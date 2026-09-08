@@ -1,15 +1,15 @@
 # ADR 0007: Codex App Server and owned worktrees
 
-- Status: accepted for P05.1–P05.3
+- Status: accepted; P05 complete
 - Date: 2026-09-08
+- Completed: 2026-09-08 15:17:15 +01:00
 
 ## Context
 
 P05 requires a supported Codex interface, durable project/thread identity, cancellation, and an
-initial single-writer safety boundary before coding changes. The SORA checkout currently has no Git
-commit, so it cannot itself be the base of a Git worktree. Read-only provider acceptance and an
-isolated committed fixture can still prove the adapter and allocation mechanics without altering the
-user's checkout or inventing a base revision.
+initial single-writer safety boundary before coding changes. Early acceptance used an isolated
+committed fixture because the SORA checkout did not yet have a base commit. The authorized SORA
+baseline now permits full-project acceptance against an explicit immutable base.
 
 ## Decision
 
@@ -22,8 +22,12 @@ Direct CLI use is read-only. A write run requires `workspace-write`, a durable
 `WorkspaceRecord`, the matching `ProviderRequest.workspace_ref`, and a current exclusive lease from
 `GitWorkspaceManager`. `danger-full-access` is rejected. The manager allocates a detached worktree
 from an explicit resolvable base commit beneath its configured state root, records source dirty
-state and ownership before work, and captures base/head/status/files/diff afterward. It never stages,
-commits, merges, or deletes a handed-off worktree; broader recovery and cleanup belong to P07.
+state and ownership before work, and captures base/head/status/files/diff afterward. A
+`CodingRunArtifact` joins that Git evidence to provider outcome, command/test activity, files,
+warnings, and uncertainties. P06 coding-write routing allocates and binds one workspace per run,
+captures the artifact before accepting the result, prohibits toolful fallback, and releases the
+lease in terminal cleanup. It never stages, commits, merges, or deletes a handed-off worktree;
+broader recovery and cleanup belong to P07.
 
 ## Consequences
 
@@ -34,8 +38,8 @@ commits, merges, or deletes a handed-off worktree; broader recovery and cleanup 
 - Unexpected command/file approval requests are declined under `approvalPolicy=never`.
 - Initial leases are durable files and fail closed for a second writer. Cross-process heartbeat,
   recovery, discard, and cleanup remain P07 work.
-- P05 cannot be marked complete until a real full-SORA base commit exists and P05.4 is repeated on
-  that base without mutating or committing the user's checkout.
+- P05 full-SORA acceptance passed from explicit base `f370082`; the source checkout remained clean,
+  the review worktree retained only the requested edits, and the lease was released.
 
 ## Reversal
 

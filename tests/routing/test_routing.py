@@ -70,7 +70,9 @@ def test_coding_write_held_pending_p05_3() -> None:
     assert decision.category is TaskIntentCategory.CODING_WRITE
     assert decision.rule_name == "coding_write_rule"
     assert decision.metadata.get("p05_deferred") is True
-    assert "Active coding writes deferred" in str(decision.metadata.get("warning"))
+    assert "require configured P05 workspace isolation" in str(
+        decision.metadata.get("warning")
+    )
 
 
 def test_coding_write_routes_only_to_codex_when_isolation_is_available() -> None:

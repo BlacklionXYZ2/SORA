@@ -1,19 +1,22 @@
 # P06 Antigravity and Rule-Based Routing Verification
 
 - Date: 2026-09-08
-- Completed: 2026-09-08 13:55:00 +01:00 (Europe/London)
-- Model: Gemini 3.8 Flash
+- Implementation completed: 2026-09-08 13:55:00 +01:00 (Europe/London)
+- Dependency closure / combined acceptance: 2026-09-08 15:17:15 +01:00 (Europe/London)
+- Models: Gemini 3.8 Flash (P06 implementation); GPT-5.6 Sol (P05 integration and dependency closure)
 - Environment: Windows 11 Pro 10.0.26200 x64, CPython 3.12.10, uv 0.12.10, agy 1.1.27 (`C:\Users\oscar\AppData\Local\agy\bin\agy.exe`)
 - Scope: Non-interactive Antigravity CLI adapter, deterministic rule-based routing engine, dialogue/status fast-paths, explicit override protection (no silent substitution), privacy scope containment, bounded automatic fallback, conversational steering disambiguation, proportional adaptive presentation, and multi-provider runtime wiring.
 
-## Critical Dependency: P05 Dependency & Deferred Scope
+## P05 dependency closure
 
 > [!IMPORTANT]
-> **P05 must be finished before P06 can be considered complete.**
+> **Satisfied 2026-09-08 15:17:15 +01:00.**
 >
-> Because Phase P05 (Codex and safe single-writer coding) was intentionally bypassed to preserve unlogged work from Sol, the following parts of P06 could not be completed and are deferred:
-> 1. **P05.3 Workspace Isolation / Git Worktrees**: Active coding-write tasks that mutate files in-place are held safely (`p05_deferred=True` flag in `RoutingDecision`) rather than executing unisolated file mutations in the main working tree.
-> 2. **Live Codex Acceptance**: In accordance with the P06 Definition of Done (*"Do not claim all three backend integrations until each has separate live acceptance evidence"*), live Codex acceptance cannot be claimed until P05 is formally completed. Only Hermes and Antigravity have verified adapter/probing foundations.
+> P05 now allocates a manager-owned worktree for each configured coding write, binds Codex to the
+> same lease and workspace reference, persists a complete review artifact, and releases the lease.
+> Coding writes have no provider fallback and unconfigured writes fail before submission. A live
+> P06-routed GPT-5.6 Luna run on the full SORA repository passed this boundary. This closure is GPT-5.6
+> Sol integration evidence and does not change Gemini 3.8 Flash's P06 implementation attribution.
 
 ## Behavior Implemented
 
@@ -25,6 +28,7 @@
 - **Deterministic Routing Engine (`sora.routing.router`)**:
   - Fast-paths: `dialogue_fast_path` and `status_lookup_fast_path` to bypass worker queues for instant companion responses.
   - Intent classification: classified prompt text and metadata into `research`, `coding_read`, `coding_write`, `deterministic_offline`, or `reasoning_general`.
+  - Isolated coding writes select Codex with an empty fallback list; requests that cannot be isolated remain `p05_deferred` and are rejected before task creation.
   - Explicit manual override protection: explicit user requests for a specific backend are strictly honored without silent substitution. If the backend is unavailable, `ProviderLaunchError(UNAVAILABLE)` is raised with an empty fallback sequence.
   - Privacy scope containment: local-only context filters out cloud providers and rejects explicit cloud requests.
   - Conversational steering disambiguation (`disambiguate_steering`): maps "Cody", "Hermes", "Antigravity"/"AG", or pronouns to active runs when unambiguous, returning `None` if ambiguous.
@@ -33,6 +37,7 @@
   - Trace recording: emits `phase="routing.selected"` on task submission and `phase="routing.fallback"` on bounded automatic fallback.
   - Conversational steering (`runtime.steer_from_conversation`): applies steering instructions only to targeted active runs.
   - Proportional adaptive presentation (`runtime.present_result`): dynamically selects `BRIEF`, `EXPLAIN`, or `WALKTHROUGH` presentation modes with specialist attribution.
+  - Managed P05 handoff: configured writes allocate a per-run worktree from an explicit base, bind the concrete Codex provider, capture a durable review artifact before result acceptance, and release the lease in terminal cleanup.
 - **CLI Flags (`sora.__main__`)**:
   - Added `--provider antigravity` and options: `--antigravity-command`, `--antigravity-cwd`, `--antigravity-model`, `--antigravity-effort`.
 
@@ -53,8 +58,19 @@ Final verification output:
 - **Schema freshness**: passed for all 22 public contract schemas.
 - **Regression test**: all existing P00–P04 and P03A tests passed without regression.
 
+Final combined P05/P06 verification on the integrated tree:
+
+- **Pytest**: **145 passed in 9.08s** across 24 test modules.
+- **Strict mypy**: passed across 85 source files; Ruff and compile checks passed.
+- **Fresh package**: sdist/wheel build and isolated-wheel imports for both providers, routing,
+  runtime, and workspaces passed.
+- **Live managed route**: task `task-44bf8027-4fc8-4581-a32e-7f96be73fd79` selected Codex with no
+  fallback, used clean base `f370082b89924da37b832fec59b78e1ab4b9b52c`, retained exactly two
+  requested file edits in its worktree, persisted the review artifact, and left no lease or source
+  checkout change. Host verification against the exact worktree passed all 6 Codex provider tests.
+
 ## Limits Retained
 
-- Active coding writes mutating files in-place remain deferred until P05.3 Git worktree isolation is implemented.
-- P06 DoD does not claim triple-live acceptance: live Codex integration remains blocked until P05 is completed.
+- Coding writes still require explicit repository/workspace/base configuration; without it they fail closed.
+- The managed artifact is reviewable but deliberately not auto-merged, staged, or committed.
 - Antigravity adapter exercises non-interactive JSON mode; live streaming events remain unsupported until native streaming protocols are exposed.

@@ -56,6 +56,15 @@ provider lifecycle. The direct CLI is deliberately read-only. Coding writes requ
 worktree plus a live `GitWorkspaceManager` lease; the adapter rejects unowned `workspace-write` and
 all `danger-full-access` runs.
 
+Run an auto-routed coding write in a managed worktree from an explicit base:
+
+```powershell
+uv run --locked python -m sora --provider codex --codex-cwd C:\path\to\repository --codex-write-base HEAD --codex-workspace-root C:\path\to\sora-workspaces --once "Edit the requested files and run focused tests." --wait --task-timeout 300
+```
+
+The source checkout is not changed. SORA retains the worktree and a review artifact containing the
+base, head, status, diff, commands/tests, and uncertainties; it never merges the result automatically.
+
 Start the interactive mock CLI with `uv run --locked python -m sora`. Its commands are:
 
 ```text

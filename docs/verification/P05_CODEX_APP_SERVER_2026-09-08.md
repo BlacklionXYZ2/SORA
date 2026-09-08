@@ -4,9 +4,10 @@
 - Verification date: 2026-09-08 (Europe/London)
 - Model implementing SORA changes: GPT-5.6 Sol
 - Live Codex model: GPT-5.6 Luna, low effort
-- Status: in progress; P05.1–P05.3 implemented, P05.4 awaits a real SORA Git base
-- Git actions in the SORA checkout: no files staged, no commit created
-- Progress changelog: `changelog/2026-09-08T143852+0100_P05-PROGRESS_GPT-5.6-Sol.md`
+- Completed: 2026-09-08 15:17:15 +01:00 (Europe/London)
+- Status: complete; P05.1–P05.4 accepted
+- Git actions in the SORA checkout: authorized baseline commits `a4b7118` and `f370082`; live acceptance artifact not staged, committed, or merged
+- Completion changelog: `changelog/2026-09-08T151715+0100_P05_GPT-5.6-Sol.md`
 
 ## Supported-interface probe
 
@@ -39,8 +40,14 @@ Official protocol references:
 - Added `GitWorkspaceManager`, durable `WorkspaceRecord`, exclusive write leases, resolved-path
   containment, explicit base resolution, detached worktree allocation, source-dirty recording, and
   review artifact capture.
+- Added `CodingRunArtifact`, combining Git base/head/status/files/diff with the provider outcome,
+  commands, verification commands, files read/changed, warnings, and uncertainties in one durable
+  review record.
 - Codex `workspace-write` now requires the manager-issued record, matching cwd/workspace reference,
   current owner lease, and a lease covering the request deadline.
+- Integrated P06 coding writes with per-run worktree allocation, concrete Codex provider binding,
+  artifact capture before result acceptance, and lease release in terminal cleanup. Coding writes
+  have no provider fallback; missing isolation or a non-Codex write provider fails closed.
 - Core now atomically persists session-capable providers' native IDs and records the actual provider
   selected by a bounded fallback, preventing a resumed thread from being attributed to the failed
   first-choice backend.
@@ -88,21 +95,42 @@ changed only `src/sora_fixture.py` from `return "before"` to `return "after"`.
   `fixture verification passed`; this is separate host-side evidence.
 - The write lease was released while the worktree and review evidence were retained.
 
-## Remaining P05 boundary
+## Full-SORA P05.4 acceptance
 
-P05.4 and the overall stage remain open. The current SORA repository has zero commits and every
-project file is untracked, so Git cannot allocate a worktree from an honest SORA base revision. SORA
-will not create an initial commit, stage the user's files, or substitute a fabricated base without
-explicit authorization. Once a real base exists, repeat the bounded write/test/artifact matrix on an
-owned full-SORA worktree, then record the completion timestamp and create the required
-`P05_GPT-5.6-Sol` completion changelog.
+The user's request to finish P05 authorized the required repository baseline. Commit `a4b7118`
+established the combined SORA baseline containing the already completed P03A work and Gemini's P06
+implementation; commit `f370082b89924da37b832fec59b78e1ab4b9b52c` added the final routing
+classification/fail-closed corrections and was the explicit clean base for acceptance.
+
+P06 routed task `task-44bf8027-4fc8-4581-a32e-7f96be73fd79` as `coding_write` to
+`codex-app-server` with no fallback. `SoraRuntime` allocated
+`workspace-run-33a4d057-0542-46de-ae49-7c88b70b13cb`, bound GPT-5.6 Luna at low effort to that
+worktree, and persisted native thread `01a08150-e844-7250-adf0-451e9690328e`.
+
+The durable artifact has SHA-256
+`6c1eff5700fc6f1c919e97434d73a44dc55fd12e32845035ab8ba699b68b2ef9` and records:
+
+- requested/resolved base `f370082` / `f370082b89924da37b832fec59b78e1ab4b9b52c`;
+- unchanged head because the provider correctly did not commit;
+- exactly `src/sora/providers/codex.py` and `tests/providers/test_codex.py` as changed tracked files;
+- the complete diff adding `display_name="Cody"` and its test assertion;
+- provider commands, verification attempts, files read/changed, warnings, and the explicit
+  uncertainty that its sandbox could not launch the project's configured interpreter.
+
+The source checkout remained clean and unchanged. The artifact was captured before result
+acceptance, its reference was attached to the normalized result, and both the workspace lease and
+runtime lease were released while the review worktree was retained. SQLite `PRAGMA quick_check`
+returned `ok`. Host-side verification then set `PYTHONPATH` to that exact worktree and passed the
+entire Codex provider module: **6 passed in 0.66s**. The live changes remain unmerged for explicit
+review.
 
 ## Current repository verification
 
-- `scripts/verify.ps1`: clean Ruff, strict mypy across 84 source files, and **139 passed in
-  8.35s** with no warnings.
+- `scripts/verify.ps1`: clean Ruff, strict mypy across 85 source files, and **145 passed in
+  9.08s** with no warnings.
 - Fresh sdist and wheel: built successfully into ignored validation storage.
-- Fresh Python 3.12 wheel environment: Codex provider and Git workspace manager imports passed.
+- Fresh Python 3.12 wheel environment: Codex, Antigravity, routing, runtime, workspace manager, and
+  `CodingRunArtifact` imports passed together.
 - The Antigravity cancellation cleanup warning exposed by the first full run was corrected by
   letting the active `communicate()` drain subprocess pipes before teardown; its focused suite then
   passed with unraisable warnings promoted to errors.

@@ -128,7 +128,7 @@ class RoutingEngine:
         - Manual overrides: explicit requests are honored without silent substitution.
         - Privacy scope containment: local-only context never routes or falls back to cloud.
         - Dialogue fast-paths: conversational and status queries bypass heavy models.
-        - P05.3 safety boundary: coding writes without worktree isolation are held.
+        - P05 safety boundary: coding writes without configured worktree isolation are held.
         - Bounded fallbacks: auto-routing generates an ordered fallback list.
         """
         category = self.classify_intent(intent)
@@ -210,7 +210,7 @@ class RoutingEngine:
             metadata: dict[str, JsonValue] = {}
             if not self.has_worktree_isolation:
                 metadata["p05_deferred"] = True
-                metadata["warning"] = "Active coding writes deferred pending P05.3 isolation"
+                metadata["warning"] = "Coding writes require configured P05 workspace isolation"
 
             # Only Codex currently binds write authority to a manager-owned worktree.
             # Without that boundary, another harness may plan but must not mutate.
@@ -233,7 +233,7 @@ class RoutingEngine:
                 rule_name="coding_write_rule",
                 reason=(
                     "Coding write task routed for planning/analysis; "
-                    "in-place file mutations held pending P05.3"
+                    "execution held until P05 workspace isolation is configured"
                     if not self.has_worktree_isolation
                     else "Coding write task routed to Codex in an owned worktree"
                 ),
