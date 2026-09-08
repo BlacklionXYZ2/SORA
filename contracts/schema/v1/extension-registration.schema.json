@@ -1,0 +1,80 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "ExtensionDepth": {
+      "enum": [
+        "integration",
+        "desktop_component",
+        "agent_extension"
+      ],
+      "title": "ExtensionDepth",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "JsonValue": {},
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "capability_ids": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Identifier"
+      },
+      "title": "Capability Ids",
+      "type": "array"
+    },
+    "config": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Config",
+      "type": "object"
+    },
+    "depth": {
+      "$ref": "#/$defs/ExtensionDepth"
+    },
+    "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+    },
+    "extension_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "required_grants": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Grants",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "version": {
+      "$ref": "#/$defs/NonEmptyText"
+    }
+  },
+  "required": [
+    "extension_id",
+    "depth",
+    "version"
+  ],
+  "title": "ExtensionRegistration",
+  "type": "object"
+}

@@ -1,0 +1,115 @@
+{
+  "$defs": {
+    "CapabilityCategory": {
+      "enum": [
+        "desktop",
+        "files",
+        "media",
+        "tasks",
+        "social",
+        "calendar",
+        "desktop_objects",
+        "reasoning_agents"
+      ],
+      "title": "CapabilityCategory",
+      "type": "string"
+    },
+    "CapabilityScope": {
+      "enum": [
+        "local_owner",
+        "local_restricted",
+        "network_public",
+        "remote_guest"
+      ],
+      "title": "CapabilityScope",
+      "type": "string"
+    },
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "JsonValue": {},
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "SemanticVerb": {
+      "enum": [
+        "open",
+        "show",
+        "look",
+        "point",
+        "type",
+        "play",
+        "pause",
+        "send",
+        "search",
+        "add_task",
+        "move_task",
+        "complete_task",
+        "delegate"
+      ],
+      "title": "SemanticVerb",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "capability_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "category": {
+      "$ref": "#/$defs/CapabilityCategory"
+    },
+    "description": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "parameters_schema": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Parameters Schema",
+      "type": "object"
+    },
+    "required_scope": {
+      "$ref": "#/$defs/CapabilityScope",
+      "default": "local_owner"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "side_effect_class": {
+      "default": "read_only",
+      "enum": [
+        "read_only",
+        "idempotent_write",
+        "consequential_write"
+      ],
+      "title": "Side Effect Class",
+      "type": "string"
+    },
+    "verbs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SemanticVerb"
+      },
+      "title": "Verbs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "capability_id",
+    "category",
+    "description"
+  ],
+  "title": "CapabilityDescriptor",
+  "type": "object"
+}

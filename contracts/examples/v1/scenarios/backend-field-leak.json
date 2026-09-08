@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "result_id": "result-backend-leak",
+  "task_id": "task-001",
+  "run_id": "run-001",
+  "base_revision": 12,
+  "outcome": "completed",
+  "summary": "Contains an illegal backend-native field.",
+  "conclusion": "This payload must be rejected.",
+  "hermes_session_token": "native-secret"
+}

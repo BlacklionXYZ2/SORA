@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "event_id": "event-001",
+  "stream_id": "owner-local",
+  "sequence": 1,
+  "timestamp": "2026-09-07T17:00:04Z",
+  "owner_id": "owner-local",
+  "source": "core",
+  "event_type": "task.status_changed",
+  "task_id": "task-001",
+  "run_id": "run-001",
+  "correlation_id": "correlation-001",
+  "causation_id": "event-command-001",
+  "revision": 13,
+  "payload": {
+    "from": "routing",
+    "to": "reasoning"
+  }
+}

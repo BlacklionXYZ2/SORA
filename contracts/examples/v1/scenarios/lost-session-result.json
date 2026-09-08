@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "result_id": "result-lost-session",
+  "task_id": "task-003",
+  "run_id": "run-003",
+  "base_revision": 14,
+  "outcome": "failed",
+  "summary": "The mapped provider session no longer exists.",
+  "error": {
+    "code": "lost_session",
+    "message": "The provider could not find native session native-003.",
+    "retryable": false
+  }
+}

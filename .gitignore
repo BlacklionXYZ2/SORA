@@ -1,0 +1,15 @@
+/.venv/
+/.local/
+/.pytest_cache/
+/.mypy_cache/
+/.ruff_cache/
+/**/__pycache__/
+*.py[cod]
+*.egg-info/
+/SORA.zip
+
+# Runtime state and secrets are deliberately outside versioned source.
+/.env
+/data/
+*.db
+*.db-*

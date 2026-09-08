@@ -1,0 +1,145 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "queued",
+        "routing",
+        "reasoning",
+        "working",
+        "waiting_for_permission",
+        "waiting_for_input",
+        "cancel_requested",
+        "interrupted",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "active_run_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "base_revision": {
+      "minimum": 0,
+      "title": "Base Revision",
+      "type": "integer"
+    },
+    "constraints": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Constraints",
+      "type": "array"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "creator_message_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "effective_backend": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "grant_ids": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Identifier"
+      },
+      "title": "Grant Ids",
+      "type": "array"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "requested_backend": {
+      "$ref": "#/$defs/Identifier",
+      "default": "auto"
+    },
+    "result_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "task_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "owner_id",
+    "creator_message_id",
+    "status",
+    "base_revision",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "TaskRecord",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "task_id": "task-001",
+  "owner_id": "owner-local",
+  "project_id": "project-sora",
+  "creator_message_id": "message-001",
+  "status": "reasoning",
+  "requested_backend": "auto",
+  "effective_backend": "mock",
+  "base_revision": 12,
+  "active_run_id": "run-001",
+  "grant_ids": ["grant-read"],
+  "constraints": ["Do not modify the source checkout"],
+  "result_ref": null,
+  "created_at": "2026-09-07T17:00:00Z",
+  "updated_at": "2026-09-07T17:00:01Z"
+}

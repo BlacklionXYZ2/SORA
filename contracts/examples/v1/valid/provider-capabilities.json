@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "provider": "mock",
+  "sessions": true,
+  "resume": true,
+  "events": true,
+  "steer": false,
+  "cancel": true,
+  "tool_restrictions": true,
+  "supported_result_version": "1.0"
+}

@@ -1,0 +1,126 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_destination": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "context": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "context_manifest_ref": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "deadline": {
+      "format": "date-time",
+      "title": "Deadline",
+      "type": "string"
+    },
+    "grant_ids": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Identifier"
+      },
+      "title": "Grant Ids",
+      "type": "array"
+    },
+    "idempotency_key": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "intent": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "run_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "session_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "task_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "token_budget": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Token Budget"
+    },
+    "workspace_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "request_id",
+    "task_id",
+    "run_id",
+    "owner_id",
+    "intent",
+    "context",
+    "context_manifest_ref",
+    "deadline",
+    "artifact_destination",
+    "idempotency_key"
+  ],
+  "title": "ProviderRequest",
+  "type": "object"
+}

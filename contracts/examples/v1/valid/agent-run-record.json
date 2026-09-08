@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "run_id": "run-001",
+  "task_id": "task-001",
+  "attempt": 1,
+  "provider": "mock",
+  "status": "running",
+  "native_session_id": "native-001",
+  "lease_expires_at": "2026-09-07T17:05:00Z",
+  "started_at": "2026-09-07T17:00:02Z",
+  "finished_at": null,
+  "outcome": null
+}

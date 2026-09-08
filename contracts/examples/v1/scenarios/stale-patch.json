@@ -1,0 +1,7 @@
+{
+  "patch_file": "../valid/patch-envelope.json",
+  "entity_versions": {
+    "task:task-001": 4
+  },
+  "expected_disposition": "conflict"
+}

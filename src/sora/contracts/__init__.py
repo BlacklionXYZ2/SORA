@@ -1,0 +1,56 @@
+"""Versioned, backend-neutral contracts owned by SORA Core."""
+
+from .events import EventOrder, classify_event_order
+from .models import (
+    AgentRunRecord,
+    AgentSessionRecord,
+    ApprovalRequest,
+    ApprovalStatus,
+    CapabilityGrant,
+    CapabilityOperation,
+    CapabilityRequest,
+    EventEnvelope,
+    NormalizedResult,
+    PatchEnvelope,
+    ProviderCapabilities,
+    ProviderError,
+    ProviderErrorCode,
+    ProviderOutcome,
+    ProviderRequest,
+    RunStatus,
+    SessionStatus,
+    TaskRecord,
+    TaskStatus,
+)
+from .transitions import (
+    validate_approval_transition,
+    validate_run_transition,
+    validate_task_transition,
+)
+
+__all__ = [
+    "AgentRunRecord",
+    "AgentSessionRecord",
+    "ApprovalRequest",
+    "ApprovalStatus",
+    "CapabilityGrant",
+    "CapabilityOperation",
+    "CapabilityRequest",
+    "EventEnvelope",
+    "EventOrder",
+    "NormalizedResult",
+    "PatchEnvelope",
+    "ProviderCapabilities",
+    "ProviderError",
+    "ProviderErrorCode",
+    "ProviderOutcome",
+    "ProviderRequest",
+    "RunStatus",
+    "SessionStatus",
+    "TaskRecord",
+    "TaskStatus",
+    "classify_event_order",
+    "validate_approval_transition",
+    "validate_run_transition",
+    "validate_task_transition",
+]

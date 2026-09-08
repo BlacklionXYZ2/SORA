@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "result_id": "result-uncertain-launch",
+  "task_id": "task-002",
+  "run_id": "run-002",
+  "base_revision": 13,
+  "outcome": "failed",
+  "summary": "The launch acknowledgement was lost; the native effect is unknown.",
+  "uncertainties": ["The provider may have created a native run."],
+  "error": {
+    "code": "uncertain_launch",
+    "message": "No launch acknowledgement was received.",
+    "retryable": false
+  }
+}

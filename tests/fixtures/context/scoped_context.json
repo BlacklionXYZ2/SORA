@@ -1,0 +1,37 @@
+{
+  "owner_id": "owner-local",
+  "project_id": "project-sora",
+  "constraints": ["Never modify the source checkout."],
+  "items": [
+    {
+      "source_id": "fact-001",
+      "source": "FACT",
+      "owner_id": "owner-local",
+      "project_id": "project-sora",
+      "content": "The active project is SORA."
+    },
+    {
+      "source_id": "inference-001",
+      "source": "INFERENCE",
+      "owner_id": "owner-local",
+      "project_id": "project-sora",
+      "content": "The user may prefer a dark interface."
+    },
+    {
+      "source_id": "private-other-project",
+      "source": "MEMORY",
+      "owner_id": "owner-local",
+      "project_id": "project-private",
+      "content": "PRIVATE OTHER PROJECT CONTENT"
+    }
+  ],
+  "expected_included": [
+    "Never modify the source checkout.",
+    "[FACT:fact-001]",
+    "[INFERENCE:inference-001]"
+  ],
+  "expected_excluded": ["PRIVATE OTHER PROJECT CONTENT"],
+  "expected_manifest_reason": {
+    "private-other-project": "project_scope_mismatch"
+  }
+}

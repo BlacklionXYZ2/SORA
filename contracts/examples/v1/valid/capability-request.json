@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "request_id": "capability-request-001",
+  "owner_id": "owner-local",
+  "device_id": "device-desktop",
+  "project_id": "project-sora",
+  "operation": "path.read",
+  "resource": "C:\\Users\\oscar\\Desktop\\SORA\\README.md"
+}

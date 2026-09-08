@@ -1,0 +1,518 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "EntityPrecondition": {
+      "additionalProperties": false,
+      "properties": {
+        "entity_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "entity_type": {
+          "enum": [
+            "task",
+            "fact",
+            "memory",
+            "project",
+            "conversation"
+          ],
+          "title": "Entity Type",
+          "type": "string"
+        },
+        "expected_version": {
+          "minimum": 0,
+          "title": "Expected Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "entity_type",
+        "entity_id",
+        "expected_version"
+      ],
+      "title": "EntityPrecondition",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "JsonValue": {},
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "PatchEnvelope": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision": {
+          "minimum": 0,
+          "title": "Base Revision",
+          "type": "integer"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "idempotency_key": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "operations": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "propose_fact": "#/$defs/ProposeFactOperation",
+                "propose_memory": "#/$defs/ProposeMemoryOperation",
+                "update_task_metadata": "#/$defs/UpdateTaskMetadataOperation"
+              },
+              "propertyName": "operation"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ProposeFactOperation"
+              },
+              {
+                "$ref": "#/$defs/ProposeMemoryOperation"
+              },
+              {
+                "$ref": "#/$defs/UpdateTaskMetadataOperation"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Operations",
+          "type": "array"
+        },
+        "patch_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "preconditions": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/EntityPrecondition"
+          },
+          "title": "Preconditions",
+          "type": "array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "scope": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "source_run_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "patch_id",
+        "source_run_id",
+        "base_revision",
+        "scope",
+        "provenance",
+        "idempotency_key",
+        "operations"
+      ],
+      "title": "PatchEnvelope",
+      "type": "object"
+    },
+    "ProposeFactOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "fact": {
+          "$ref": "#/$defs/ProposedFact"
+        },
+        "operation": {
+          "const": "propose_fact",
+          "title": "Operation",
+          "type": "string"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "operation",
+        "operation_id",
+        "fact"
+      ],
+      "title": "ProposeFactOperation",
+      "type": "object"
+    },
+    "ProposeMemoryOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "memory": {
+          "$ref": "#/$defs/ProposedMemory"
+        },
+        "operation": {
+          "const": "propose_memory",
+          "title": "Operation",
+          "type": "string"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "operation",
+        "operation_id",
+        "memory"
+      ],
+      "title": "ProposeMemoryOperation",
+      "type": "object"
+    },
+    "ProposedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "content": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "epistemic_status": {
+          "enum": [
+            "assertion",
+            "observation",
+            "inference"
+          ],
+          "title": "Epistemic Status",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "content",
+        "epistemic_status",
+        "confidence"
+      ],
+      "title": "ProposedFact",
+      "type": "object"
+    },
+    "ProposedMemory": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "retention": {
+          "default": "durable",
+          "enum": [
+            "transient",
+            "session",
+            "durable"
+          ],
+          "title": "Retention",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "sensitivity": {
+          "default": "normal",
+          "enum": [
+            "normal",
+            "private",
+            "secret"
+          ],
+          "title": "Sensitivity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "content",
+        "scope"
+      ],
+      "title": "ProposedMemory",
+      "type": "object"
+    },
+    "ProviderError": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ProviderErrorCode"
+        },
+        "message": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "retry_after_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry After Seconds"
+        },
+        "retryable": {
+          "default": false,
+          "title": "Retryable",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ProviderError",
+      "type": "object"
+    },
+    "ProviderErrorCode": {
+      "enum": [
+        "unavailable",
+        "unsupported",
+        "invalid_request",
+        "malformed_result",
+        "rate_limited",
+        "timed_out",
+        "cancelled",
+        "lost_session",
+        "uncertain_launch",
+        "internal"
+      ],
+      "title": "ProviderErrorCode",
+      "type": "string"
+    },
+    "ProviderOutcome": {
+      "enum": [
+        "completed",
+        "failed",
+        "cancelled",
+        "unknown"
+      ],
+      "title": "ProviderOutcome",
+      "type": "string"
+    },
+    "UpdateTaskMetadataOperation": {
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "update_task_metadata",
+          "title": "Operation",
+          "type": "string"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "summary": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "task_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "operation",
+        "operation_id",
+        "task_id",
+        "summary"
+      ],
+      "title": "UpdateTaskMetadataOperation",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actions_taken": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Actions Taken",
+      "type": "array"
+    },
+    "base_revision": {
+      "minimum": 0,
+      "title": "Base Revision",
+      "type": "integer"
+    },
+    "commands_run": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Commands Run",
+      "type": "array"
+    },
+    "conclusion": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ProviderError"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "facts": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "files_changed": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Files Changed",
+      "type": "array"
+    },
+    "files_read": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Files Read",
+      "type": "array"
+    },
+    "memory_updates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Memory Updates",
+      "type": "array"
+    },
+    "outcome": {
+      "$ref": "#/$defs/ProviderOutcome"
+    },
+    "patch": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PatchEnvelope"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "result_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "run_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "suggested_response": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "summary": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "task_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "task_updates": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Task Updates",
+      "type": "array"
+    },
+    "uncertainties": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Uncertainties",
+      "type": "array"
+    },
+    "usage": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Usage"
+    },
+    "warnings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "result_id",
+    "task_id",
+    "run_id",
+    "base_revision",
+    "outcome",
+    "summary"
+  ],
+  "title": "NormalizedResult",
+  "type": "object"
+}

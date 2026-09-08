@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "CapabilityOperation": {
+      "enum": [
+        "tool.invoke",
+        "path.read",
+        "path.write",
+        "desktop.observe",
+        "desktop.present",
+        "desktop.navigate",
+        "desktop.interact"
+      ],
+      "title": "CapabilityOperation",
+      "type": "string"
+    },
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "operation": {
+      "$ref": "#/$defs/CapabilityOperation"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "resource": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "request_id",
+    "owner_id",
+    "device_id",
+    "operation",
+    "resource"
+  ],
+  "title": "CapabilityRequest",
+  "type": "object"
+}

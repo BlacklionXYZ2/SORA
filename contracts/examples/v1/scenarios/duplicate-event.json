@@ -1,0 +1,5 @@
+{
+  "event_file": "../valid/event-envelope.json",
+  "deliveries": 2,
+  "expected_second_disposition": "duplicate"
+}

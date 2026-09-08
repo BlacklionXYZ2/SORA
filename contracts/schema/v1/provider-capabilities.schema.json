@@ -1,0 +1,97 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cancel": {
+      "default": false,
+      "title": "Cancel",
+      "type": "boolean"
+    },
+    "display_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Display Name"
+    },
+    "events": {
+      "default": false,
+      "title": "Events",
+      "type": "boolean"
+    },
+    "filesystem": {
+      "default": false,
+      "title": "Filesystem",
+      "type": "boolean"
+    },
+    "provider": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "resume": {
+      "default": false,
+      "title": "Resume",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "sessions": {
+      "default": false,
+      "title": "Sessions",
+      "type": "boolean"
+    },
+    "steer": {
+      "default": false,
+      "title": "Steer",
+      "type": "boolean"
+    },
+    "streaming": {
+      "default": false,
+      "title": "Streaming",
+      "type": "boolean"
+    },
+    "structured_output": {
+      "default": true,
+      "title": "Structured Output",
+      "type": "boolean"
+    },
+    "supported_result_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Supported Result Version",
+      "type": "string"
+    },
+    "tool_restrictions": {
+      "default": false,
+      "title": "Tool Restrictions",
+      "type": "boolean"
+    },
+    "worktree_support": {
+      "default": false,
+      "title": "Worktree Support",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "provider"
+  ],
+  "title": "ProviderCapabilities",
+  "type": "object"
+}

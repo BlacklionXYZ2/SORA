@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "grant_id": "grant-read",
+  "owner_id": "owner-local",
+  "device_id": "device-desktop",
+  "project_id": "project-sora",
+  "operation": "path.read",
+  "resource": "C:\\Users\\oscar\\Desktop\\SORA",
+  "status": "active",
+  "issued_at": "2026-09-07T16:59:00Z",
+  "not_before": "2026-09-07T16:59:00Z",
+  "expires_at": "2026-09-07T18:00:00Z",
+  "max_uses": 10,
+  "used_count": 0,
+  "approval_id": "approval-001"
+}

@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "CapabilityOperation": {
+      "enum": [
+        "tool.invoke",
+        "path.read",
+        "path.write",
+        "desktop.observe",
+        "desktop.present",
+        "desktop.navigate",
+        "desktop.interact"
+      ],
+      "title": "CapabilityOperation",
+      "type": "string"
+    },
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "GrantStatus": {
+      "enum": [
+        "active",
+        "revoked",
+        "exhausted"
+      ],
+      "title": "GrantStatus",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "grant_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "issued_at": {
+      "format": "date-time",
+      "title": "Issued At",
+      "type": "string"
+    },
+    "max_uses": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Uses"
+    },
+    "not_before": {
+      "format": "date-time",
+      "title": "Not Before",
+      "type": "string"
+    },
+    "operation": {
+      "$ref": "#/$defs/CapabilityOperation"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "resource": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "$ref": "#/$defs/GrantStatus",
+      "default": "active"
+    },
+    "used_count": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Used Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "grant_id",
+    "owner_id",
+    "device_id",
+    "operation",
+    "resource",
+    "issued_at",
+    "not_before",
+    "expires_at",
+    "approval_id"
+  ],
+  "title": "CapabilityGrant",
+  "type": "object"
+}

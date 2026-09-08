@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopObjectVisibility": {
+      "enum": [
+        "private",
+        "local_only",
+        "guest_visible",
+        "public"
+      ],
+      "title": "DesktopObjectVisibility",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "affordances": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "title": "Affordances",
+      "type": "array"
+    },
+    "anchor": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "canonical_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "object_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "object_type": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "version": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Version",
+      "type": "integer"
+    },
+    "visibility": {
+      "$ref": "#/$defs/DesktopObjectVisibility",
+      "default": "private"
+    }
+  },
+  "required": [
+    "object_id",
+    "object_type",
+    "owner_id",
+    "anchor"
+  ],
+  "title": "DesktopObjectRecord",
+  "type": "object"
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "patch_id": "patch-001",
+  "source_run_id": "run-001",
+  "base_revision": 12,
+  "scope": "owner-local/project-sora",
+  "provenance": "mock provider fixture",
+  "evidence_refs": ["artifact-001"],
+  "idempotency_key": "patch-once-001",
+  "preconditions": [
+    {
+      "entity_type": "task",
+      "entity_id": "task-001",
+      "expected_version": 3
+    }
+  ],
+  "operations": [
+    {
+      "operation": "propose_fact",
+      "operation_id": "operation-001",
+      "fact": {
+        "content": "The fixture repository contains a pyproject.toml file.",
+        "epistemic_status": "observation",
+        "confidence": 1.0,
+        "evidence_refs": ["artifact-001"]
+      }
+    }
+  ]
+}

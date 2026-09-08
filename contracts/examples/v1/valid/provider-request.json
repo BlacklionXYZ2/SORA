@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "request_id": "request-001",
+  "task_id": "task-001",
+  "run_id": "run-001",
+  "owner_id": "owner-local",
+  "project_id": "project-sora",
+  "intent": "Inspect the repository without modifying it",
+  "context": "The repository is a SORA fixture.",
+  "context_manifest_ref": "manifest-001",
+  "session_ref": "session-001",
+  "workspace_ref": "workspace-readonly",
+  "grant_ids": ["grant-read"],
+  "deadline": "2026-09-07T17:10:00Z",
+  "token_budget": 4000,
+  "artifact_destination": "artifacts/run-001",
+  "idempotency_key": "request-once-001"
+}
