@@ -44,8 +44,8 @@ _STATUS_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 _CODING_WRITE_PATTERNS = re.compile(
-    r"\b(?:write code|refactor|fix the bug|patch|edit file|create file|"
-    r"implement feature|modify code)\b",
+    r"\b(?:write code|refactor|fix the bug|patch|edit(?:ing)?|create file|"
+    r"implement feature|modify code|change (?:the )?(?:code|file))\b",
     re.IGNORECASE,
 )
 _CODING_READ_PATTERNS = re.compile(
@@ -170,6 +170,11 @@ class RoutingEngine:
             for p in self.registered_providers
             if not effective_local_only or p not in self.cloud_providers
         }
+        if not candidates:
+            raise ProviderLaunchError(
+                ProviderErrorCode.UNAVAILABLE,
+                "No provider satisfies the requested privacy scope",
+            )
 
         # 2. Dialogue / Status fast-paths
         if category is TaskIntentCategory.DIALOGUE_FAST_PATH:

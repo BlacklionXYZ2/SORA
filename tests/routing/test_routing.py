@@ -85,6 +85,16 @@ def test_coding_write_routes_only_to_codex_when_isolation_is_available() -> None
     assert "p05_deferred" not in decision.metadata
 
 
+def test_coding_write_classifier_recognizes_scoped_edit_wording() -> None:
+    engine = RoutingEngine(
+        registered_providers=["codex", "deterministic"],
+        has_worktree_isolation=True,
+    )
+    decision = engine.route("Edit only src/module.py and run its test.")
+    assert decision.category is TaskIntentCategory.CODING_WRITE
+    assert decision.selected_provider == "codex"
+
+
 def test_explicit_coding_write_is_deferred_without_owned_workspace() -> None:
     engine = RoutingEngine(
         registered_providers=["codex"],

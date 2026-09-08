@@ -175,6 +175,9 @@ async def run(arguments: argparse.Namespace) -> int:
     managed_codex_writes = (
         arguments.provider == "codex" and arguments.codex_write_base is not None
     )
+    provider_registry: dict[str, ReasoningProvider] = {arguments.provider: provider}
+    if arguments.provider != "deterministic":
+        provider_registry["deterministic"] = DeterministicProvider()
     runtime = SoraRuntime(
         RuntimeConfig(
             root=arguments.root,
@@ -189,7 +192,7 @@ async def run(arguments: argparse.Namespace) -> int:
             ),
             coding_base_ref=(arguments.codex_write_base if managed_codex_writes else None),
         ),
-        providers={arguments.provider: provider},
+        providers=provider_registry,
     )
     await runtime.start()
     try:

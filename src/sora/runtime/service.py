@@ -140,7 +140,10 @@ class SoraRuntime:
             return self.providers[name]
         if "default" in self.providers:
             return self.providers["default"]
-        return self.provider
+        raise ProviderLaunchError(
+            ProviderErrorCode.UNAVAILABLE,
+            f"Selected provider '{name}' is not registered; silent substitution is prohibited.",
+        )
 
     async def start(self) -> list[str]:
         if self._started:
