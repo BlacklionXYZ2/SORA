@@ -20,6 +20,7 @@ from sora.contracts.models import TaskStatus
 from sora.embodiment.local_player import LocalAvatarSession
 from sora.providers.antigravity import AntigravityProvider
 from sora.providers.base import ReasoningProvider
+from sora.providers.claude_code import ClaudeCodeProvider
 from sora.providers.codex import CodexAppServerProvider
 from sora.providers.hermes import HermesACPProvider
 from sora.providers.llama_server import LlamaOptions
@@ -56,12 +57,12 @@ def parser() -> argparse.ArgumentParser:
     )
     result.add_argument(
         "--provider",
-        choices=("auto", "deterministic", "hermes", "codex", "antigravity"),
+        choices=("auto", "deterministic", "hermes", "codex", "antigravity", "claude"),
         default=os.getenv("SORA_PROVIDER", "auto"),
         help=(
             "reasoning backend; auto registers every usable backend so the routing "
             "engine chooses per task at runtime, deterministic is offline, "
-            "Hermes/Codex/Antigravity are external"
+            "Hermes/Codex/Antigravity/Claude are external"
         ),
     )
     result.add_argument(
@@ -224,6 +225,31 @@ def parser() -> argparse.ArgumentParser:
         choices=("low", "medium", "high"),
         default=os.getenv("SORA_ANTIGRAVITY_EFFORT", "medium"),
         help="Antigravity reasoning effort level",
+    )
+    result.add_argument(
+        "--claude-command",
+        default=os.getenv("SORA_CLAUDE_COMMAND", "claude"),
+        help="Claude Code CLI executable (headless, on the owner's subscription)",
+    )
+    result.add_argument(
+        "--claude-arg",
+        action="append",
+        default=None,
+        help=(
+            "extra Claude Code argument, e.g. --permission-mode acceptEdits; repeatable. "
+            "None are added by default, so print mode denies tools that need approval"
+        ),
+    )
+    result.add_argument(
+        "--claude-cwd",
+        type=Path,
+        default=None,
+        help="explicit Claude Code working directory",
+    )
+    result.add_argument(
+        "--claude-model",
+        default=os.getenv("SORA_CLAUDE_MODEL", None),
+        help="Claude model alias or name; blank uses Claude Code's own default",
     )
     result.add_argument(
         "--serve",
@@ -405,6 +431,27 @@ def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
                 cwd=str(antigravity_cwd) if antigravity_cwd else None,
                 model=arguments.antigravity_model,
                 effort=arguments.antigravity_effort,
+                timeout_seconds=arguments.task_timeout,
+            )
+
+    if arguments.provider in ("auto", "claude"):
+        claude_cwd = arguments.claude_cwd
+        if claude_cwd is None and auto:
+            claude_cwd = workspace
+        if claude_cwd is not None and not claude_cwd.is_dir():
+            if not auto:
+                raise ProviderSetupError(
+                    f"Claude working directory does not exist: {claude_cwd}"
+                )
+            skipped.append(f"claude: working directory does not exist: {claude_cwd}")
+        elif auto and shutil.which(arguments.claude_command) is None:
+            skipped.append(f"claude: '{arguments.claude_command}' is not on PATH")
+        else:
+            registry["claude"] = ClaudeCodeProvider(
+                command=arguments.claude_command,
+                args=tuple(arguments.claude_arg or ()),
+                cwd=str(claude_cwd) if claude_cwd else None,
+                model=arguments.claude_model,
                 timeout_seconds=arguments.task_timeout,
             )
 

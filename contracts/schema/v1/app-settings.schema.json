@@ -441,7 +441,7 @@
           "type": "number"
         },
         "mode": {
-          "default": "native-only",
+          "default": "image-on-prompt",
           "enum": [
             "native-only",
             "image-on-prompt",

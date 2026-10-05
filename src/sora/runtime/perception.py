@@ -22,7 +22,9 @@ from sora.vision.capture import validate_png_dimensions
 
 
 class PerceptionSettings(StrictModel):
-    mode: Literal["native-only", "image-on-prompt", "adaptive"] = "native-only"
+    # V1 sends the current window with every text and voice prompt (V1.md step 4). Settings
+    # migrated from before perception existed keep native-only; see AppSettingsStore.load.
+    mode: Literal["native-only", "image-on-prompt", "adaptive"] = "image-on-prompt"
     paused: StrictBool = False
     window_context: StrictBool = True
     desktop_context: StrictBool = True

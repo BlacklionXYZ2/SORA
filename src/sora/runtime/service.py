@@ -1598,13 +1598,9 @@ class SoraRuntime:
 
         raw_prov = result.patch.provenance if result.patch else "SORA"
         actor = raw_prov
-        lower_prov = raw_prov.lower()
-        if "antigravity" in lower_prov:
-            actor = "Antigravity"
-        elif "hermes" in lower_prov:
-            actor = "Hermes"
-        elif "codex" in lower_prov or "cody" in lower_prov:
-            actor = "Cody"
+        mentioned = self.routing_engine.agent_names.mentioned(raw_prov)
+        if mentioned:
+            actor = self.routing_engine.agent_names.name_for(mentioned[0], raw_prov) or raw_prov
 
         return ResultPresentation(
             presentation_id=f"presentation-{result.result_id}",
@@ -2262,14 +2258,13 @@ class SoraRuntime:
                     try:
                         selected = catalogue.select(choice)
                         # Retain explicit owner harness choice, even if a model suggests another.
-                        named = re.search(
-                            r"\b(?:ask|have|get|use|delegate(?:\s+to)?)\s+"
-                            r"(codex|hermes|antigravity)\b",
-                            text,
-                            re.IGNORECASE,
-                        )
-                        if named is not None:
-                            requested = named.group(1).lower()
+                        named = self.routing_engine.agent_names.requested(text)
+                        if len(named) > 1:
+                            raise ValueError(
+                                "You named more than one specialist; which one should I ask?",
+                            )
+                        if named:
+                            requested = named[0]
                             if selected.provider not in {None, requested}:
                                 raise ValueError(
                                     "The proposed specialist differs from your request",

@@ -12,7 +12,7 @@
     "voice": true
   },
   "perception": {
-    "mode": "native-only",
+    "mode": "image-on-prompt",
     "paused": false,
     "window_context": true,
     "desktop_context": true,

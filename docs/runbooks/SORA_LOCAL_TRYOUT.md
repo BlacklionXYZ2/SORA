@@ -3,8 +3,12 @@
 This is a developer/manual test setup, not an installer or release acceptance. It keeps state in
 `.local/manual-test`, separate from an installed SORA release, binds Core only to `127.0.0.1`, and
 registers every reasoning specialist installed on this machine so SORA routes each delegated task at
-runtime (Hermes, Codex and Antigravity when their CLIs are on `PATH`); the offline deterministic
-fixture stays registered as the fallback.
+runtime (Hermes, Codex, Antigravity and Claude Code when their CLIs are on `PATH`); the offline
+deterministic fixture stays registered as the fallback. Claude runs headless (`claude -p`) on your
+Claude subscription and is only used when you name it ("ask Claude…"). SORA adds no permission
+flags, so by default it can read and answer but not edit; pass `--claude-arg` (for example
+`--claude-arg=--permission-mode --claude-arg=acceptEdits`) to Core if you want it to edit, and
+`--claude-model` to pick a model.
 
 ## One-command start
 
@@ -112,7 +116,7 @@ The script checks `uv` and the .NET SDK, builds the current Windows capture help
 ### Where delegated work happens
 
 `--workspace-root` defaults to `<state root>\workspace` and is the working directory handed to Hermes,
-Codex and Antigravity when they have no explicit directory of their own. Managed coding writes need an
+Codex, Antigravity and Claude when they have no explicit directory of their own. Managed coding writes need an
 owned Git base, so on first start the script initialises that workspace as a Git repository when it is
 not already one. Write tasks therefore run in a fresh worktree under `<state root>\coding-workspaces`
 and never modify the source checkout; SORA keeps the worktree plus a review artifact and never merges

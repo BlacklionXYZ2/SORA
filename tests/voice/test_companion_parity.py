@@ -54,7 +54,11 @@ def runtime(tmp_path: Path) -> SoraRuntime:
     return SoraRuntime(
         RuntimeConfig(root=tmp_path, identity_root=ROOT / "identity"),
         provider=DeterministicProvider(),
-        app_settings=AppSettingsController(tmp_path, AppSettings()),
+        # These are voice tests; without a capture helper the image-on-prompt default would add
+        # an honest "window image unavailable" notice to every answer.
+        app_settings=AppSettingsController(
+            tmp_path, AppSettings.model_validate({"perception": {"mode": "native-only"}}),
+        ),
     )
 
 

@@ -181,7 +181,7 @@ async def test_runtime_auto_routes_research_to_antigravity(tmp_path: Path) -> No
     # Verify presentation maps to friendly specialist
     assert report.result is not None
     presentation = runtime.present_result(report.result)
-    assert presentation.actor_provenance == "Antigravity"
+    assert presentation.actor_provenance == "Aggie"  # VISION.md name for Antigravity
     assert presentation.mode is PresentationMode.EXPLAIN
 
     await runtime.close()

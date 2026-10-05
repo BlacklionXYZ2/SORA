@@ -12,6 +12,7 @@ from pydantic import Field, JsonValue
 from sora.contracts.base import Identifier, NonEmptyText, StrictModel
 from sora.contracts.models import ProviderErrorCode, TaskRecord, TaskStatus
 from sora.providers.base import ProviderLaunchError
+from sora.routing.agent_names import DEFAULT_DIRECTORY, AgentDirectory
 
 
 class TaskIntentCategory(StrEnum):
@@ -71,10 +72,8 @@ _OFFLINE_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
-# Regex patterns for steering disambiguation
-_HERMES_TARGET = re.compile(r"\bhermes\b", re.IGNORECASE)
-_CODY_TARGET = re.compile(r"\b(?:cody|codex)\b", re.IGNORECASE)
-_ANTIGRAVITY_TARGET = re.compile(r"\b(?:antigravity|ag)\b", re.IGNORECASE)
+# Agent names for steering come from the shared AgentDirectory (Cody, Hermes, Aggie, Claude
+# and the owner's custom nicknames, with their spoken variants).
 _PRONOUN_TARGET = re.compile(r"\b(?:him|her|them|it)\b", re.IGNORECASE)
 
 
@@ -89,14 +88,19 @@ class RoutingEngine:
         cloud_providers: set[str] | None = None,
         local_providers: set[str] | None = None,
         has_worktree_isolation: bool = False,
+        agent_names: AgentDirectory = DEFAULT_DIRECTORY,
     ) -> None:
         self.default_provider = default_provider
+        self.agent_names = agent_names
         self.registered_providers = (
             set(registered_providers)
             if registered_providers is not None
             else {"deterministic", "hermes", "codex", "antigravity"}
         )
-        self.cloud_providers = set(cloud_providers) if cloud_providers is not None else {"codex"}
+        # Claude is hosted like Codex, so the existing local-only rule covers it the same way.
+        self.cloud_providers = (
+            set(cloud_providers) if cloud_providers is not None else {"codex", "claude"}
+        )
         self.local_providers = (
             set(local_providers)
             if local_providers is not None
@@ -304,7 +308,7 @@ class RoutingEngine:
     ) -> str | None:
         """Resolve conversational steering instruction to a target task_id.
 
-        Matches specialist aliases (Cody -> codex, Hermes -> hermes, AG -> antigravity)
+        Matches agent names and spoken aliases (Cody, Hermes, Aggie, Claude, custom nicknames)
         or pronouns ("him", "her", "them") if exactly one candidate is running.
         Returns None for ambiguous references to prevent affecting arbitrary work.
         """
@@ -326,23 +330,19 @@ class RoutingEngine:
         # 1. Direct name references. Naming more than one specialist ("cancel Hermes, not
         # Codex") is ambiguous: acting on whichever name is checked first could steer or
         # cancel exactly the task the owner excluded, so ask for clarification instead.
-        named = [
-            backend
-            for backend, pattern in (
-                ("codex", _CODY_TARGET),
-                ("hermes", _HERMES_TARGET),
-                ("antigravity", _ANTIGRAVITY_TARGET),
-            )
-            if pattern.search(instruction)
-        ]
+        named = self.agent_names.mentioned(instruction)
         if len(named) > 1:
             return None
         if named:
+            agent = self.agent_names.get(named[0])
+            assert agent is not None
+            # Records may carry the routing key ("codex") or the adapter's provider ID
+            # ("codex-app-server"), depending on whether the owner named it or Core routed it.
             matches = [
                 t
                 for t in running
-                if getattr(t, "effective_backend", None) == named[0]
-                or getattr(t, "requested_backend", None) == named[0]
+                if agent.owns(getattr(t, "effective_backend", None))
+                or agent.owns(getattr(t, "requested_backend", None))
             ]
             return matches[0].task_id if len(matches) == 1 else None
 

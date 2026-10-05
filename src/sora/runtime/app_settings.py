@@ -424,6 +424,12 @@ class AppSettingsStore:
             raise ValueError("Settings require complete automatic perception settings")
         if migrating:
             payload["version"] = 9
+            if old_version in {2, 3}:
+                # Never switch automatic images on by upgrading: pre-perception settings keep the
+                # mode they effectively had. Only new settings start with image-on-prompt.
+                payload.setdefault(
+                    "perception", PerceptionSettings(mode="native-only").model_dump(),
+                )
         if old_version in {6, 7, 8, 9} and (not isinstance(payload.get("voice"), dict) or (
             set(payload["voice"]) != set(VoiceSettings.model_fields)
         )):

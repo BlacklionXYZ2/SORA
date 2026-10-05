@@ -41,7 +41,7 @@ def test_shipped_settings_example_is_current() -> None:
     settings = AppSettings.model_validate_json(
         (ROOT / "config/sora-settings.example.json").read_text()
     )
-    assert settings.version == 9 and settings.perception.mode == "native-only"
+    assert settings.version == 9 and settings.perception.mode == "image-on-prompt"
     assert not settings.local_companion.direct_file_write
 
 
@@ -53,7 +53,9 @@ def test_v3_migration_and_live_perception_roundtrip(tmp_path: Path) -> None:
     path.write_text(json.dumps(original))
     controller = AppSettingsController(tmp_path, AppSettings(), path=path)
     assert controller.saved.version == 9 and controller.saved.revision == 8
+    # Upgrading never turns automatic images on; only new settings default to image-on-prompt.
     assert controller.active.perception.mode == "native-only"
+    assert AppSettings().perception.mode == "image-on-prompt"
     assert json.loads(next(tmp_path.glob("settings.v3-*.json")).read_text()) == original
     controller.provider = OpenAICompatibleDialogueProvider(
         base_url="http://127.0.0.1:1234/v1",
