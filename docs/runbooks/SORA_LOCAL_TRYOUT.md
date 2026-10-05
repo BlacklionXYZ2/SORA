@@ -5,10 +5,14 @@ This is a developer/manual test setup, not an installer or release acceptance. I
 registers every reasoning specialist installed on this machine so SORA routes each delegated task at
 runtime (Hermes, Codex, Antigravity and Claude Code when their CLIs are on `PATH`); the offline
 deterministic fixture stays registered as the fallback. Claude runs headless (`claude -p`) on your
-Claude subscription and is only used when you name it ("ask Claude…"). SORA adds no permission
-flags, so by default it can read and answer but not edit; pass `--claude-arg` (for example
-`--claude-arg=--permission-mode --claude-arg=acceptEdits`) to Core if you want it to edit, and
-`--claude-model` to pick a model.
+Claude subscription. SORA picks it when you name it ("ask Claude…") or when its usage description in
+Settings fits the task. Hosted agents run without permission prompts by default (Claude with
+`--permission-mode bypassPermissions`, Antigravity with `--dangerously-skip-permissions`) and can
+work directly in a project folder you select; Core records the diff. Pass
+`--claude-ask-permissions` or `--antigravity-ask-permissions` to Core to opt out, and
+`--claude-model` to pick a model. **Custom agents**: in Settings → Agents · Custom agent 1–4, give
+any harness that serves an OpenAI-compatible API on this machine a nickname, spoken aliases, a port
+and a usage description, enable it, and restart SORA.
 
 ## One-command start
 

@@ -78,7 +78,7 @@ Preserve conventional category navigation and progressive model detail. The pict
 | GUI-1b | In progress | Shared Chat presenter, drafts, attachments, inert transcript, canonical-ID anchors, request-scoped Stop | Positive native file reading, keyboard/IME/history, accessibility | §4.12–§4.13 |
 | GUI-1c | In progress | Activity, Agents/Paths, note board, Content, Integrations, attempt history, registered artifacts, activity chips | Native retained-workflow/history/chip/navigation acceptance, configured-provider runs | §4.15, §4.17–§4.18 |
 | GUI-1d | In progress | Shared Voice panel, press-to-talk controls, closed-panel microphone indication | Physical spoken/device/mouth/latency/tray acceptance | §4.19 |
-| GUI-2a–d | In progress | Categorised editor for all 84 AppSettings v9 fields, revision/epoch guards, retained drafts, device inventory, read-only launch details | Native input/layout, save/restart persistence, real model reload/failure recovery, device and entitlement checks | §4.20–§4.21 |
+| GUI-2a–d | In progress | Categorised editor for all AppSettings fields (84 in v9; 117 since v10 added Claude and custom agents on 2026-10-05), revision/epoch guards, retained drafts, device inventory, read-only launch details | Native input/layout, save/restart persistence, real model reload/failure recovery, device and entitlement checks | §4.20–§4.21 |
 | GUI-3a | In progress | Canonical bounded Memory list/detail/search and shared Overview/Search/inspector | Native search/paging/keyboard/DPI/latency acceptance | §4.23 |
 | GUI-3b | In progress | Atomic versioned correction/forget, migration 11 durable receipts, retained editor/confirmation | Native modal/conflict/receipt/Quit/accessibility acceptance | §4.25 |
 | GUI-3c | In progress | Presentation transport, `find_memory`/`present_memory` chooser calls, turn-local references, retrieval events, Chat Memory chips | Connected native Chat → exact Memory selection/highlight; real small-model invocation | §4.27–§4.29 |
@@ -88,7 +88,7 @@ Preserve conventional category navigation and progressive model detail. The pict
 | GUI-5 | Not started | Graph feasibility prototype only (no canonical memory relations) | Real relation storage/projection, graph, final visual design | §12 |
 | GUI-6 | Not started | — | Ordinary launch default, packaging, fault/DPI/sleep matrix, end-to-end voice, release acceptance | §12 |
 
-**Fixed versions:** AppSettings **v9**, UI preferences **v1**, database migration **12**. The ordinary default launcher is still the Desktop compatibility app; the Shell host is opt-in.
+**Fixed versions:** AppSettings **v10** (since 2026-10-05, Opus 5.5: Claude and custom-agent preferences; v7–v9 migrate with a backup), UI preferences **v1**, database migration **12**. The ordinary default launcher is still the Desktop compatibility app; the Shell host is opt-in.
 
 **Latest recorded regression:** 904 Python passed / 25 opt-in skipped, 8 PWA, mypy/lint/schema/compile, 369 C# and three zero-warning Windows builds, observed 2026-10-04 13:47:07 +01:00 by GPT-6.1 Sol (§4.33). **Independent rerun, 2026-10-05, Opus 5.5:** `pytest` 904 passed / 25 skipped, `ruff check` clean and `mypy --strict` clean (284 files) on the same source. C# 369/369, zero-warning builds of all three Windows clients and PWA 8/8 also confirmed. After the same day's [P03A/P06 audit](docs/verification/P03A_P06_INDEPENDENT_AUDIT_Opus-5.5_2026-10-05.md) (no GUI change): 908 passed / 25 skipped / 6 strict expected failures. Native and live checks were not rerun.
 
