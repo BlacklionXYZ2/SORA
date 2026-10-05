@@ -195,6 +195,7 @@ from sora.persistence.repository import SoraRepository
 from sora.providers.base import (
     MalformedProviderResult,
     OwnedWorkspaceProvider,
+    ProjectRootProvider,
     ProviderLaunchError,
     ReasoningProvider,
     SessionProvider,
@@ -4014,9 +4015,28 @@ class SoraRuntime:
             if str(root) != task.working_directory:
                 raise ValueError("Project directory identity changed; select it again")
             if not isinstance(provider, CodexAppServerProvider):
-                raise ProviderLaunchError(
-                    ProviderErrorCode.UNSUPPORTED,
-                    "No project boundary adapter",
+                # Trusted hosted agents work in the folder itself (owner decision 2026-10-05).
+                # Core still serialises writers and records the diff, as for Codex direct mode.
+                if not isinstance(provider, ProjectRootProvider) or task.workspace_mode not in {
+                    "read-only", "direct",
+                }:
+                    raise ProviderLaunchError(
+                        ProviderErrorCode.UNSUPPORTED,
+                        "No project boundary adapter",
+                    )
+                if task.workspace_mode == "read-only":
+                    return provider.for_project_root(str(root)), request, None, None
+                if not await self.project_paths.acquire(run_id, task.task_id, root):
+                    raise ProviderLaunchError(
+                        ProviderErrorCode.UNAVAILABLE,
+                        "Project root overlaps another active or uncertain writer. "
+                        "Inspect Paths and retry after it stops.",
+                    )
+                return (
+                    provider.for_project_root(str(root)),
+                    request.model_copy(update={"write_lease_ref": run_id}),
+                    None,
+                    None,
                 )
             if task.workspace_mode == "read-only":
                 return provider.for_read_root(str(root)), request, None, None
@@ -4441,11 +4461,13 @@ class SoraRuntime:
         )
         if write and selected == "read-only":
             raise ValueError("This task changes files but the project mode is read-only")
-        if not isinstance(provider, CodexAppServerProvider):
+        if not isinstance(provider, (CodexAppServerProvider, ProjectRootProvider)):
             raise ProviderLaunchError(
                 ProviderErrorCode.UNSUPPORTED,
-                "This harness has no enforced project boundary yet. Choose Codex for project work.",
+                "This agent cannot work in a project folder. Choose Cody, Aggie or Claude.",
             )
+        if selected == "isolated" and not isinstance(provider, CodexAppServerProvider):
+            raise ValueError("Isolated worktrees are Codex-only; use direct mode for this agent")
         source = Path(__file__).resolve().parents[3]
         source_task = root == source or (
             source in root.parents and not root.is_relative_to(source / ".local")

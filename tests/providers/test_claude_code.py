@@ -188,7 +188,25 @@ def test_auto_registry_adds_claude_only_when_installed(tmp_path: Path) -> None:
     ])
     provider = cli.build_provider_registry(installed).registry["claude"]
     assert isinstance(provider, ClaudeCodeProvider)
-    assert provider.model == "sonnet" and provider.args == ()
+    # Hosted agents are trusted with writes by default (owner decision 2026-10-05).
+    assert provider.model == "sonnet"
+    assert provider.args == ("--permission-mode", "bypassPermissions")
+
+    ask = cli.parser().parse_args([
+        "--root", str(tmp_path), "--claude-command", sys.executable, "--claude-ask-permissions",
+        "--hermes-command", "no-hermes", "--codex-command", "no-codex",
+        "--antigravity-command", "no-agy",
+    ])
+    assert cli.build_provider_registry(ask).registry["claude"].args == ()  # type: ignore[attr-defined]
+    own = cli.parser().parse_args([
+        "--root", str(tmp_path), "--claude-command", sys.executable,
+        "--claude-arg=--permission-mode", "--claude-arg=acceptEdits",
+        "--hermes-command", "no-hermes", "--codex-command", "no-codex",
+        "--antigravity-command", "no-agy",
+    ])
+    assert cli.build_provider_registry(own).registry["claude"].args == (  # type: ignore[attr-defined]
+        "--permission-mode", "acceptEdits",
+    )
     assert provider.cwd == str((tmp_path / "workspace").resolve())
 
 

@@ -5,10 +5,10 @@ API key for it. Each run is one non-interactive ``claude -p --output-format json
 prompt arrives on standard input, so no command-line length or Windows quoting limit applies.
 Native session IDs are captured so a later run can ``--resume`` the conversation.
 
-The adapter adds no permission flags of its own. In print mode Claude Code denies any tool that
-would need an interactive approval, so by default it can read and reason but not change files.
-The owner opts into more through extra arguments (for example ``--permission-mode acceptEdits``),
-exactly as for Antigravity. Like Antigravity, it does not bind writes to an owned worktree.
+Permissions come from ``args``. Core's launcher passes ``--permission-mode bypassPermissions``
+by default, because the owner trusts hosted agents with file writes (2026-10-05); without it,
+print mode denies every tool that would need an interactive approval. For project work Core
+rebinds the adapter to the selected folder (``for_project_root``); it uses no owned worktree.
 """
 
 from __future__ import annotations
@@ -188,6 +188,17 @@ class ClaudeCodeProvider:
         self.max_output_chars = max_output_chars
         self._runs: dict[str, _Run] = {}
         self._session_ids: dict[str, str] = {}
+
+    def for_project_root(self, root: str) -> ClaudeCodeProvider:
+        """The same adapter, working directly in the owner's selected project folder."""
+        return ClaudeCodeProvider(
+            command=self.command, args=self.args, cwd=root, model=self.model,
+            timeout_seconds=self.timeout_seconds, max_output_chars=self.max_output_chars,
+        )
+
+    def writer_stopped(self, run_id: str) -> bool:
+        state = self._runs.get(run_id)
+        return state is None or state.process.returncode is not None
 
     async def capabilities(self) -> ProviderCapabilities:
         return ProviderCapabilities(

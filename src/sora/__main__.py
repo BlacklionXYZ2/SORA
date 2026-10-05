@@ -200,6 +200,14 @@ def parser() -> argparse.ArgumentParser:
         ),
     )
     result.add_argument(
+        "--antigravity-ask-permissions",
+        action="store_true",
+        help=(
+            "do not pass --dangerously-skip-permissions to Antigravity by default; headless "
+            "runs then auto-deny tools that need approval"
+        ),
+    )
+    result.add_argument(
         "--agent-write-root",
         action="append",
         default=None,
@@ -236,8 +244,16 @@ def parser() -> argparse.ArgumentParser:
         action="append",
         default=None,
         help=(
-            "extra Claude Code argument, e.g. --permission-mode acceptEdits; repeatable. "
-            "None are added by default, so print mode denies tools that need approval"
+            "extra Claude Code argument, repeatable; replaces the default "
+            "--permission-mode bypassPermissions"
+        ),
+    )
+    result.add_argument(
+        "--claude-ask-permissions",
+        action="store_true",
+        help=(
+            "do not pass Claude Code --permission-mode bypassPermissions by default; print "
+            "mode then denies tools that need approval, so Claude can read but not edit"
         ),
     )
     result.add_argument(
@@ -319,6 +335,20 @@ def parser() -> argparse.ArgumentParser:
         help="additional exact Host header name covered by the TLS certificate; repeatable",
     )
     return result
+
+
+# Owner decision 2026-10-05: hosted agents are trusted with file writes and run without
+# permission prompts unless the owner opts out or passes their own arguments.
+CLAUDE_FULL_ACCESS = ("--permission-mode", "bypassPermissions")
+ANTIGRAVITY_FULL_ACCESS = ("--dangerously-skip-permissions",)
+
+
+def hosted_agent_args(
+    explicit: list[str] | None, ask_permissions: bool, full_access: tuple[str, ...],
+) -> tuple[str, ...]:
+    if explicit:
+        return tuple(explicit)
+    return () if ask_permissions else full_access
 
 
 class ProviderSetupError(Exception):
@@ -427,7 +457,10 @@ def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
         else:
             registry["antigravity"] = AntigravityProvider(
                 command=arguments.antigravity_command,
-                args=tuple(arguments.antigravity_arg or ()),
+                args=hosted_agent_args(
+                    arguments.antigravity_arg, arguments.antigravity_ask_permissions,
+                    ANTIGRAVITY_FULL_ACCESS,
+                ),
                 cwd=str(antigravity_cwd) if antigravity_cwd else None,
                 model=arguments.antigravity_model,
                 effort=arguments.antigravity_effort,
@@ -449,7 +482,9 @@ def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
         else:
             registry["claude"] = ClaudeCodeProvider(
                 command=arguments.claude_command,
-                args=tuple(arguments.claude_arg or ()),
+                args=hosted_agent_args(
+                    arguments.claude_arg, arguments.claude_ask_permissions, CLAUDE_FULL_ACCESS,
+                ),
                 cwd=str(claude_cwd) if claude_cwd else None,
                 model=arguments.claude_model,
                 timeout_seconds=arguments.task_timeout,
