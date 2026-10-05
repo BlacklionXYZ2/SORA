@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "arguments": {
+      "default": [
+        "{path}"
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Arguments",
+      "type": "array"
+    },
+    "completion_timeout_seconds": {
+      "default": 0,
+      "maximum": 30,
+      "minimum": 0,
+      "title": "Completion Timeout Seconds",
+      "type": "number"
+    },
+    "executable": {
+      "format": "path",
+      "title": "Executable",
+      "type": "string"
+    },
+    "handler_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "kinds": {
+      "items": {
+        "enum": [
+          "repository",
+          "file",
+          "document",
+          "image",
+          "telemetry",
+          "artifact"
+        ],
+        "type": "string"
+      },
+      "title": "Kinds",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "supports_column": {
+      "default": false,
+      "title": "Supports Column",
+      "type": "boolean"
+    },
+    "supports_highlight": {
+      "default": false,
+      "title": "Supports Highlight",
+      "type": "boolean"
+    },
+    "supports_line": {
+      "default": false,
+      "title": "Supports Line",
+      "type": "boolean"
+    },
+    "verbs": {
+      "default": [
+        "open",
+        "show"
+      ],
+      "items": {
+        "enum": [
+          "open",
+          "show",
+          "where"
+        ],
+        "type": "string"
+      },
+      "title": "Verbs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "handler_id",
+    "kinds",
+    "executable"
+  ],
+  "title": "ContentHandlerConfig",
+  "type": "object"
+}

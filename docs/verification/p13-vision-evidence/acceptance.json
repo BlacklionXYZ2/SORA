@@ -1,0 +1,61 @@
+{
+  "stage": "P13.3",
+  "status": "complete",
+  "completed_at": "2026-09-18T17:28:15+01:00",
+  "model": "GPT-5.6 Sol",
+  "contract": {
+    "maximum_detections_per_batch": 64,
+    "maximum_label_characters": 512,
+    "unknown_fields_rejected": true,
+    "action_or_grant_input_fields": false,
+    "action_authority_fixed_false": true,
+    "instruction_authority_fixed_false": true,
+    "canonical_fact_fixed_false": true
+  },
+  "scope_and_lifetime": {
+    "exact_resource_prefix": "desktop.observe:vision",
+    "operation": "desktop.observe",
+    "owner_device_project_scoped": true,
+    "maximum_ttl_seconds": 30,
+    "expiry_capped_by_capture": true,
+    "evidence_capacity": 256,
+    "storage": "volatile_process_memory",
+    "cleared_on_topology_change": true,
+    "cleared_on_shutdown": true,
+    "sqlite_persistence": false
+  },
+  "normalization": {
+    "frame_to_screen_mapping": "capture_origin_plus_local_rectangle",
+    "out_of_frame_rejected": true,
+    "minimum_candidate_confidence": 0.75,
+    "low_confidence_usable_for_context": false,
+    "captured_instruction_usable_for_context": false,
+    "capture_digest_provenance": true,
+    "detector_and_normalizer_provenance": true
+  },
+  "demo": {
+    "mode": "deterministic_local",
+    "dialogue": "passed",
+    "background_task": "passed",
+    "projections": "passed",
+    "event_awareness": "passed",
+    "fixture_capture_through_core": "passed",
+    "vision_candidates": 1,
+    "vision_suppressed": 2,
+    "external_provider_calls": 0,
+    "native_os_actions": 0,
+    "output_sha256": "7cb8fe5b5eb7a3c42f680c266ae35f3a27e195db3a4df85efc38fec800709a0b"
+  },
+  "verification": {
+    "focused_vision_api": {"passed": 13, "skipped": 1},
+    "desktop_vision": {"passed": 57, "skipped": 6},
+    "repository": {"passed": 298, "skipped": 10},
+    "native_projects_built": 4,
+    "native_build_warnings": 0,
+    "native_build_errors": 0,
+    "mypy_source_files": 163,
+    "ruff": "passed",
+    "schemas": "fresh",
+    "compileall": "passed"
+  }
+}

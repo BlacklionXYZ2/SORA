@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "EmbodimentFeedbackKind": {
+      "description": "Edge-triggered physical/semantic feedback from the embodiment client.",
+      "enum": [
+        "grabbed",
+        "released",
+        "fell",
+        "landed",
+        "support_removed",
+        "clicked",
+        "poked",
+        "completed",
+        "failed"
+      ],
+      "title": "EmbodimentFeedbackKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "VirtualDesktopPoint": {
+      "additionalProperties": false,
+      "description": "Global Windows virtual-desktop coordinate in physical pixels.",
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "VirtualDesktopPoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Bounded, non-replayed event reported by the currently connected avatar.",
+  "properties": {
+    "correlation_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "maxLength": 128,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Detail"
+    },
+    "event_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "kind": {
+      "$ref": "#/$defs/EmbodimentFeedbackKind"
+    },
+    "magnitude": {
+      "anyOf": [
+        {
+          "maximum": 10000,
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Magnitude"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "position": {
+      "$ref": "#/$defs/VirtualDesktopPoint"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "subject_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "topology_revision": {
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_id",
+    "kind",
+    "occurred_at",
+    "topology_revision",
+    "position"
+  ],
+  "title": "EmbodimentFeedbackEvent",
+  "type": "object"
+}

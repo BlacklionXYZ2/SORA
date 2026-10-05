@@ -1,0 +1,269 @@
+{
+  "$defs": {
+    "AgentRunRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "minimum": 1,
+          "title": "Attempt",
+          "type": "integer"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finished At"
+        },
+        "lease_expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lease Expires At"
+        },
+        "local_delegation_epoch": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Local Delegation Epoch"
+        },
+        "native_session_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ProviderOutcome"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "run_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Started At"
+        },
+        "status": {
+          "$ref": "#/$defs/RunStatus"
+        },
+        "task_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "run_id",
+        "task_id",
+        "attempt",
+        "provider",
+        "status"
+      ],
+      "title": "AgentRunRecord",
+      "type": "object"
+    },
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ProviderOutcome": {
+      "enum": [
+        "completed",
+        "failed",
+        "cancelled",
+        "unknown"
+      ],
+      "title": "ProviderOutcome",
+      "type": "string"
+    },
+    "RunHistoryItem": {
+      "additionalProperties": false,
+      "properties": {
+        "result_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "run": {
+          "$ref": "#/$defs/AgentRunRecord"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "run"
+      ],
+      "title": "RunHistoryItem",
+      "type": "object"
+    },
+    "RunStatus": {
+      "enum": [
+        "pending",
+        "launching",
+        "running",
+        "waiting_for_permission",
+        "waiting_for_input",
+        "cancel_requested",
+        "interrupted",
+        "uncertain",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "planned",
+        "queued",
+        "routing",
+        "reasoning",
+        "working",
+        "waiting_for_permission",
+        "waiting_for_input",
+        "cancel_requested",
+        "interrupted",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "active_run_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "evidence_note": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "maxLength": 1024,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Cursor"
+    },
+    "projection_revision": {
+      "minimum": 0,
+      "title": "Projection Revision",
+      "type": "integer"
+    },
+    "runs": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RunHistoryItem"
+      },
+      "maxItems": 100,
+      "title": "Runs",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "task_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "task_status": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "total": {
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "task_id",
+    "task_status",
+    "total",
+    "projection_revision",
+    "evidence_note"
+  ],
+  "title": "TaskRunPage",
+  "type": "object"
+}

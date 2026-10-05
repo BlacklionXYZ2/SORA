@@ -1,0 +1,39 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopPresentationVerb": {
+      "enum": [
+        "walk",
+        "turn",
+        "point"
+      ],
+      "title": "DesktopPresentationVerb",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "marker_duration_seconds": {
+      "default": 5.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Marker Duration Seconds",
+      "type": "number"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "verb": {
+      "$ref": "#/$defs/DesktopPresentationVerb"
+    }
+  },
+  "required": [
+    "verb"
+  ],
+  "title": "DesktopPresentationRequest",
+  "type": "object"
+}

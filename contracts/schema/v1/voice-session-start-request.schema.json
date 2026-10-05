@@ -1,0 +1,60 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "echo_reference_enabled": {
+      "default": true,
+      "title": "Echo Reference Enabled",
+      "type": "boolean"
+    },
+    "input_device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "language": {
+      "default": "en",
+      "maxLength": 35,
+      "minLength": 2,
+      "pattern": "^[A-Za-z0-9-]+$",
+      "title": "Language",
+      "type": "string"
+    },
+    "output_device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "voice_id": {
+      "$ref": "#/$defs/Identifier",
+      "default": "af_heart"
+    }
+  },
+  "required": [
+    "session_id",
+    "input_device_id",
+    "output_device_id",
+    "started_at"
+  ],
+  "title": "VoiceSessionStartRequest",
+  "type": "object"
+}

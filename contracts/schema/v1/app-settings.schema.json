@@ -1,0 +1,698 @@
+{
+  "$defs": {
+    "AgentModelPurpose": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[^\\s\\x00-\\x1f\\x7f]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "purpose": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Purpose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "AgentModelPurpose",
+      "type": "object"
+    },
+    "AgentPreference": {
+      "additionalProperties": false,
+      "properties": {
+        "base_ref": {
+          "default": "HEAD",
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Base Ref",
+          "type": "string"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "model_choices": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AgentModelPurpose"
+          },
+          "maxItems": 64,
+          "title": "Model Choices",
+          "type": "array"
+        },
+        "model_purpose": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Model Purpose",
+          "type": "string"
+        },
+        "preferred_effort": {
+          "anyOf": [
+            {
+              "const": "configured",
+              "type": "string"
+            },
+            {
+              "enum": [
+                "none",
+                "minimal",
+                "low",
+                "medium",
+                "high",
+                "xhigh",
+                "max",
+                "ultra"
+              ],
+              "type": "string"
+            }
+          ],
+          "default": "configured",
+          "title": "Preferred Effort"
+        },
+        "preferred_model": {
+          "default": "",
+          "maxLength": 256,
+          "pattern": "^(?:[^\\s\\x00-\\x1f\\x7f]+)?$",
+          "title": "Preferred Model",
+          "type": "string"
+        },
+        "project_root": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Project Root",
+          "type": "string"
+        },
+        "purpose": {
+          "default": "",
+          "maxLength": 500,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "workspace_mode": {
+          "default": "direct",
+          "enum": [
+            "direct",
+            "isolated",
+            "read-only"
+          ],
+          "title": "Workspace Mode",
+          "type": "string"
+        }
+      },
+      "title": "AgentPreference",
+      "type": "object"
+    },
+    "AgentPreferences": {
+      "additionalProperties": false,
+      "properties": {
+        "antigravity": {
+          "$ref": "#/$defs/AgentPreference"
+        },
+        "codex": {
+          "$ref": "#/$defs/AgentPreference"
+        },
+        "hermes": {
+          "$ref": "#/$defs/AgentPreference"
+        }
+      },
+      "title": "AgentPreferences",
+      "type": "object"
+    },
+    "DialogueSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {
+          "default": "deterministic",
+          "enum": [
+            "managed-llama",
+            "openai-compatible",
+            "deterministic"
+          ],
+          "title": "Backend",
+          "type": "string"
+        },
+        "context_max_chars": {
+          "default": 8000,
+          "maximum": 65536,
+          "minimum": 256,
+          "title": "Context Max Chars",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 90,
+          "maximum": 300,
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "title": "DialogueSettings",
+      "type": "object"
+    },
+    "ExternalSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "default": "",
+          "maxLength": 2048,
+          "title": "Base Url",
+          "type": "string"
+        },
+        "model": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Model",
+          "type": "string"
+        },
+        "model_folder": {
+          "default": "",
+          "maxLength": 2048,
+          "title": "Model Folder",
+          "type": "string"
+        }
+      },
+      "title": "ExternalSettings",
+      "type": "object"
+    },
+    "LlamaOptions": {
+      "additionalProperties": false,
+      "description": "Serializable settings; file availability is checked at load, not at GUI boot.",
+      "properties": {
+        "batch_size": {
+          "default": 2048,
+          "maximum": 131072,
+          "minimum": 1,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "cache_type_k": {
+          "default": "f16",
+          "enum": [
+            "f32",
+            "f16",
+            "bf16",
+            "q8_0",
+            "q4_0",
+            "q4_1",
+            "iq4_nl",
+            "q5_0",
+            "q5_1"
+          ],
+          "title": "Cache Type K",
+          "type": "string"
+        },
+        "cache_type_v": {
+          "default": "f16",
+          "enum": [
+            "f32",
+            "f16",
+            "bf16",
+            "q8_0",
+            "q4_0",
+            "q4_1",
+            "iq4_nl",
+            "q5_0",
+            "q5_1"
+          ],
+          "title": "Cache Type V",
+          "type": "string"
+        },
+        "context_size": {
+          "default": 8192,
+          "maximum": 131072,
+          "minimum": 2048,
+          "title": "Context Size",
+          "type": "integer"
+        },
+        "cpu_moe": {
+          "default": false,
+          "title": "Cpu Moe",
+          "type": "boolean"
+        },
+        "executable": {
+          "format": "path",
+          "title": "Executable",
+          "type": "string"
+        },
+        "flash_attn": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "title": "Flash Attn",
+          "type": "string"
+        },
+        "gpu_layers": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "enum": [
+                "auto",
+                "all"
+              ],
+              "type": "string"
+            }
+          ],
+          "default": "auto",
+          "title": "Gpu Layers"
+        },
+        "load_mode": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "none",
+            "mmap",
+            "mlock",
+            "mmap+mlock",
+            "dio"
+          ],
+          "title": "Load Mode",
+          "type": "string"
+        },
+        "main_gpu": {
+          "default": 0,
+          "maximum": 63,
+          "minimum": 0,
+          "title": "Main Gpu",
+          "type": "integer"
+        },
+        "mmproj_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mmproj Path"
+        },
+        "model_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Path"
+        },
+        "n_cpu_moe": {
+          "default": 0,
+          "maximum": 999,
+          "minimum": 0,
+          "title": "N Cpu Moe",
+          "type": "integer"
+        },
+        "port": {
+          "default": 18771,
+          "maximum": 65535,
+          "minimum": 1024,
+          "title": "Port",
+          "type": "integer"
+        },
+        "speculative": {
+          "$ref": "#/$defs/SpeculativeOptions"
+        },
+        "split_mode": {
+          "default": "layer",
+          "enum": [
+            "none",
+            "layer",
+            "row",
+            "tensor"
+          ],
+          "title": "Split Mode",
+          "type": "string"
+        },
+        "startup_timeout": {
+          "default": 180,
+          "maximum": 600,
+          "minimum": 1,
+          "title": "Startup Timeout",
+          "type": "number"
+        },
+        "swa_full": {
+          "default": false,
+          "title": "Swa Full",
+          "type": "boolean"
+        },
+        "tensor_split": {
+          "default": "",
+          "maxLength": 256,
+          "pattern": "^([0-9.]+(,[0-9.]+)*)?$",
+          "title": "Tensor Split",
+          "type": "string"
+        },
+        "ubatch_size": {
+          "default": 512,
+          "maximum": 131072,
+          "minimum": 1,
+          "title": "Ubatch Size",
+          "type": "integer"
+        }
+      },
+      "title": "LlamaOptions",
+      "type": "object"
+    },
+    "LocalCompanionPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "agent_delegation": {
+          "default": true,
+          "title": "Agent Delegation",
+          "type": "boolean"
+        },
+        "avatar_control": {
+          "default": true,
+          "title": "Avatar Control",
+          "type": "boolean"
+        },
+        "desktop_capture": {
+          "default": true,
+          "title": "Desktop Capture",
+          "type": "boolean"
+        },
+        "desktop_interact": {
+          "default": true,
+          "title": "Desktop Interact",
+          "type": "boolean"
+        },
+        "desktop_observe": {
+          "default": true,
+          "title": "Desktop Observe",
+          "type": "boolean"
+        },
+        "direct_file_write": {
+          "default": false,
+          "title": "Direct File Write",
+          "type": "boolean"
+        },
+        "file_read": {
+          "default": true,
+          "title": "File Read",
+          "type": "boolean"
+        },
+        "voice": {
+          "default": true,
+          "title": "Voice",
+          "type": "boolean"
+        }
+      },
+      "title": "LocalCompanionPolicy",
+      "type": "object"
+    },
+    "PerceptionSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "context_max_age_seconds": {
+          "default": 90,
+          "maximum": 600,
+          "minimum": 5,
+          "title": "Context Max Age Seconds",
+          "type": "number"
+        },
+        "desktop_context": {
+          "default": true,
+          "title": "Desktop Context",
+          "type": "boolean"
+        },
+        "interval_seconds": {
+          "default": 30,
+          "maximum": 300,
+          "minimum": 5,
+          "title": "Interval Seconds",
+          "type": "number"
+        },
+        "mode": {
+          "default": "native-only",
+          "enum": [
+            "native-only",
+            "image-on-prompt",
+            "adaptive"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "paused": {
+          "default": false,
+          "title": "Paused",
+          "type": "boolean"
+        },
+        "window_context": {
+          "default": true,
+          "title": "Window Context",
+          "type": "boolean"
+        }
+      },
+      "title": "PerceptionSettings",
+      "type": "object"
+    },
+    "SpeculativeOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "draft_cache_type_k": {
+          "default": "f16",
+          "enum": [
+            "f32",
+            "f16",
+            "bf16",
+            "q8_0",
+            "q4_0",
+            "q4_1",
+            "iq4_nl",
+            "q5_0",
+            "q5_1"
+          ],
+          "title": "Draft Cache Type K",
+          "type": "string"
+        },
+        "draft_cache_type_v": {
+          "default": "f16",
+          "enum": [
+            "f32",
+            "f16",
+            "bf16",
+            "q8_0",
+            "q4_0",
+            "q4_1",
+            "iq4_nl",
+            "q5_0",
+            "q5_1"
+          ],
+          "title": "Draft Cache Type V",
+          "type": "string"
+        },
+        "draft_gpu_layers": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "enum": [
+                "auto",
+                "all"
+              ],
+              "type": "string"
+            }
+          ],
+          "default": "auto",
+          "title": "Draft Gpu Layers"
+        },
+        "draft_model_path": {
+          "anyOf": [
+            {
+              "format": "path",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Draft Model Path"
+        },
+        "draft_tokens_max": {
+          "default": 3,
+          "maximum": 256,
+          "minimum": 1,
+          "title": "Draft Tokens Max",
+          "type": "integer"
+        },
+        "draft_tokens_min": {
+          "default": 0,
+          "maximum": 256,
+          "minimum": 0,
+          "title": "Draft Tokens Min",
+          "type": "integer"
+        },
+        "type": {
+          "default": "none",
+          "enum": [
+            "none",
+            "draft-mtp",
+            "draft-dflash",
+            "draft-eagle3",
+            "draft-simple",
+            "ngram-simple",
+            "ngram-map-k",
+            "ngram-map-k4v",
+            "ngram-mod",
+            "ngram-cache"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "title": "SpeculativeOptions",
+      "type": "object"
+    },
+    "VoiceSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "input_device": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Input Device",
+          "type": "string"
+        },
+        "output_device": {
+          "default": "",
+          "maxLength": 512,
+          "title": "Output Device",
+          "type": "string"
+        },
+        "python_executable": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Python Executable",
+          "type": "string"
+        },
+        "recording_limit_seconds": {
+          "default": 30,
+          "maximum": 60,
+          "minimum": 2,
+          "title": "Recording Limit Seconds",
+          "type": "integer"
+        },
+        "speech_speed": {
+          "default": 1,
+          "maximum": 2,
+          "minimum": 0.5,
+          "title": "Speech Speed",
+          "type": "number"
+        },
+        "stt_model_path": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Stt Model Path",
+          "type": "string"
+        },
+        "tts_model_path": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Tts Model Path",
+          "type": "string"
+        },
+        "voice_id": {
+          "default": "af_heart",
+          "pattern": "^[a-z][a-z0-9_]{1,63}$",
+          "title": "Voice Id",
+          "type": "string"
+        },
+        "voices_path": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Voices Path",
+          "type": "string"
+        }
+      },
+      "title": "VoiceSettings",
+      "type": "object"
+    },
+    "WorkerSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "task_timeout_seconds": {
+          "default": 300,
+          "maximum": 3600,
+          "minimum": 5,
+          "title": "Task Timeout Seconds",
+          "type": "number"
+        },
+        "worker_count": {
+          "default": 2,
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Worker Count",
+          "type": "integer"
+        }
+      },
+      "title": "WorkerSettings",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "agents": {
+      "$ref": "#/$defs/AgentPreferences"
+    },
+    "delegation_epoch": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Delegation Epoch",
+      "type": "integer"
+    },
+    "dialogue": {
+      "$ref": "#/$defs/DialogueSettings"
+    },
+    "external": {
+      "$ref": "#/$defs/ExternalSettings"
+    },
+    "llama": {
+      "$ref": "#/$defs/LlamaOptions"
+    },
+    "local_companion": {
+      "$ref": "#/$defs/LocalCompanionPolicy"
+    },
+    "perception": {
+      "$ref": "#/$defs/PerceptionSettings"
+    },
+    "revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "runtime": {
+      "$ref": "#/$defs/WorkerSettings"
+    },
+    "version": {
+      "const": 9,
+      "default": 9,
+      "title": "Version",
+      "type": "integer"
+    },
+    "voice": {
+      "$ref": "#/$defs/VoiceSettings"
+    }
+  },
+  "title": "AppSettings",
+  "type": "object"
+}

@@ -1,0 +1,23 @@
+{
+  "$defs": {
+    "ScreenViewKeyword": {
+      "enum": [
+        "none",
+        "screen"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Whether the owner's current message asks about the screen as it is now.",
+  "properties": {
+    "view": {
+      "$ref": "#/$defs/ScreenViewKeyword"
+    }
+  },
+  "required": [
+    "view"
+  ],
+  "title": "ScreenViewChoice",
+  "type": "object"
+}

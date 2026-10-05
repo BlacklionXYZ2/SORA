@@ -1,0 +1,37 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One deduplicated Level 3 PRESS contact and its independent postcondition.",
+  "properties": {
+    "attempt_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "expected_name_after": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Expected Name After",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "expected_name_after"
+  ],
+  "title": "DesktopPressRequest",
+  "type": "object"
+}

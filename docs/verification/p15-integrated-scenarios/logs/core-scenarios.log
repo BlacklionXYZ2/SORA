@@ -1,0 +1,12 @@
+COMMAND: uv run --locked pytest tests/scenarios/test_integrated_user_scenarios.py tests/runtime/test_coding_workspaces.py::test_p06_coding_route_allocates_codex_worktree_and_captures_artifact tests/desktop/test_editor_handoff.py::test_exact_selection_reaches_task_and_finding_points_at_verified_line tests/voice/test_sessions.py::test_client_pipeline_keeps_pcm_local_and_completes_tts_playback tests/api/test_remote_access.py::test_paired_remote_session_is_scoped_revocable_and_audited tests/api/test_event_replay_and_reconnect.py::test_websocket_streaming_and_reconnect_replay -q
+STARTED: 2026-09-22T19:27:02.6348216+01:00
+FINISHED: 2026-09-22T19:27:07.5980261+01:00
+EXIT_CODE: 0
+
+STDOUT
+.......                                                                  [100%]
+7 passed in 4.32s
+
+STDERR
+
+

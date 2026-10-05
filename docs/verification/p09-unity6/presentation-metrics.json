@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-09-10T07:18:08.1895672+00:00",
+  "unity": "6000.6.0f1",
+  "graphics_api": "Direct3D11",
+  "samples": 3587,
+  "mean_frame_ms": 16.7320557,
+  "p50_frame_ms": 16.6674042,
+  "p95_frame_ms": 16.6760979,
+  "latest_cpu_frame_ms": 16.6929,
+  "latest_gpu_frame_ms": 0.02744,
+  "timing_note": "Zero CPU/GPU values mean unavailable. Warmup excluded; bounded first 3600 frames.",
+  "global_anchor": {
+    "x": 1280,
+    "y": 1988
+  },
+  "rendered_client_anchor": {
+    "x": 2560.0,
+    "y": 1988.0
+  },
+  "viewport": {
+    "width": 5120,
+    "height": 2160
+  },
+  "marker_target_id": null,
+  "visual_alignment_verified": false,
+  "cross_process_click_through_verified": false
+}

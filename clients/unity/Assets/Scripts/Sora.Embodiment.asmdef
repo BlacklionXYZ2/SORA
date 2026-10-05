@@ -1,0 +1,5 @@
+{
+  "name": "Sora.Embodiment",
+  "references": ["VRM10", "UniGLTF", "UniGLTF.Utils", "FastSpringBone10", "SpringBoneJobs", "VrmLib"],
+  "autoReferenced": true
+}

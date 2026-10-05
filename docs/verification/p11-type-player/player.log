@@ -1,0 +1,56 @@
+Mono path[0] = 'C:/Users/oscar/Desktop/SORA/clients/unity/Builds/Windows/SORA_Data/Managed'
+Mono config path = 'C:/Users/oscar/Desktop/SORA/clients/unity/Builds/Windows/MonoBleedingEdge/etc'
+CodeReloadManager initialized
+Found 2 interfaces on host : 0) 169.254.83.107 1) 192.168.86.43
+Player connection [20684]  Target information:
+
+Player connection [20684]  * "[IP] 169.254.83.107 [Port] 55000 [Flags] 2 [Guid] 3982863998 [EditorId] 2081745779 [Version] 1048832 [Id] WindowsPlayer(2,oscars-pc) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] SORA" 
+
+Player connection [20684]  * "[IP] 192.168.86.43 [Port] 55000 [Flags] 2 [Guid] 3982863998 [EditorId] 2081745779 [Version] 1048832 [Id] WindowsPlayer(2,oscars-pc) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] SORA" 
+
+Started UDP target info broadcast (2) on [169.254.255.255:54997].
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.6.0f1 (f7f8ed4d1e24)
+[EntityIdStore] init: VM path (explicit commit), pageSize=4096, blockCount=1048576, entitiesPerBlock=256, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path C:/Users/oscar/Desktop/SORA/clients/unity/Builds/Windows/SORA_Data/UnitySubsystems
+GfxDevice: creating device client; kGfxThreadingModeClientWorkerJobs
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: AMD Radeon RX 9070 XT (ID=0x7550)
+    Vendor:   ATI
+    VRAM:     16188 MB
+    Driver:   32.0.31041.1004
+Begin MonoManager ReloadAssembly
+- Finished resetting the current domain, in  0.006 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+<RI> Initializing input.
+<RI> Input initialized.
+D3D11 device created for Microsoft Media Foundation video decoding.
+Direct3D: detected that using refresh rate causes time drift. Will stop trusting refresh rate until the game window is moved.
+UnloadTime: 0.593600 ms
+[WindowPresentation] Native overlay configured; visual/input acceptance requires a packaged build.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Sora.Embodiment.Native.WindowPresentation:InitializeTransparentOverlay () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Native/WindowPresentation.cs:173)
+Sora.Embodiment.Native.WindowPresentation:Start () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Native/WindowPresentation.cs:132)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+CodeReloadManager destroyed
+PlayerConnection::Cleanup##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1789584706367,"processId":27160,"allocatedMemory":440888,"memoryLabels":[{"Default":3832},{"NewDelete":104},{"Thread":512},{"Manager":14932},{"GfxDevice":72},{"GfxThread":1536},{"Audio":752},{"Serialization":408},{"ScriptingNativeRuntime":409384},{"String":472},{"PoolAlloc":96},{"ScriptManager":5688},{"CodeReload":440},{"CloudService":144},{"VR":1928},{"Video":144},{"Subsystems":96},{"Gui":588},{"CoreBusinessMetrics":128}]}

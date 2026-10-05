@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\desktop_shell\SettingsRequests.cs" Link="SettingsRequests.cs" />
+    <Compile Include="..\desktop_app\SettingsDraftState.cs" Link="SettingsDraftState.cs" />
+    <Compile Include="..\desktop_app\SettingsCategories.cs" Link="SettingsCategories.cs" />
+    <Compile Include="..\desktop_app\SettingsLaunchPresentation.cs" Link="SettingsLaunchPresentation.cs" />
+    <Compile Include="..\unity\Assets\Scripts\Coordinates\OverlayPlacement.cs" Link="OverlayPlacement.cs" />
+    <Compile Include="..\unity\Assets\Scripts\Native\WindowsDisplayTopology.cs" Link="WindowsDisplayTopology.cs" />
+    <Compile Include="..\unity\Assets\Scripts\Coordinates\CoordinateTransformer.cs" Link="CoordinateTransformer.cs" />
+    <Compile Include="..\unity\Assets\Scripts\Network\SoraCoreClient.cs" Link="SoraCoreClient.cs" />
+    <Compile Include="..\desktop_widget\WidgetCore.cs" Link="WidgetCore.cs" />
+    <Compile Include="..\desktop_widget\FullAppModel.cs" Link="FullAppModel.cs" />
+    <Compile Include="..\desktop_widget\BoardNoteDraft.cs" Link="BoardNoteDraft.cs" />
+    <Compile Include="..\desktop_widget\ModelPurposeDraft.cs" Link="ModelPurposeDraft.cs" />
+    <Compile Include="..\desktop_shell\ShellSession.cs" Link="ShellSession.cs" />
+    <Compile Include="..\desktop_shell\RetainedRequests.cs" Link="RetainedRequests.cs" />
+    <Compile Include="..\desktop_shell\ChatPresentation.cs" Link="ChatPresentation.cs" />
+    <Compile Include="..\desktop_shell\ChatDocument.cs" Link="ChatDocument.cs" />
+    <Compile Include="..\desktop_shell\TaskPresentation.cs" Link="TaskPresentation.cs" />
+    <Compile Include="..\desktop_shell\MemoryPresentation.cs" Link="MemoryPresentation.cs" />
+    <Compile Include="..\desktop_shell\MemoryEdits.cs" Link="MemoryEdits.cs" />
+    <Compile Include="..\desktop_shell\MemoryPanelProtocol.cs" Link="MemoryPanelProtocol.cs" />
+    <Compile Include="..\desktop_shell\VoicePresentation.cs" Link="VoicePresentation.cs" />
+    <Compile Include="..\desktop_shell\GraphLayout.cs" Link="GraphLayout.cs" />
+    <Compile Include="..\desktop_shell\ShellProfile.cs" Link="ShellProfile.cs" />
+    <Compile Include="..\desktop_shell\ShellInstance.cs" Link="ShellInstance.cs" />
+    <Compile Include="..\desktop_shell\ShellPreferences.cs" Link="ShellPreferences.cs" />
+    <Compile Include="..\desktop_shell\ManagedCoreLifecycle.cs" Link="ManagedCoreLifecycle.cs" />
+    <Compile Include="..\desktop_shell\ManagedCoreOptions.cs" Link="ManagedCoreOptions.cs" />
+    <Compile Include="..\desktop_shell\CoreDescriptor.cs" Link="CoreDescriptor.cs" />
+    <Compile Include="..\desktop_shell\ShellCoreCoordinator.cs" Link="ShellCoreCoordinator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

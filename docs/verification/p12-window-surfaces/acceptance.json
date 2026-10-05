@@ -1,0 +1,33 @@
+{
+  "stage": "P12.4",
+  "status": "complete",
+  "completed_at": "2026-09-17T12:06:01+01:00",
+  "model": "GPT-5.6 Sol",
+  "surface_bounds": {
+    "maximum_selected_windows": 32,
+    "maximum_lifetime_seconds": 30,
+    "unselected_geometry_created": false,
+    "window_titles_or_content_transmitted": false
+  },
+  "packaged": {
+    "core_snapshot_received": true,
+    "moving_surface_carried_avatar": true,
+    "scenarios": [
+      {"invalidation": "Minimized", "landed_on": "window_top", "final_support": "taskbar", "resumed_falling": true},
+      {"invalidation": "Closed", "landed_on": "window_top", "final_support": "taskbar", "resumed_falling": true},
+      {"invalidation": "Occluded", "landed_on": "window_top", "final_support": "taskbar", "resumed_falling": true}
+    ],
+    "duration_seconds": 95.01
+  },
+  "verification": {
+    "unity_playmode": {"passed": 47, "failed": 0, "p12_4_tests": 7},
+    "portable_csharp": {"passed": 22, "failed": 0},
+    "embodiment": {"passed": 39, "skipped": 3},
+    "repository": {"passed": 277, "skipped": 9},
+    "mypy_source_files": 148,
+    "ruff": "passed",
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "managed_assembly_sha256": "98F7D7C28C870C15CBB5E9C07DEEE8A9CE6574E1F5A866E0B292E0B621DFD3DC"
+}

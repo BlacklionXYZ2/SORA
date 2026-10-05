@@ -1,0 +1,161 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "EditorPosition": {
+      "additionalProperties": false,
+      "description": "One-based Unicode-code-point position; range ends are exclusive.",
+      "properties": {
+        "column": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Column",
+          "type": "integer"
+        },
+        "line": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "line",
+        "column"
+      ],
+      "title": "EditorPosition",
+      "type": "object"
+    },
+    "EditorSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/EditorPosition"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "start": {
+          "$ref": "#/$defs/EditorPosition"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "EditorSelection",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Verified task context persisted under the task's normal retention policy.",
+  "properties": {
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "context_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "desktop_target_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "document_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Document Sha256",
+      "type": "string"
+    },
+    "editor_name": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "relative_file_path": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Relative File Path",
+      "type": "string"
+    },
+    "repository_root": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Repository Root",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "selected_text": {
+      "maxLength": 4096,
+      "minLength": 1,
+      "title": "Selected Text",
+      "type": "string"
+    },
+    "selection": {
+      "$ref": "#/$defs/EditorSelection"
+    },
+    "selection_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Selection Sha256",
+      "type": "string"
+    },
+    "source": {
+      "const": "app_integration",
+      "default": "app_integration",
+      "title": "Source",
+      "type": "string"
+    },
+    "verified_at": {
+      "format": "date-time",
+      "title": "Verified At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "context_id",
+    "owner_id",
+    "device_id",
+    "editor_name",
+    "repository_root",
+    "relative_file_path",
+    "document_sha256",
+    "selection",
+    "selected_text",
+    "selection_sha256",
+    "desktop_target_id",
+    "captured_at",
+    "verified_at"
+  ],
+  "title": "EditorContextSnapshot",
+  "type": "object"
+}

@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopObjectAffordance": {
+      "description": "Small semantic vocabulary understood by the generic embodiment bridge.",
+      "enum": [
+        "look",
+        "point",
+        "touch"
+      ],
+      "title": "DesktopObjectAffordance",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "JsonValue": {},
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Visibility-filtered object data safe for one resolved capability scope.",
+  "properties": {
+    "affordances": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DesktopObjectAffordance"
+      },
+      "title": "Affordances",
+      "type": "array"
+    },
+    "anchor": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "canonical_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "content": {
+      "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+      },
+      "title": "Content",
+      "type": "object"
+    },
+    "label": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "object_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "object_type": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "rect": {
+      "$ref": "#/$defs/ScreenRect"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "topology_revision": {
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "version": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "object_id",
+    "object_type",
+    "label",
+    "anchor",
+    "rect",
+    "topology_revision"
+  ],
+  "title": "DesktopObjectProjection",
+  "type": "object"
+}

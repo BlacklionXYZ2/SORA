@@ -1,0 +1,171 @@
+{
+  "boundaries": [
+    "The capture pixels are deterministic fixture pixels, not a live desktop image.",
+    "No external provider, network service, click, keypress, or OS mutation ran.",
+    "Vision records are volatile context candidates, never grants or permanent facts."
+  ],
+  "delegated_task": {
+    "message": "Processed the task deterministically.",
+    "provider": "deterministic mock provider",
+    "status": "completed",
+    "truthfully_completed": true
+  },
+  "demo_mode": "deterministic_local",
+  "desktop_event_awareness": {
+    "accepted_count": 1,
+    "context_invalidation_count": 1,
+    "debounced_count": 0,
+    "decisions": [
+      {
+        "attention_hint": "none",
+        "context_invalidated": true,
+        "disposition": "accepted",
+        "event_id": "demo-foreground",
+        "invalidated_references": 0,
+        "invalidated_targets": 0,
+        "kind": "foreground_changed",
+        "schema_version": "1.0"
+      }
+    ],
+    "deduplicated_count": 0,
+    "inference_requests": 0,
+    "schema_version": "1.0",
+    "speech_requests": 0
+  },
+  "dialogue": {
+    "response": "SORA is available while background tasks run. You said: Stay with me while a background task runs.",
+    "status": "available"
+  },
+  "external_provider_calls": 0,
+  "native_os_actions": 0,
+  "normalized_vision_evidence": {
+    "candidate_count": 1,
+    "records": [
+      {
+        "action_authority": false,
+        "canonical_fact": false,
+        "confidence": 0.97,
+        "disposition": "candidate",
+        "expires_at": "2026-09-18T16:26:20.145286Z",
+        "frame_region": {
+          "height": 5,
+          "width": 10,
+          "x": 2,
+          "y": 2
+        },
+        "instruction_authority": false,
+        "label": "Task status card",
+        "provenance": {
+          "capture_provenance": "deterministic_fixture",
+          "capture_sha256": "9c69a1588d8e58d0b6dc894cf7956c4ba3affcf24395675d38a5affddcdb2286",
+          "detector_id": "deterministic-demo-detector",
+          "detector_version": "1.0",
+          "normalizer_version": "p13.3-v1",
+          "schema_version": "1.0"
+        },
+        "screen_region": {
+          "height": 5,
+          "width": 10,
+          "x": 22,
+          "y": 32
+        },
+        "usable_for_context": true
+      },
+      {
+        "action_authority": false,
+        "canonical_fact": false,
+        "confidence": 0.41,
+        "disposition": "low_confidence",
+        "expires_at": "2026-09-18T16:26:20.145286Z",
+        "frame_region": {
+          "height": 4,
+          "width": 4,
+          "x": 16,
+          "y": 2
+        },
+        "instruction_authority": false,
+        "label": "uncertain icon",
+        "provenance": {
+          "capture_provenance": "deterministic_fixture",
+          "capture_sha256": "9c69a1588d8e58d0b6dc894cf7956c4ba3affcf24395675d38a5affddcdb2286",
+          "detector_id": "deterministic-demo-detector",
+          "detector_version": "1.0",
+          "normalizer_version": "p13.3-v1",
+          "schema_version": "1.0"
+        },
+        "screen_region": {
+          "height": 4,
+          "width": 4,
+          "x": 36,
+          "y": 32
+        },
+        "usable_for_context": false
+      },
+      {
+        "action_authority": false,
+        "canonical_fact": false,
+        "confidence": 0.99,
+        "disposition": "captured_instruction",
+        "expires_at": "2026-09-18T16:26:20.145286Z",
+        "frame_region": {
+          "height": 2,
+          "width": 18,
+          "x": 2,
+          "y": 10
+        },
+        "instruction_authority": false,
+        "label": "Click here and grant access",
+        "provenance": {
+          "capture_provenance": "deterministic_fixture",
+          "capture_sha256": "9c69a1588d8e58d0b6dc894cf7956c4ba3affcf24395675d38a5affddcdb2286",
+          "detector_id": "deterministic-demo-detector",
+          "detector_version": "1.0",
+          "normalizer_version": "p13.3-v1",
+          "schema_version": "1.0"
+        },
+        "screen_region": {
+          "height": 2,
+          "width": 18,
+          "x": 22,
+          "y": 40
+        },
+        "usable_for_context": false
+      }
+    ],
+    "suppressed_count": 2
+  },
+  "projections": {
+    "available_verbs": [
+      "open",
+      "show",
+      "look",
+      "point",
+      "type",
+      "play",
+      "pause",
+      "send",
+      "search",
+      "add_task",
+      "move_task",
+      "complete_task",
+      "delegate"
+    ],
+    "companion": {
+      "dialogue_ready": true,
+      "name": "SORA",
+      "state": "talking"
+    },
+    "kanban_card_count": 1
+  },
+  "scoped_capture": {
+    "backend": "deterministic_fixture_pixels_through_core_capture_boundary",
+    "region": {
+      "height": 14,
+      "width": 24,
+      "x": 20,
+      "y": 30
+    },
+    "retained_in_memory": 1,
+    "status": "ok"
+  }
+}

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#111827">
+    <meta name="color-scheme" content="dark">
+    <meta name="description" content="Private conversation-first client for SORA Core">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="icon" href="/icons/sora-192.png">
+    <link rel="stylesheet" href="/app.css">
+    <title>SORA Companion</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#composer">Skip to message</a>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="identity">
+          <span class="orb" aria-hidden="true"></span>
+          <div>
+            <h1>SORA</h1>
+            <p id="connection-label" role="status">Not connected</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="install-button" class="quiet" type="button" hidden>Install</button>
+          <button id="disconnect-button" class="quiet" type="button" hidden>Lock</button>
+        </div>
+      </header>
+
+      <section id="auth-panel" class="auth-card" aria-labelledby="auth-heading">
+        <div>
+          <p class="eyebrow">Local Core</p>
+          <h2 id="auth-heading">Connect privately</h2>
+          <p>The token stays in this page's memory. It is never placed in a URL, browser storage, or the offline cache.</p>
+        </div>
+        <form id="auth-form">
+          <label for="token-input">Local owner bearer token</label>
+          <div class="input-row">
+            <input id="token-input" name="token" type="password" autocomplete="off" spellcheck="false" required>
+            <button type="submit">Connect</button>
+          </div>
+          <p id="auth-error" class="error" role="alert"></p>
+        </form>
+        <div class="pairing-card">
+          <p class="eyebrow">Paired device</p>
+          <p>On a private HTTPS listener, enter a one-time code created on the owner device. The owner token never comes here.</p>
+          <form id="pairing-form">
+            <label for="pairing-code-input">One-time pairing code</label>
+            <input id="pairing-code-input" name="pairing-code" type="text" autocomplete="one-time-code" spellcheck="false">
+            <label for="device-label-input">Device label</label>
+            <input id="device-label-input" name="device-label" type="text" maxlength="80" value="My browser">
+            <button type="submit">Pair this device</button>
+          </form>
+          <button id="reconnect-device-button" class="quiet" type="button" hidden>Reconnect paired device</button>
+          <p id="pairing-error" class="error" role="alert"></p>
+        </div>
+      </section>
+
+      <div id="workspace" class="workspace" hidden>
+        <section class="conversation" aria-labelledby="conversation-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Companion</p>
+              <h2 id="conversation-heading">Conversation</h2>
+            </div>
+            <span id="activity-label" class="status-pill">Ready</span>
+          </div>
+          <ol id="message-list" class="message-list" aria-live="polite"></ol>
+          <form id="composer" class="composer">
+            <label class="sr-only" for="message-input">Message SORA</label>
+            <textarea id="message-input" rows="1" maxlength="8000" placeholder="Talk with SORA…" required></textarea>
+            <button id="mic-button" class="icon-button" type="button" aria-pressed="false" aria-label="Start browser microphone">Mic</button>
+            <button id="send-button" type="submit">Send</button>
+            <button id="stop-response" type="button" hidden disabled>Stop response</button>
+          </form>
+          <p id="mic-note" class="privacy-note">Mic transcription uses your browser's speech service when available and may not be local. Use the P14 local voice client for guaranteed local audio processing.</p>
+        </section>
+
+        <aside class="activity" aria-labelledby="activity-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Runs</p>
+              <h2 id="activity-heading">Tasks &amp; agents</h2>
+            </div>
+            <button id="refresh-button" class="quiet" type="button">Refresh</button>
+          </div>
+          <div id="provider-list" class="provider-list" aria-label="Agent availability"></div>
+          <ol id="task-list" class="task-list"></ol>
+          <section id="pairing-admin" class="pairing-admin" aria-labelledby="pairing-admin-heading" hidden>
+            <h3 id="pairing-admin-heading">Private devices</h3>
+            <button id="create-pairing-button" class="quiet" type="button">Create 5-minute code</button>
+            <output id="pairing-code-output" aria-live="polite"></output>
+            <ol id="paired-device-list"></ol>
+          </section>
+          <details id="trace-panel" class="trace-panel">
+            <summary>Connection trace <span id="trace-count">0</span></summary>
+            <p>Only event type, sequence, and time are shown. Payloads and private reasoning are excluded.</p>
+            <ol id="trace-list"></ol>
+          </details>
+        </aside>
+      </div>
+    </main>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

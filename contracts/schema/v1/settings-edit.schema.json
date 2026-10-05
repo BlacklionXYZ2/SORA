@@ -1,0 +1,36 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "changes": {
+      "additionalProperties": true,
+      "title": "Changes",
+      "type": "object"
+    },
+    "expected_revision": {
+      "minimum": 0,
+      "title": "Expected Revision",
+      "type": "integer"
+    },
+    "version": {
+      "enum": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "expected_revision",
+    "changes"
+  ],
+  "title": "SettingsEdit",
+  "type": "object"
+}

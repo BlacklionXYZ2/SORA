@@ -1,0 +1,152 @@
+{
+  "recorded_at": "2026-09-10T08:18:32.377561+01:00",
+  "author_model": "GPT 6 Astra",
+  "status": "in review",
+  "accepted_items": [
+    "P09.1",
+    "P09.2",
+    "P09.3",
+    "P09.5",
+    "P09.6"
+  ],
+  "open_items": [
+    "P09.4 physical display and power transitions"
+  ],
+  "unity": "6000.6.0f1 (f7f8ed4d1e24)",
+  "univrm": "0.131.2",
+  "player": {
+    "path": "clients/unity/Builds/Windows/SORA.exe",
+    "sha256": "718444f6a718fa668da96eb0a58445b009673310e6129152a63dbf7a92b8de00",
+    "bytes": 667136
+  },
+  "managed_assembly_sha256": "25389cd955d1f028b956c0ef863a75ec67b12381f522e752ce8201d7c6ccb573",
+  "verification": {
+    "python": {
+      "command": "$env:SORA_TEST_CSHARP=1; uv run --locked pytest -q",
+      "passed": 214,
+      "skipped": 1,
+      "duration_seconds": 24.09
+    },
+    "csharp": {
+      "command": "dotnet test clients/csharp_tests --verbosity quiet",
+      "passed": 21,
+      "failed": 0
+    },
+    "unity_playmode": {
+      "passed": 4,
+      "failed": 0,
+      "start_utc": "2026-09-10 07:09:52Z",
+      "end_utc": "2026-09-10 07:09:53Z"
+    },
+    "packaged": {
+      "command": "./scripts/verify-packaged-embodiment.ps1",
+      "passed": 1,
+      "duration_seconds": 73.47,
+      "completed_at": "2026-09-10T07:18:15.997430+00:00",
+      "both_player_exit_codes": [
+        0,
+        0
+      ]
+    },
+    "ruff": "passed",
+    "mypy": "passed: standard src tests scripts/export-contracts.py invocation, 119 files",
+    "schema_freshness": "passed",
+    "compileall": "passed",
+    "invocation_note": "A tests-only mypy invocation omitted src and produced missing typed-source imports; standard repository invocation including src passed."
+  },
+  "performance": {
+    "samples": 3587,
+    "mean_frame_ms": 16.7320557,
+    "p50_frame_ms": 16.6674042,
+    "p95_frame_ms": 16.6760979,
+    "latest_cpu_frame_ms": 16.6929,
+    "latest_gpu_frame_ms": 0.02744
+  },
+  "measurement_scope": "Five-second warmup excluded, bounded development-player run: movement/marker followed by predominantly idle; timings are not utilization percentages.",
+  "alignment": {
+    "viewport": {
+      "width": 5120,
+      "height": 2160
+    },
+    "global_anchor": {
+      "x": 1280,
+      "y": 1988
+    },
+    "rendered_client_anchor": {
+      "x": 2560.0,
+      "y": 1988.0
+    },
+    "asserted_max_error_physical_pixels": 1
+  },
+  "hardware_transitions_tested": false,
+  "local_log_checks": {
+    "prepare.log": {
+      "sha256": "c690f4f2b55dd686d088dd59f30f6b4b4f0d5b47c917a3f037c26fa9651de7da",
+      "native_leak_report": false
+    },
+    "build.log": {
+      "sha256": "5501b2a999426d24f92c402a6f72ba146bde4467e075396cb44c0580881abddf",
+      "native_leak_report": false
+    },
+    "playmode.log": {
+      "sha256": "65f9fd03348f7c899979c8d872d22065713637ef3898c68d0a6f71623f718a30",
+      "native_leak_report": false
+    },
+    "player/first/player.log": {
+      "sha256": "ddd9707367cbcb1ecfb1165b8552422facea23cc49a9a3633bf2c777363ae744",
+      "native_leak_report": false
+    },
+    "player/reconnect/player.log": {
+      "sha256": "8058151ed35fccccbec9281f0633382a31fef60f9f10972bd778891896553acf",
+      "native_leak_report": false
+    }
+  },
+  "evidence_sha256": {
+    "playmode-results.xml": "52625a64bf290e5f6e020de00b3e29904aed28344af506b70662f7368825efaf",
+    "player-acceptance.json": "c064af14644a4fa92517198a0bd10a36aa3460d8a08759190dc5a8a1f8101c61",
+    "native-input-acceptance.json": "1e5f53e7ff79f59c2d4179c39e8cfbcfd2b018a5cc7ac6e0ed3e439ecca0d861",
+    "presentation-metrics.json": "2f79fca3fe26a37ae0be7808ca4205f7f75b79eebbbabfde4a3d982bc71fd064",
+    "own-camera.png": "fe6603f3f3cc27d352096823dc4660d63899c63e1eb56c3ba5a4edb81c143a4b"
+  },
+  "source_sha256": {
+    "clients/input_fixture/Program.cs": "0fac7b181e5ff6c90efd9f6bf4112e882809af4f5179f89998325e88ad8c529b",
+    "clients/input_fixture/input_fixture.csproj": "b8ff6f209c955e57950c1fee5a84d23803d1d88e28b7aad37c9524b3608c6bcb",
+    "clients/unity/Assets/Editor/SoraBuild.cs": "d4d07324310f6acc30b7786bdb62a104afe0d06c09cf87644dfa6d7ffbfad8b4",
+    "clients/unity/Assets/Scenes/SoraOverlay.unity": "5a07c8efa99d7b9e8b2b2aa5e288265b354954496a88c62576d4a5807cc68e22",
+    "clients/unity/Assets/Scripts/Debugging/PresentationMetrics.cs": "beeb4f580ac004dda3209cf86742535008ebc2b5bb67ae172113654bf443cf12",
+    "clients/unity/Assets/Scripts/Native/OverlayViewport.cs": "de8b3382d8df276b9abb40ccdc75548b18d466a2aabdaac6531ab59617488b5c",
+    "clients/unity/Assets/Scripts/Native/WindowPresentation.cs": "c40092bcb3de618c8d40113527117f7af108d5cd498ff1676e7cd853382f78fc",
+    "clients/unity/Assets/Scripts/Network/SoraEmbodimentBehaviour.cs": "e49e5757bad1b4c1a27a99c728cdb859cc14b17640fd62c54f58634ccad16901",
+    "clients/unity/Assets/Scripts/SoraBootstrap.cs": "2b540e90fcbd89a702a5c6fe2dfb80f8bd4e0d858059a4577e81fc49548f139d",
+    "clients/unity/Assets/Tests/PlayMode/PresentationTests.cs": "07615702b5935b04e3338f3e2797f0afbdb14b4b95c942ad2392892cbe707894",
+    "clients/unity/Packages/manifest.json": "3180a72a52a7ec789371d26f99d7dbc95196fba7d1d94e275e32dc1ba172ffaa",
+    "clients/unity/Packages/packages-lock.json": "cd100086989843e7d3b500224ad6960d8371168b3ec3f46cdc49b3f18437f230",
+    "clients/unity/ProjectSettings/AudioManager.asset": "9543c41dbfc7d3951217c4dd9481ed026eb8e529b85ecf4463969a0fea747729",
+    "clients/unity/ProjectSettings/ClusterInputManager.asset": "40e65dd214bf254955d2c8829ca8ce2130fd3510485560ce012e9a1ddd93e623",
+    "clients/unity/ProjectSettings/DynamicsManager.asset": "785919ec02924b9125bd572087d9e3ceb1844b1cceb3ff6144c1c1f56cd79047",
+    "clients/unity/ProjectSettings/EditorBuildSettings.asset": "1d1f650d200b36c321125fa8e6adddb8acc2c56072a93944d910232af84cd51f",
+    "clients/unity/ProjectSettings/EditorSettings.asset": "4b842c80c4e630b6cb5416b817aba84b97014072e1ab555b08742344687ccdf5",
+    "clients/unity/ProjectSettings/GraphicsSettings.asset": "265a94452a00fb6580714f8d69274276eba44cdb41bd9b57c0286ae64c2ae4cd",
+    "clients/unity/ProjectSettings/InputManager.asset": "d0f454ddb880912abcae92e3e12957a7446786ba89e24937e019ff3bbc0d4300",
+    "clients/unity/ProjectSettings/MemorySettings.asset": "25fb3fdd1ce94347ccdcf23d5d5e446055ca81d8b3756a7df85d614645a71ac4",
+    "clients/unity/ProjectSettings/MultiplayerManager.asset": "aba89fd1a1ddad182727ad82727e536d27372e90328a8196da2a4560398983dd",
+    "clients/unity/ProjectSettings/NavMeshAreas.asset": "7ebbf8f53b8033104e1878b95ca07a28d0954092d81c220f14196a42f651e658",
+    "clients/unity/ProjectSettings/Physics2DSettings.asset": "7280037ac908e26d4519825446c92c80a8520308016b171522760b535aadcbc0",
+    "clients/unity/ProjectSettings/PhysicsCoreProjectSettings2D.asset": "bedc5339a832c60dc3f11b84abc4f4384dbfa20b0cd9ad6c444b907e751fc35e",
+    "clients/unity/ProjectSettings/PresetManager.asset": "29c125923fe6e29f90190d4fce1c82d660e7051546e2c9d02908d18c9cf2436c",
+    "clients/unity/ProjectSettings/ProjectAuditorSettings.asset": "9e68444b9bda981e2927a98df9edf69ea88362f0c6b7f3c81b39b9d515d2a416",
+    "clients/unity/ProjectSettings/ProjectSettings.asset": "dd43ed413332fbff58b1422852802eb5fee086734be58f045af42aa220baf6f8",
+    "clients/unity/ProjectSettings/ProjectVersion.txt": "39584c3e6c1e571d53a79ef2dd6ea91c0568ac086792cc435e86401a0ba824ed",
+    "clients/unity/ProjectSettings/QualitySettings.asset": "f1f893b1be47ad2442f58338dd7c860dc1986bb317e2f5bb31084454ffabbf4c",
+    "clients/unity/ProjectSettings/SceneTemplateSettings.json": "bb9098b3bfcde78d93e264b96f7b77b5430e64e8c57a7aad7f5a5d9c3945e16a",
+    "clients/unity/ProjectSettings/TagManager.asset": "996628fdc904025b83606bbfbda4fe08c0bbe916475146110e77cdc2f22c2013",
+    "clients/unity/ProjectSettings/TimeManager.asset": "3396f52fdc16d445024e01d7a2d99db6f0a37569d1d73c0302e9ffb857d90287",
+    "clients/unity/ProjectSettings/UnityConnectSettings.asset": "bfd9b4ad7ba0f6044f0957cd427df1d8e49dcf9453fdfc35dac74c64bbffa8f3",
+    "clients/unity/ProjectSettings/VFXManager.asset": "d2937fe93ff49c2ce60f888056b70ebc0a1df7dd5e22dab3fa41678c2a3f3858",
+    "clients/unity/ProjectSettings/VersionControlSettings.asset": "e199cdfa6a8f2bf33cfd47e549198f13e3eb2a5099e908fdb4e0f14d939ccc6b",
+    "scripts/build-embodiment.ps1": "ba5e34430eea3ab61f5a53342c8c3ca69106f0aa65e0a687cff556b49e23a72f",
+    "scripts/verify-packaged-embodiment.ps1": "703e0a415661500b5c2040f2b4eee6f69cab5faad5c43cff0a3542296d7021a4",
+    "tests/embodiment/native_input_probe.py": "261722b21c332e0ca1de779ba1637f8061bc4e1aa2ccf1c4f501b06345c6d39b",
+    "tests/embodiment/test_unity_player.py": "1c25d7eb045d5baf258e889feef6c439a8a0c830583a32bbe8c4e513b3802305"
+  }
+}

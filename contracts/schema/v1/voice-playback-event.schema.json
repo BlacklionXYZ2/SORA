@@ -1,0 +1,91 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "detail": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Detail"
+    },
+    "device_generation": {
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Device Generation",
+      "type": "integer"
+    },
+    "event_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "output_device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "playback_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "position_ms": {
+      "default": 0,
+      "maximum": 86400000,
+      "minimum": 0,
+      "title": "Position Ms",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "sequence": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "state": {
+      "enum": [
+        "started",
+        "completed",
+        "failed"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "playback_id",
+    "sequence",
+    "state",
+    "output_device_id",
+    "device_generation",
+    "occurred_at"
+  ],
+  "title": "VoicePlaybackEvent",
+  "type": "object"
+}

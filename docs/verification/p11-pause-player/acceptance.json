@@ -1,0 +1,31 @@
+{
+  "recorded_at": "2026-09-16T18:51:36.144259+00:00",
+  "action": "press",
+  "semantic_intent": "pause deterministic media",
+  "attempt_id": "packaged-pause-once",
+  "phases": [
+    "target_selected",
+    "navigate",
+    "align",
+    "reach",
+    "contact",
+    "invoke",
+    "verify",
+    "retract",
+    "completed"
+  ],
+  "terminal": {
+    "status": "completed",
+    "reason": "postcondition_verified",
+    "effect_attempted": true,
+    "verified": true
+  },
+  "playback": {
+    "before": "playing",
+    "after": "paused",
+    "position_stopped": true,
+    "press_count": 1
+  },
+  "grant_serialized_to_unity_or_evidence": false,
+  "duplicate_effect_count": 0
+}

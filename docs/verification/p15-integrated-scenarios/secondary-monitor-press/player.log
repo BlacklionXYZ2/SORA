@@ -1,0 +1,191 @@
+Mono path[0] = 'C:/Users/oscar/Desktop/SORA/.local/releases/sora-p15.3-acceptance-20260922/payload/unity/SORA_Data/Managed'
+Mono config path = 'C:/Users/oscar/Desktop/SORA/.local/releases/sora-p15.3-acceptance-20260922/payload/unity/MonoBleedingEdge/etc'
+CodeReloadManager initialized
+Found 4 interfaces on host : 0) 192.168.1.185 1) 169.254.83.107 2) 10.2.0.2 3) 192.168.86.21
+Player connection [12152]  Target information:
+
+Player connection [12152]  * "[IP] 192.168.1.185 [Port] 55000 [Flags] 2 [Guid] 1917218558 [EditorId] 393383442 [Version] 1048832 [Id] WindowsPlayer(2,oscars-pc) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] SORA" 
+
+Player connection [12152]  * "[IP] 169.254.83.107 [Port] 55000 [Flags] 2 [Guid] 1917218558 [EditorId] 393383442 [Version] 1048832 [Id] WindowsPlayer(2,oscars-pc) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] SORA" 
+
+Player connection [12152]  * "[IP] 10.2.0.2 [Port] 55000 [Flags] 2 [Guid] 1917218558 [EditorId] 393383442 [Version] 1048832 [Id] WindowsPlayer(2,oscars-pc) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] SORA" 
+
+Player connection [12152]  * "[IP] 192.168.86.21 [Port] 55000 [Flags] 2 [Guid] 1917218558 [EditorId] 393383442 [Version] 1048832 [Id] WindowsPlayer(2,oscars-pc) [Debug] 0 [PackageName] WindowsPlayer [ProjectName] SORA" 
+
+Player connection [12152] Started UDP target info broadcast (1) on [225.0.0.222:54997].
+
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.6.0f1 (f7f8ed4d1e24)
+[EntityIdStore] init: VM path (explicit commit), pageSize=4096, blockCount=1048576, entitiesPerBlock=256, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path C:/Users/oscar/Desktop/SORA/.local/releases/sora-p15.3-acceptance-20260922/payload/unity/SORA_Data/UnitySubsystems
+GfxDevice: creating device client; kGfxThreadingModeClientWorkerJobs
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: AMD Radeon RX 9070 XT (ID=0x7550)
+    Vendor:   ATI
+    VRAM:     16188 MB
+    Driver:   32.0.31041.1004
+Begin MonoManager ReloadAssembly
+- Finished resetting the current domain, in  0.006 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+<RI> Initializing input.
+<RI> Input initialized.
+D3D11 device created for Microsoft Media Foundation video decoding.
+Direct3D: detected that using refresh rate causes time drift. Will stop trusting refresh rate until the game window is moved.
+UnloadTime: 0.587100 ms
+Display topology transition: Initial
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Sora.Embodiment.Native.OverlayViewport:ReadLayout () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Native/OverlayViewport.cs:58)
+Sora.Embodiment.Native.OverlayViewport:Configure (UnityEngine.Camera,Sora.Embodiment.Native.WindowPresentation,Sora.Embodiment.Network.SoraEmbodimentBehaviour) (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Native/OverlayViewport.cs:22)
+Sora.Embodiment.SoraBootstrap/<Start>d__3:MoveNext () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/SoraBootstrap.cs:67)
+System.Runtime.CompilerServices.AsyncVoidMethodBuilder:Start<Sora.Embodiment.SoraBootstrap/<Start>d__3> (Sora.Embodiment.SoraBootstrap/<Start>d__3&)
+Sora.Embodiment.SoraBootstrap:Start ()
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+[WindowPresentation] Native overlay configured; visual/input acceptance requires a packaged build.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Sora.Embodiment.Native.WindowPresentation:InitializeTransparentOverlay () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Native/WindowPresentation.cs:245)
+Sora.Embodiment.Native.WindowPresentation:Start () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Native/WindowPresentation.cs:204)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+Secondary motion tuned: 28 spring joints
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at C:/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[]) (at C:/build/output/unity/unity/Runtime/Export/Logging/DebugLogHandler.cs:9)
+UnityEngine.Logger:Log (UnityEngine.LogType,object) (at C:/build/output/unity/unity/Runtime/Export/Logging/Logger.cs:60)
+UnityEngine.Debug:Log (object) (at C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs:130)
+Sora.Embodiment.Avatar.AvatarSecondaryMotionTuner:Configure (UniVRM10.Vrm10Instance) (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/Avatar/AvatarSecondaryMotionTuner.cs:55)
+Sora.Embodiment.SoraBootstrap/<Start>d__3:MoveNext () (at C:/Users/oscar/Desktop/SORA/clients/unity/Assets/Scripts/SoraBootstrap.cs:94)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<UniVRM10.Vrm10Instance>:TrySetResult (UniVRM10.Vrm10Instance)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<UniVRM10.Vrm10Instance>:SetResult (UniVRM10.Vrm10Instance)
+UniVRM10.Vrm10/<LoadPathAsync>d__1:MoveNext () (at ./Library/PackageCache/com.vrmc.vrm@48d64123d085/Runtime/IO/Vrm10.cs:73)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<UniVRM10.Vrm10Instance>:TrySetResult (UniVRM10.Vrm10Instance)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<UniVRM10.Vrm10Instance>:SetResult (UniVRM10.Vrm10Instance)
+UniVRM10.Vrm10/<LoadAsync>d__4:MoveNext () (at ./Library/PackageCache/com.vrmc.vrm@48d64123d085/Runtime/IO/Vrm10.cs:241)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<UniVRM10.Vrm10Instance>:TrySetResult (UniVRM10.Vrm10Instance)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<UniVRM10.Vrm10Instance>:SetResult (UniVRM10.Vrm10Instance)
+UniVRM10.Vrm10/<TryLoadingAsVrm10Async>d__5:MoveNext () (at ./Library/PackageCache/com.vrmc.vrm@48d64123d085/Runtime/IO/Vrm10.cs:282)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<UniVRM10.Vrm10Instance>:TrySetResult (UniVRM10.Vrm10Instance)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<UniVRM10.Vrm10Instance>:SetResult (UniVRM10.Vrm10Instance)
+UniVRM10.Vrm10/<LoadVrm10DataAsync>d__7:MoveNext () (at ./Library/PackageCache/com.vrmc.vrm@48d64123d085/Runtime/IO/Vrm10.cs:405)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<UniGLTF.RuntimeGltfInstance>:TrySetResult (UniGLTF.RuntimeGltfInstance)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<UniGLTF.RuntimeGltfInstance>:SetResult (UniGLTF.RuntimeGltfInstance)
+UniGLTF.ImporterContext/<LoadAsync>d__33:MoveNext () (at ./Library/PackageCache/com.vrmc.gltf@75b3f33fb8d1/Runtime/UniGLTF/IO/ImporterContext.cs:143)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<System.Threading.Tasks.VoidTaskResult>:TrySetResult (System.Threading.Tasks.VoidTaskResult)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Threading.Tasks.VoidTaskResult>:SetResult (System.Threading.Tasks.VoidTaskResult)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Threading.Tasks.VoidTaskResult>:SetResult (System.Threading.Tasks.Task`1<System.Threading.Tasks.VoidTaskResult>)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder:SetResult ()
+UniVRM10.Vrm10Importer/<FinalizeAsync>d__11:MoveNext () (at ./Library/PackageCache/com.vrmc.vrm@48d64123d085/Runtime/IO/Vrm10Importer.cs:223)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<System.Threading.Tasks.VoidTaskResult>:TrySetResult (System.Threading.Tasks.VoidTaskResult)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Threading.Tasks.VoidTaskResult>:SetResult (System.Threading.Tasks.VoidTaskResult)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<System.Threading.Tasks.VoidTaskResult>:SetResult (System.Threading.Tasks.Task`1<System.Threading.Tasks.VoidTaskResult>)
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder:SetResult ()
+UniVRM10.Vrm10Importer/<LoadConstraintAsync>d__19:MoveNext () (at ./Library/PackageCache/com.vrmc.vrm@48d64123d085/Runtime/IO/Vrm10Importer.cs:767)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:InvokeMoveNext (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Runtime.CompilerServices.AsyncMethodBuilderCore/MoveNextRunner:Run ()
+System.Threading.Tasks.AwaitTaskContinuation:InvokeAction (object)
+System.Threading.Tasks.AwaitTaskContinuation:RunCallback (System.Threading.ContextCallback,object,System.Threading.Tasks.Task&)
+System.Threading.Tasks.SynchronizationContextAwaitTaskContinuation:Run (System.Threading.Tasks.Task,bool)
+System.Threading.Tasks.Task:FinishContinuations ()
+System.Threading.Tasks.Task:FinishStageThree ()
+System.Threading.Tasks.Task`1<object>:TrySetResult (object)
+System.Threading.Tasks.TaskCompletionSource`1<object>:TrySetResult (object)
+System.Threading.Tasks.TaskCompletionSource`1<object>:SetResult (object)
+UniGLTF.RuntimeOnlyAwaitCaller/<>c__DisplayClass4_0:<NextFrame>b__0 () (at ./Library/PackageCache/com.vrmc.gltf@75b3f33fb8d1/Runtime/Utils/AwaitCaller/RuntimeOnlyAwaitCaller.cs:31)
+UniGLTF.TinyManagedTaskScheduler:ManagedUpdate () (at ./Library/PackageCache/com.vrmc.gltf@75b3f33fb8d1/Runtime/Utils/AwaitCaller/TinyManagedTaskScheduler.cs:21)
+UniGLTF.NextFrameTaskScheduler/UnityLoopTaskScheduler:Update () (at ./Library/PackageCache/com.vrmc.gltf@75b3f33fb8d1/Runtime/Utils/AwaitCaller/NextFrameTaskScheduler.cs:50)
+
+(Filename: C:/build/output/unity/unity/Runtime/Export/Debug/Debug.bindings.cs Line: 130)
+
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+CodeReloadManager destroyed
+PlayerConnection::Cleanup##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1790101742124,"processId":17416,"allocatedMemory":440920,"memoryLabels":[{"Default":3832},{"NewDelete":104},{"Thread":512},{"Manager":14932},{"GfxDevice":72},{"GfxThread":1536},{"Audio":752},{"Serialization":408},{"ScriptingNativeRuntime":409384},{"String":504},{"PoolAlloc":96},{"ScriptManager":5688},{"CodeReload":440},{"CloudService":144},{"VR":1928},{"Video":144},{"Subsystems":96},{"Gui":588},{"CoreBusinessMetrics":128}]}

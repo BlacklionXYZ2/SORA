@@ -1,0 +1,74 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "VoiceDeviceKind": {
+      "enum": [
+        "input",
+        "output"
+      ],
+      "title": "VoiceDeviceKind",
+      "type": "string"
+    },
+    "VoiceDeviceState": {
+      "enum": [
+        "lost",
+        "recovered"
+      ],
+      "title": "VoiceDeviceState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "event_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "generation": {
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Generation",
+      "type": "integer"
+    },
+    "kind": {
+      "$ref": "#/$defs/VoiceDeviceKind"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "state": {
+      "$ref": "#/$defs/VoiceDeviceState"
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "kind",
+    "device_id",
+    "state",
+    "generation",
+    "occurred_at"
+  ],
+  "title": "VoiceDeviceEvent",
+  "type": "object"
+}

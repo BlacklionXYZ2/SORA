@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-10 07:09:52Z" end-time="2026-09-10 07:09:53Z" duration="0.9017351">
+  <test-suite type="TestSuite" id="1008" name="SORA" fullname="SORA" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-10 07:09:52Z" end-time="2026-09-10 07:09:53Z" duration="0.901735" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1006" name="Sora.Embodiment.PlayModeTests.dll" fullname="C:/Users/oscar/Desktop/SORA/clients/unity/Library/ScriptAssemblies/Sora.Embodiment.PlayModeTests.dll" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-10 07:09:52Z" end-time="2026-09-10 07:09:53Z" duration="0.894719" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13412" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestFixture" id="1001" name="PresentationTests" fullname="PresentationTests" classname="PresentationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-10 07:09:52Z" end-time="2026-09-10 07:09:53Z" duration="0.893038" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1005" name="BundledLicensedVrmLoadsWithHumanoidHeadAndMeshes" fullname="PresentationTests.BundledLicensedVrmLoadsWithHumanoidHeadAndMeshes" methodname="BundledLicensedVrmLoadsWithHumanoidHeadAndMeshes" classname="PresentationTests" runstate="Runnable" seed="1423398393" result="Passed" start-time="2026-09-10 07:09:52Z" end-time="2026-09-10 07:09:53Z" duration="0.563171" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1004" name="CameraProjectionMatchesPhysicalClientPixels" fullname="PresentationTests.CameraProjectionMatchesPhysicalClientPixels" methodname="CameraProjectionMatchesPhysicalClientPixels" classname="PresentationTests" runstate="Runnable" seed="1221577880" result="Passed" start-time="2026-09-10 07:09:53Z" end-time="2026-09-10 07:09:53Z" duration="0.006661" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1002" name="MarkerExpiresAndSemanticHookDoesNotRequireAnAnimation" fullname="PresentationTests.MarkerExpiresAndSemanticHookDoesNotRequireAnAnimation" methodname="MarkerExpiresAndSemanticHookDoesNotRequireAnAnimation" classname="PresentationTests" runstate="Runnable" seed="1030893665" result="Passed" start-time="2026-09-10 07:09:53Z" end-time="2026-09-10 07:09:53Z" duration="0.105385" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1003" name="MovementAndTopologyInvalidationUsePhysicalPixels" fullname="PresentationTests.MovementAndTopologyInvalidationUsePhysicalPixels" methodname="MovementAndTopologyInvalidationUsePhysicalPixels" classname="PresentationTests" runstate="Runnable" seed="484404548" result="Passed" start-time="2026-09-10 07:09:53Z" end-time="2026-09-10 07:09:53Z" duration="0.205977" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: C:\Users\oscar\Desktop\SORA\.local\p09-unity-evidence\playmode-results.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,18 @@
+{
+  "recorded_at": "2026-09-14T22:59:55+01:00",
+  "caller_integrity": "medium",
+  "caller_elevated": false,
+  "elevated_target": {
+    "pid": 14256,
+    "process": "LEDKeeper2"
+  },
+  "inaccessible_target": {
+    "pid": 4,
+    "process": "System"
+  },
+  "elevated_status": "elevated_target",
+  "inaccessible_status": "access_denied",
+  "helper_requested_elevation": false,
+  "window_titles_recorded": false,
+  "full_native_suite": true
+}

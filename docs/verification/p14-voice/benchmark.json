@@ -1,0 +1,294 @@
+{
+  "benchmark_version": "1.0",
+  "measured_at": "2026-09-18T18:46:40.981210+01:00",
+  "hardware": {
+    "operating_system": "Microsoft Windows 11 Pro 10.0.26200",
+    "architecture": "64-bit",
+    "cpu": "Intel(R) Core(TM) i5-14600K",
+    "physical_cores": 14,
+    "logical_cores": 20,
+    "memory_gib": 31.723,
+    "accelerators": [
+      "Meta Virtual Monitor",
+      "Intel(R) UHD Graphics 770",
+      "AMD Radeon RX 9070 XT"
+    ]
+  },
+  "corpus": [
+    "Sora, please open the project notes and show me the latest result.",
+    "Stop speaking, but keep the coding task running in the background.",
+    "This button here is the one I meant, not the window beside it."
+  ],
+  "results": [
+    {
+      "component": "vad",
+      "candidate_id": "silero-vad-6.2.2-onnx-cpu",
+      "implementation_version": "6.2.2",
+      "execution_provider": "ONNX Runtime CPUExecutionProvider",
+      "model_name": "Silero VAD v6.2 ONNX opset 16",
+      "software_license": "MIT",
+      "model_license": "MIT",
+      "artifacts": [
+        {
+          "name": "silero_vad.onnx",
+          "relative_path": "python-environment/silero_vad/data/silero_vad.onnx",
+          "size_bytes": 2327524,
+          "sha256": "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3",
+          "license": "MIT",
+          "source_url": "https://github.com/snakers4/silero-vad/blob/v6.2.2/src/silero_vad/data/silero_vad.onnx"
+        }
+      ],
+      "latency": {
+        "cold_ms": 75.047,
+        "warm_samples_ms": [
+          29.144,
+          31.136,
+          27.911,
+          28.802,
+          28.34
+        ],
+        "warm_p50_ms": 28.802,
+        "warm_p95_ms": 30.738,
+        "workload_audio_seconds": 7.633,
+        "warm_p95_realtime_factor": 0.004027
+      },
+      "memory": {
+        "baseline_rss_mib": 226.008,
+        "loaded_rss_mib": 248.359,
+        "peak_rss_mib": 248.359
+      },
+      "quality": [
+        {
+          "name": "speech_interval_recall",
+          "value": 0.816616,
+          "unit": "ratio",
+          "interpretation": "Overlap with the known SAPI speech interval; higher is better."
+        },
+        {
+          "name": "padded_silence_false_positive_ms",
+          "value": 0.0,
+          "unit": "ms",
+          "interpretation": "Speech attributed to the one-second silence pads; lower is better."
+        },
+        {
+          "name": "detected_segments",
+          "value": 2.0,
+          "unit": "count",
+          "interpretation": "Number of segments found in one clean utterance with silence pads."
+        }
+      ],
+      "limitations": [
+        "Quality fixture is clean synthetic Windows SAPI speech, not microphone speech or noise."
+      ]
+    },
+    {
+      "component": "stt",
+      "candidate_id": "faster-whisper-base-en-cpu-int8",
+      "implementation_version": "1.2.1",
+      "execution_provider": "CTranslate2 CPU int8, 6 threads",
+      "model_name": "Systran/faster-whisper-base.en@3d3d5dee26484f91867d81cb899cfcf72b96be6c",
+      "software_license": "MIT",
+      "model_license": "MIT (OpenAI Whisper; converted distribution)",
+      "artifacts": [
+        {
+          "name": ".gitattributes",
+          "relative_path": ".local/p14-voice-benchmark/models/stt/models--Systran--faster-whisper-base.en/snapshots/3d3d5dee26484f91867d81cb899cfcf72b96be6c/.gitattributes",
+          "size_bytes": 1477,
+          "sha256": "db7c0371f46f0840b8f25794c1e3321c9b5820a8cb6ba9694a46fc64b8fae5a6",
+          "license": "MIT",
+          "source_url": "https://huggingface.co/Systran/faster-whisper-base.en/tree/3d3d5dee26484f91867d81cb899cfcf72b96be6c"
+        },
+        {
+          "name": "config.json",
+          "relative_path": ".local/p14-voice-benchmark/models/stt/models--Systran--faster-whisper-base.en/snapshots/3d3d5dee26484f91867d81cb899cfcf72b96be6c/config.json",
+          "size_bytes": 2227,
+          "sha256": "f3bc3821e9fc76a27bae538e11ae5b677dcdd352b4600429ce7951d398569aeb",
+          "license": "MIT",
+          "source_url": "https://huggingface.co/Systran/faster-whisper-base.en/tree/3d3d5dee26484f91867d81cb899cfcf72b96be6c"
+        },
+        {
+          "name": "model.bin",
+          "relative_path": ".local/p14-voice-benchmark/models/stt/models--Systran--faster-whisper-base.en/snapshots/3d3d5dee26484f91867d81cb899cfcf72b96be6c/model.bin",
+          "size_bytes": 145216508,
+          "sha256": "2a166925539a16005f14ff328359f9b9adb9dc4fb631bb3b227526862e93e2ef",
+          "license": "MIT",
+          "source_url": "https://huggingface.co/Systran/faster-whisper-base.en/tree/3d3d5dee26484f91867d81cb899cfcf72b96be6c"
+        },
+        {
+          "name": "README.md",
+          "relative_path": ".local/p14-voice-benchmark/models/stt/models--Systran--faster-whisper-base.en/snapshots/3d3d5dee26484f91867d81cb899cfcf72b96be6c/README.md",
+          "size_bytes": 1323,
+          "sha256": "0360e1518671daf4064d44121ad1c4bbb0446dd5b0f8c724c8d3132fd33a1540",
+          "license": "MIT",
+          "source_url": "https://huggingface.co/Systran/faster-whisper-base.en/tree/3d3d5dee26484f91867d81cb899cfcf72b96be6c"
+        },
+        {
+          "name": "tokenizer.json",
+          "relative_path": ".local/p14-voice-benchmark/models/stt/models--Systran--faster-whisper-base.en/snapshots/3d3d5dee26484f91867d81cb899cfcf72b96be6c/tokenizer.json",
+          "size_bytes": 2128466,
+          "sha256": "929c5252409436dce1b38a75d1abbcb5e132d170d8e324e4e04ed915fa2d22df",
+          "license": "MIT",
+          "source_url": "https://huggingface.co/Systran/faster-whisper-base.en/tree/3d3d5dee26484f91867d81cb899cfcf72b96be6c"
+        },
+        {
+          "name": "vocabulary.txt",
+          "relative_path": ".local/p14-voice-benchmark/models/stt/models--Systran--faster-whisper-base.en/snapshots/3d3d5dee26484f91867d81cb899cfcf72b96be6c/vocabulary.txt",
+          "size_bytes": 422309,
+          "sha256": "ff77588746d3a2595d32ab5b69ffd7b95ce2441ac57533cb66fc3eb575a115cf",
+          "license": "MIT",
+          "source_url": "https://huggingface.co/Systran/faster-whisper-base.en/tree/3d3d5dee26484f91867d81cb899cfcf72b96be6c"
+        }
+      ],
+      "latency": {
+        "cold_ms": 1438.404,
+        "warm_samples_ms": [
+          328.233,
+          314.132,
+          352.735,
+          340.753,
+          317.136
+        ],
+        "warm_p50_ms": 328.233,
+        "warm_p95_ms": 350.339,
+        "workload_audio_seconds": 5.632971,
+        "warm_p95_realtime_factor": 0.062194
+      },
+      "memory": {
+        "baseline_rss_mib": 66.855,
+        "loaded_rss_mib": 252.348,
+        "peak_rss_mib": 344.574
+      },
+      "quality": [
+        {
+          "name": "corpus_word_error_rate",
+          "value": 0.0,
+          "unit": "ratio",
+          "interpretation": "Case/punctuation-insensitive WER across three clean SAPI utterances; lower is better."
+        },
+        {
+          "name": "exact_transcripts",
+          "value": 3.0,
+          "unit": "count",
+          "interpretation": "Utterances transcribed with zero normalized word errors; higher is better."
+        }
+      ],
+      "limitations": [
+        "Quality corpus is clean synthetic Windows SAPI speech and does not measure accents, noise, or far-field microphones.",
+        "The Windows faster-whisper GPU path requires NVIDIA CUDA; this AMD host was measured on CPU."
+      ]
+    },
+    {
+      "component": "tts",
+      "candidate_id": "kokoro-v1.0-onnx-int8",
+      "implementation_version": "0.6.1",
+      "execution_provider": "ONNX Runtime CPUExecutionProvider",
+      "model_name": "Kokoro-82M v1.0 int8, af_heart",
+      "software_license": "MIT",
+      "model_license": "Apache-2.0",
+      "artifacts": [
+        {
+          "name": "kokoro-v1.0.int8.onnx",
+          "relative_path": ".local/p14-voice-benchmark/models/tts/kokoro-v1.0.int8.onnx",
+          "size_bytes": 92361271,
+          "sha256": "6e742170d309016e5891a994e1ce1559c702a2ccd0075e67ef7157974f6406cb",
+          "license": "Apache-2.0",
+          "source_url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.int8.onnx"
+        },
+        {
+          "name": "voices-v1.0.bin",
+          "relative_path": ".local/p14-voice-benchmark/models/tts/voices-v1.0.bin",
+          "size_bytes": 28214398,
+          "sha256": "bca610b8308e8d99f32e6fe4197e7ec01679264efed0cac9140fe9c29f1fbf7d",
+          "license": "Apache-2.0",
+          "source_url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
+        }
+      ],
+      "latency": {
+        "cold_ms": 3706.714,
+        "warm_samples_ms": [
+          2977.139,
+          2925.54,
+          2926.416,
+          2930.936,
+          2967.506
+        ],
+        "warm_p50_ms": 2930.936,
+        "warm_p95_ms": 2975.212,
+        "workload_audio_seconds": 3.818667,
+        "warm_p95_realtime_factor": 0.779123
+      },
+      "memory": {
+        "baseline_rss_mib": 88.477,
+        "loaded_rss_mib": 304.148,
+        "peak_rss_mib": 383.535
+      },
+      "quality": [
+        {
+          "name": "loopback_word_error_rate",
+          "value": 0.0,
+          "unit": "ratio",
+          "interpretation": "faster-whisper base.en normalized WER on generated audio; lower is better."
+        },
+        {
+          "name": "peak_absolute_amplitude",
+          "value": 0.487374,
+          "unit": "ratio",
+          "interpretation": "Peak floating-point sample magnitude; values above one would clip."
+        },
+        {
+          "name": "clipped_sample_ratio",
+          "value": 0.0,
+          "unit": "ratio",
+          "interpretation": "Samples at digital full scale; lower is better."
+        },
+        {
+          "name": "sample_rate",
+          "value": 24000.0,
+          "unit": "Hz",
+          "interpretation": "Generated PCM sample rate."
+        }
+      ],
+      "limitations": [
+        "Loop-back WER measures intelligibility, not human-rated naturalness or voice preference.",
+        "Only the English af_heart voice and one utterance were latency-tested."
+      ]
+    }
+  ],
+  "defaults": [
+    {
+      "component": "vad",
+      "candidate_id": "silero-vad-6.2.2-onnx-cpu",
+      "measured": true,
+      "requires_livekit": false,
+      "reason": "Small streaming ONNX model; measured well below real time on CPU and avoids a hardware-specific GPU requirement."
+    },
+    {
+      "component": "stt",
+      "candidate_id": "faster-whisper-base-en-cpu-int8",
+      "measured": true,
+      "requires_livekit": false,
+      "reason": "The measured base.en CPU-int8 model provides an English quality/latency baseline on this AMD Windows host; larger or multilingual models remain an explicit later choice."
+    },
+    {
+      "component": "tts",
+      "candidate_id": "kokoro-v1.0-onnx-int8",
+      "measured": true,
+      "requires_livekit": false,
+      "reason": "The measured int8 Kokoro model is local, intelligible in loop-back, compact relative to full precision, and requires no realtime service."
+    }
+  ],
+  "methodology": [
+    "Each component ran in a fresh Python child process on the recorded host.",
+    "Cold latency includes model construction plus the first operation; warm latency is five subsequent identical operations.",
+    "RSS was sampled every five milliseconds from the isolated worker process.",
+    "VAD and STT quality used three deterministic Windows SAPI English utterances; the VAD fixture added one second of silence at each edge.",
+    "STT normalized hypotheses: [\"Sora, please open the project notes and show me the latest result\", \"Stop speaking, but keep the coding task running in the background.\", \"This button here is the one I meant, not the window beside it.\"]",
+    "Kokoro loop-back transcript: Sora, please open the project notes and show me the latest result.",
+    "No LiveKit server, cloud speech API, CUDA compatibility layer, or persistent microphone recording was used."
+  ],
+  "limitations": [
+    "The corpus is synthetic, clean, English-only speech; microphone, accent, noise and conversational overlap evaluation remains part of P14.2.",
+    "Kokoro naturalness was not assigned a subjective score; the recorded metrics establish technical validity and loop-back intelligibility.",
+    "Windows faster-whisper exposes CUDA acceleration for NVIDIA hardware, so the installed AMD GPU was not claimed as an STT accelerator."
+  ]
+}

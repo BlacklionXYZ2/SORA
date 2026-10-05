@@ -26,11 +26,31 @@ async def create_backup(
     *,
     artifacts_root: Path,
     destination: Path,
+    artifacts_archive_prefix: str = "artifacts",
 ) -> Path:
-    return await asyncio.to_thread(_create_backup_sync, database.path, artifacts_root, destination)
+    return await asyncio.to_thread(
+        _create_backup_sync,
+        database.path,
+        artifacts_root,
+        destination,
+        artifacts_archive_prefix,
+    )
 
 
-def _create_backup_sync(database_path: Path, artifacts_root: Path, destination: Path) -> Path:
+def _safe_archive_prefix(value: str) -> PurePosixPath:
+    prefix = PurePosixPath(value)
+    if not value or prefix.is_absolute() or ".." in prefix.parts or ":" in value:
+        raise ValueError(f"unsafe artifact archive prefix: {value}")
+    return prefix
+
+
+def _create_backup_sync(
+    database_path: Path,
+    artifacts_root: Path,
+    destination: Path,
+    artifacts_archive_prefix: str,
+) -> Path:
+    archive_prefix = _safe_archive_prefix(artifacts_archive_prefix)
     if destination.exists() and any(destination.iterdir()):
         raise FileExistsError(f"backup destination is not empty: {destination}")
     destination.mkdir(parents=True, exist_ok=True)
@@ -48,7 +68,7 @@ def _create_backup_sync(database_path: Path, artifacts_root: Path, destination: 
             if "secrets" in relative.parts:
                 continue
             if source_path.is_file():
-                target = destination / "artifacts" / relative
+                target = destination.joinpath(*archive_prefix.parts, *relative.parts)
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source_path, target)
 
@@ -60,7 +80,7 @@ def _create_backup_sync(database_path: Path, artifacts_root: Path, destination: 
         "schema_version": 1,
         "created_at": datetime.now(UTC).isoformat(),
         "files": files,
-        "excluded": ["artifacts/**/secrets/**"],
+        "excluded": [f"{archive_prefix.as_posix()}/**/secrets/**"],
     }
     manifest_path = destination / "manifest.json"
     manifest_path.write_text(

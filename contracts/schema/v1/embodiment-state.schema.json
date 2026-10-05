@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "EmbodimentPresentationState": {
+      "description": "High-level semantic presentation state for avatar embodiment.",
+      "enum": [
+        "idle",
+        "moving",
+        "looking",
+        "thinking",
+        "listening",
+        "speaking",
+        "waiting_for_agent",
+        "reading",
+        "typing",
+        "waving",
+        "sitting",
+        "leaning",
+        "climbing"
+      ],
+      "title": "EmbodimentPresentationState",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "VirtualDesktopPoint": {
+      "additionalProperties": false,
+      "description": "Global Windows virtual-desktop coordinate in physical pixels.",
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "VirtualDesktopPoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Current state of embodiment client reported to Core.",
+  "properties": {
+    "connected_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Connected At"
+    },
+    "containing_monitor_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "current_position": {
+      "$ref": "#/$defs/VirtualDesktopPoint"
+    },
+    "interpreted_target_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "last_seen_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Seen At"
+    },
+    "marker_position": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VirtualDesktopPoint"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "presentation_state": {
+      "$ref": "#/$defs/EmbodimentPresentationState",
+      "default": "idle"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "topology_revision": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "visible": {
+      "default": true,
+      "title": "Visible",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "current_position"
+  ],
+  "title": "EmbodimentState",
+  "type": "object"
+}

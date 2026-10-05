@@ -1,0 +1,327 @@
+{
+  "stage": "P15.4",
+  "status": "complete",
+  "recorded_at": "2026-09-22T19:29:02.3577311+01:00",
+  "model": "GPT-5.6 Sol",
+  "source_revision": "89f005fc09ba511c0402ce0704b23f75108b368f",
+  "environment": {
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "machine": "OSCARS-PC",
+    "powershell": "7.6.5",
+    "python": "Python 3.12.10",
+    "node": "v24.18.0",
+    "dotnet": "10.0.103",
+    "unity_player": "C:\\Users\\oscar\\Desktop\\SORA\\.local\\releases\\sora-p15.3-acceptance-20260922\\payload\\unity\\SORA.exe",
+    "unity_player_sha256": "718444f6a718fa668da96eb0a58445b009673310e6129152a63dbf7a92b8de00",
+    "monitor_count": 2,
+    "secondary_monitor_movement_tested": true,
+    "press_target_monitor": {
+      "id": "DISPLAY6",
+      "primary": false,
+      "rect": {
+        "x": -1280,
+        "y": 813,
+        "width": 1280,
+        "height": 1024
+      },
+      "button_center": {
+        "x": -1052,
+        "y": 1018
+      }
+    }
+  },
+  "runs": [
+    {
+      "run_id": "core-scenarios",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/scenarios/test_integrated_user_scenarios.py",
+        "tests/runtime/test_coding_workspaces.py::test_p06_coding_route_allocates_codex_worktree_and_captures_artifact",
+        "tests/desktop/test_editor_handoff.py::test_exact_selection_reaches_task_and_finding_points_at_verified_line",
+        "tests/voice/test_sessions.py::test_client_pipeline_keeps_pcm_local_and_completes_tts_playback",
+        "tests/api/test_remote_access.py::test_paired_remote_session_is_scoped_revocable_and_audited",
+        "tests/api/test_event_replay_and_reconnect.py::test_websocket_streaming_and_reconnect_replay",
+        "-q"
+      ],
+      "environment": {},
+      "started_at": "2026-09-22T19:27:02.6348216+01:00",
+      "finished_at": "2026-09-22T19:27:07.5980261+01:00",
+      "duration_seconds": 4.963,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/core-scenarios.log"
+    },
+    {
+      "run_id": "browser-reconnect",
+      "command": [
+        "node",
+        "--test",
+        "clients/pwa/tests/pwa.test.mjs"
+      ],
+      "environment": {},
+      "started_at": "2026-09-22T19:27:07.6214434+01:00",
+      "finished_at": "2026-09-22T19:27:07.7751109+01:00",
+      "duration_seconds": 0.154,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/browser-reconnect.log"
+    },
+    {
+      "run_id": "build-windows_bridge",
+      "command": [
+        "dotnet",
+        "build",
+        "clients/windows_bridge",
+        "--verbosity",
+        "quiet"
+      ],
+      "environment": {},
+      "started_at": "2026-09-22T19:27:07.7788552+01:00",
+      "finished_at": "2026-09-22T19:27:08.7790006+01:00",
+      "duration_seconds": 1.0,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/build-windows_bridge.log"
+    },
+    {
+      "run_id": "build-windows_action",
+      "command": [
+        "dotnet",
+        "build",
+        "clients/windows_action",
+        "--verbosity",
+        "quiet"
+      ],
+      "environment": {},
+      "started_at": "2026-09-22T19:27:08.7831687+01:00",
+      "finished_at": "2026-09-22T19:27:09.7514034+01:00",
+      "duration_seconds": 0.968,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/build-windows_action.log"
+    },
+    {
+      "run_id": "build-media_fixture",
+      "command": [
+        "dotnet",
+        "build",
+        "clients/media_fixture",
+        "--verbosity",
+        "quiet"
+      ],
+      "environment": {},
+      "started_at": "2026-09-22T19:27:09.7541088+01:00",
+      "finished_at": "2026-09-22T19:27:10.7322538+01:00",
+      "duration_seconds": 0.978,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/build-media_fixture.log"
+    },
+    {
+      "run_id": "build-input_fixture",
+      "command": [
+        "dotnet",
+        "build",
+        "clients/input_fixture",
+        "--verbosity",
+        "quiet"
+      ],
+      "environment": {},
+      "started_at": "2026-09-22T19:27:10.7343598+01:00",
+      "finished_at": "2026-09-22T19:27:11.7016691+01:00",
+      "duration_seconds": 0.967,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/build-input_fixture.log"
+    },
+    {
+      "run_id": "packaged-unity-physics",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/embodiment/test_unity_player.py::test_packaged_unity_core_acceptance",
+        "-q",
+        "-s"
+      ],
+      "environment": {
+        "SORA_SKIP_NATIVE_INPUT_PROBE": "1",
+        "SORA_UNITY_PLAYER": "C:\\Users\\oscar\\Desktop\\SORA\\.local\\releases\\sora-p15.3-acceptance-20260922\\payload\\unity\\SORA.exe"
+      },
+      "started_at": "2026-09-22T19:27:11.7043665+01:00",
+      "finished_at": "2026-09-22T19:28:47.8192038+01:00",
+      "duration_seconds": 96.115,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/packaged-unity-physics.log"
+    },
+    {
+      "run_id": "packaged-secondary-monitor-press",
+      "command": [
+        "uv",
+        "run",
+        "--locked",
+        "pytest",
+        "tests/embodiment/test_unity_interaction.py::test_packaged_pause_records_one_verified_embodied_interaction",
+        "-q",
+        "-s"
+      ],
+      "environment": {
+        "SORA_UNITY_PLAYER": "C:\\Users\\oscar\\Desktop\\SORA\\.local\\releases\\sora-p15.3-acceptance-20260922\\payload\\unity\\SORA.exe",
+        "SORA_TEST_UIA": "1",
+        "SORA_P11_EVIDENCE_DIR": "C:\\Users\\oscar\\Desktop\\SORA\\docs\\verification\\p15-integrated-scenarios\\secondary-monitor-press",
+        "SORA_P11_REQUIRE_SECONDARY": "1"
+      },
+      "started_at": "2026-09-22T19:28:47.8254281+01:00",
+      "finished_at": "2026-09-22T19:29:02.3209488+01:00",
+      "duration_seconds": 14.496,
+      "exit_code": 0,
+      "status": "passed",
+      "log": "logs/packaged-secondary-monitor-press.log"
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario_id": "conversation",
+      "title": "Immediate companion conversation",
+      "status": "passed",
+      "run_ids": [
+        "core-scenarios"
+      ],
+      "evidence": [
+        "logs/core-scenarios.log"
+      ],
+      "environment": "Hermetic Core with the configured deterministic dialogue fixture.",
+      "limits": [
+        "No live hosted dialogue model was invoked; this proves routing and availability semantics."
+      ]
+    },
+    {
+      "scenario_id": "telemetry-file-analysis",
+      "title": "Exact two-file telemetry analysis while SORA remains responsive",
+      "status": "passed",
+      "run_ids": [
+        "core-scenarios"
+      ],
+      "evidence": [
+        "logs/core-scenarios.log"
+      ],
+      "environment": "Temporary UTF-8 CSV files and a delayed deterministic specialist running through canonical task orchestration.",
+      "limits": [
+        "The specialist is deterministic, not live Hermes/Sol; arbitrary telemetry formats remain provider/tool concerns."
+      ]
+    },
+    {
+      "scenario_id": "isolated-coding",
+      "title": "Codex-style isolated coding worktree",
+      "status": "passed",
+      "run_ids": [
+        "core-scenarios"
+      ],
+      "evidence": [
+        "logs/core-scenarios.log"
+      ],
+      "environment": "Real temporary Git repository/worktree with a protocol-faithful fake Codex app server and host verification.",
+      "limits": [
+        "No live Codex quota or remote model was consumed; provider transport and host-side isolation are the claims."
+      ]
+    },
+    {
+      "scenario_id": "exact-editor-context",
+      "title": "Exact editor selection handoff and finding presentation",
+      "status": "passed",
+      "run_ids": [
+        "core-scenarios"
+      ],
+      "evidence": [
+        "logs/core-scenarios.log"
+      ],
+      "environment": "Owned repository fixture, exact bytes/digest/selection, provider task, and verified-line presentation.",
+      "limits": [
+        "Uses a deterministic editor/UIA fixture rather than the user's live VS Code session."
+      ]
+    },
+    {
+      "scenario_id": "multi-monitor-pointing-press",
+      "title": "Packaged avatar movement and verified Pause on monitor two",
+      "status": "passed",
+      "run_ids": [
+        "packaged-unity-physics",
+        "packaged-secondary-monitor-press"
+      ],
+      "evidence": [
+        "unity-acceptance.json",
+        "secondary-monitor-press/acceptance.json",
+        "logs/packaged-unity-physics.log",
+        "logs/packaged-secondary-monitor-press.log"
+      ],
+      "environment": "Actual attached Windows displays, packaged Unity player, WinForms media fixture on the non-primary display, UIA InvokePattern, and postcondition verification.",
+      "limits": [
+        "The target is a deterministic media fixture, not Spotify; no display settings or power state were changed."
+      ]
+    },
+    {
+      "scenario_id": "physics",
+      "title": "Packaged movement, ragdoll recovery, support surfaces and feedback",
+      "status": "passed",
+      "run_ids": [
+        "packaged-unity-physics"
+      ],
+      "evidence": [
+        "unity-acceptance.json",
+        "logs/packaged-unity-physics.log"
+      ],
+      "environment": "Packaged Unity player connected to a fresh temporary Core on the actual desktop.",
+      "limits": [
+        "Physics is the bounded screen-plane implementation; no unconstrained rigid-body or limb-level desktop collision claim is made.",
+        "The primary-display raw input/drag probe was not rerun because an unrelated full-screen application obscured the owned fixture; packaged ragdoll, recovery, support-surface and secondary-motion paths were run."
+      ]
+    },
+    {
+      "scenario_id": "voice",
+      "title": "Local streaming voice turn through authenticated Core",
+      "status": "passed",
+      "run_ids": [
+        "core-scenarios"
+      ],
+      "evidence": [
+        "logs/core-scenarios.log"
+      ],
+      "environment": "Deterministic VAD/STT/TTS/playback adapters with client-local PCM and authenticated semantic Core traffic.",
+      "limits": [
+        "No physical microphone/speaker or live speech model was used in this scenario run; P14 benchmark evidence remains separate."
+      ]
+    },
+    {
+      "scenario_id": "mobile-reconnect",
+      "title": "Paired browser-compatible TLS reconnect and projection convergence",
+      "status": "passed",
+      "run_ids": [
+        "core-scenarios",
+        "browser-reconnect"
+      ],
+      "evidence": [
+        "logs/core-scenarios.log",
+        "logs/browser-reconnect.log"
+      ],
+      "environment": "Real local TLS socket, one-time pairing/session/revocation, replay backlog, and two independent JavaScript projection stores.",
+      "limits": [
+        "Same-host browser-compatible fixtures used a test certificate; a physical phone with trusted production certificate remains P15.2's open gate."
+      ]
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8
+  },
+  "boundaries": [
+    "Live provider/model quality is separate from deterministic orchestration acceptance.",
+    "A physical phone and production certificate trust remain the independent P15.2 gate.",
+    "The scenario suite changes no display, power, firewall, service, scheduled-task or repository state outside its temporary fixtures and evidence outputs."
+  ]
+}

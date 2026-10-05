@@ -1,0 +1,181 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Volatile target identity; this record is not authorization to act.",
+  "properties": {
+    "automation_id": {
+      "maxLength": 256,
+      "title": "Automation Id",
+      "type": "string"
+    },
+    "control_type": {
+      "maxLength": 128,
+      "title": "Control Type",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "enabled": {
+      "default": true,
+      "title": "Enabled",
+      "type": "boolean"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "last_validated_at": {
+      "format": "date-time",
+      "title": "Last Validated At",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 256,
+      "title": "Name",
+      "type": "string"
+    },
+    "native_window_handle": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "title": "Native Window Handle",
+      "type": "integer"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "process_id": {
+      "maximum": 4294967295,
+      "minimum": 1,
+      "title": "Process Id",
+      "type": "integer"
+    },
+    "process_started_at": {
+      "format": "date-time",
+      "title": "Process Started At",
+      "type": "string"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "rect": {
+      "$ref": "#/$defs/ScreenRect"
+    },
+    "root_window_handle": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "title": "Root Window Handle",
+      "type": "integer"
+    },
+    "runtime_id": {
+      "default": [],
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 32,
+      "title": "Runtime Id",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "default": "active",
+      "enum": [
+        "active",
+        "expired",
+        "stale_layout",
+        "unavailable",
+        "ambiguous",
+        "revoked"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "target_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "topology_revision": {
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "target_id",
+    "owner_id",
+    "device_id",
+    "process_id",
+    "process_started_at",
+    "root_window_handle",
+    "native_window_handle",
+    "automation_id",
+    "name",
+    "control_type",
+    "rect",
+    "topology_revision",
+    "created_at",
+    "expires_at",
+    "last_validated_at"
+  ],
+  "title": "DesktopTarget",
+  "type": "object"
+}

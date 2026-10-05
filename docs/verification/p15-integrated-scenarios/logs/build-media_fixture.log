@@ -1,0 +1,16 @@
+COMMAND: dotnet build clients/media_fixture --verbosity quiet
+STARTED: 2026-09-22T19:27:09.7541088+01:00
+FINISHED: 2026-09-22T19:27:10.7322538+01:00
+EXIT_CODE: 0
+
+STDOUT
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.75
+
+STDERR
+
+

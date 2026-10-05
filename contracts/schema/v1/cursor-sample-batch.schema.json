@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "CursorButton": {
+      "enum": [
+        "left",
+        "right",
+        "middle",
+        "x1",
+        "x2"
+      ],
+      "type": "string"
+    },
+    "CursorSample": {
+      "additionalProperties": false,
+      "properties": {
+        "buttons": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CursorButton"
+          },
+          "title": "Buttons",
+          "type": "array"
+        },
+        "monotonic_ns": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Monotonic Ns"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "target_element": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "topology_revision": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Topology Revision",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "timestamp",
+        "x",
+        "y"
+      ],
+      "title": "CursorSample",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "samples": {
+      "items": {
+        "$ref": "#/$defs/CursorSample"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "title": "Samples",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "samples"
+  ],
+  "title": "CursorSampleBatch",
+  "type": "object"
+}

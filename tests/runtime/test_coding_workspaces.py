@@ -129,8 +129,8 @@ async def test_p06_coding_route_allocates_codex_worktree_and_captures_artifact(
     assert artifact["provider"] == "codex-app-server"
     assert artifact["workspace"]["changed_files"] == ["module.py"]
     assert artifact["verification_commands"] == ["python -B verify.py"]
-    assert "-    return \"before\"" in artifact["workspace"]["diff"]
-    assert "+    return \"after\"" in artifact["workspace"]["diff"]
+    assert '-    return "before"' in artifact["workspace"]["diff"]
+    assert '+    return "after"' in artifact["workspace"]["diff"]
     assert not (workspace_root / "leases" / f"{workspace_id}.json").exists()
     assert any(item.startswith("review_artifact:") for item in report.result.task_updates)
     traces = await runtime.runtime_repository.traces(receipt.task.task_id)

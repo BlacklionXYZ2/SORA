@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-09-16T18:51:46.243207+00:00",
+  "action": "type",
+  "attempt_id": "packaged-type-once",
+  "phases": [
+    "target_selected",
+    "navigate",
+    "align",
+    "reach",
+    "contact",
+    "invoke",
+    "verify",
+    "retract",
+    "completed"
+  ],
+  "terminal": {
+    "status": "completed",
+    "reason": "postcondition_verified",
+    "effect_attempted": true,
+    "verified": true
+  },
+  "text_postcondition_verified": true,
+  "text_change_event_delta": 2,
+  "text_or_grant_serialized_to_unity_evidence": false,
+  "duplicate_effect_count": 0
+}

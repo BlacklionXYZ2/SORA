@@ -1,0 +1,56 @@
+{
+  "stage": "P14.3",
+  "status": "complete",
+  "completed_at": "2026-09-19T11:23:36+01:00",
+  "model": "GPT-5.6 Sol",
+  "roadmap": {
+    "completed": 76,
+    "total": 91,
+    "percent": 83.5
+  },
+  "barge_in": {
+    "provider_generations_started": 1,
+    "provider_generations_cancelled": 1,
+    "provider_generations_completed": 0,
+    "durable_messages_created": 0,
+    "playback_commands_created": 0,
+    "turn_disposition": "interrupted",
+    "automatic_on_new_speech": true
+  },
+  "stop_speaking": {
+    "provider_generations_started": 1,
+    "provider_generations_cancelled": 0,
+    "provider_generations_completed": 1,
+    "durable_user_messages": 1,
+    "durable_assistant_messages": 1,
+    "playback_commands_created": 0
+  },
+  "client_output": {
+    "chunks_written_before_stop": 1,
+    "stale_chunks_written_after_stop": 0,
+    "speaker_aborts": 1,
+    "lip_sync_reset_observed": true,
+    "local_stop_precedes_core_round_trip": true
+  },
+  "security_and_recovery": {
+    "duplicate_interruptions_advance_epoch": false,
+    "revoked_grant_can_interrupt": false,
+    "queued_audio_survives_interruption": false,
+    "atomic_commit_is_partially_written": false
+  },
+  "verification": {
+    "voice_tests_passed": 18,
+    "focused_tests_passed": 22,
+    "repository_tests_passed": 320,
+    "repository_tests_skipped": 10,
+    "ruff": "passed",
+    "mypy": "passed across 171 source files",
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "limitations": [
+    "Dialogue cancellation is cooperative and providers must honour asynchronous task cancellation.",
+    "No physical microphone-to-silence or speaker echo measurement was performed.",
+    "P14.3 defines lip-sync reset only; timed mouth and emotion synchronization is P14.4."
+  ]
+}

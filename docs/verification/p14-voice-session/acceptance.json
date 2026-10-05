@@ -1,0 +1,46 @@
+{
+  "stage": "P14.2",
+  "status": "complete",
+  "completed_at": "2026-09-19T11:07:22+01:00",
+  "model": "GPT-5.6 Sol",
+  "roadmap": {
+    "completed": 75,
+    "total": 91,
+    "percent": 82.4
+  },
+  "acceptance": {
+    "finalized_utterances": 1,
+    "durable_user_messages": 1,
+    "durable_assistant_messages": 1,
+    "dialogue_provider_calls": 1,
+    "playback_commands": 1,
+    "partial_durable_messages": 0,
+    "partial_provider_calls": 0,
+    "duplicate_messages_after_restart": 0,
+    "duplicate_playback_commands": 0,
+    "echo_turns_created": 0,
+    "stale_audio_replayed_after_output_recovery": false,
+    "raw_pcm_crossed_core_transport": false
+  },
+  "authorization": {
+    "operation": "voice.session",
+    "exact_resource_template": "voice.session:<session>:input:<input-device>:output:<output-device>",
+    "grant_rechecked_on_each_update": true,
+    "caller_authority_fields_accepted": false
+  },
+  "verification": {
+    "voice_tests_passed": 13,
+    "focused_tests_passed": 17,
+    "repository_tests_passed": 315,
+    "repository_tests_skipped": 10,
+    "ruff": "passed",
+    "mypy": "passed across 171 source files",
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "limitations": [
+    "The end-to-end client acceptance uses deterministic fake VAD, STT, TTS and playback adapters.",
+    "No live microphone or speaker was opened during P14.2 verification.",
+    "Barge-in is deferred to P14.3 and lip synchronization is deferred to P14.4."
+  ]
+}

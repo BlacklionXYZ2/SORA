@@ -1,0 +1,52 @@
+{
+  "stage": "P14.5",
+  "status": "complete",
+  "completed_at": "2026-09-22T08:22:32+01:00",
+  "model": "GPT-5.6 Sol",
+  "roadmap": {
+    "completed": 78,
+    "total": 91,
+    "percent": 85.7
+  },
+  "spoken_reference": {
+    "semantic_phrase_timestamp": true,
+    "resolves_at_phrase_time": true,
+    "uses_stt_completion_cursor_as_fallback": false,
+    "raw_cursor_in_transcript": false,
+    "grant_id_in_transcript": false,
+    "exact_attention_grant_required": true,
+    "missing_timing_clarifies": true,
+    "missing_history_clarifies": true,
+    "dialogue_called_on_clarification": false,
+    "fixture_phrase_sample": [101, 121],
+    "resolved_hover_centroid": [101, 120],
+    "fixture_completion_cursor": [902, 699],
+    "resolved_label": "historical-control"
+  },
+  "intent_control": {
+    "stop_speaking": "applied_without_task_cancellation",
+    "named_task_steer": "applied_to_hermes_fixture",
+    "named_task_cancel": "applied_to_same_fixture",
+    "separate_new_work": "created_distinct_task",
+    "ambiguous_control": "clarification_required",
+    "unsupported_steering": "reported_unsupported",
+    "local_audio_stops_before_semantic_round_trip": true,
+    "stop_vs_barge_selected_from_first_stt_hypothesis": true
+  },
+  "verification": {
+    "voice_tests_passed": 25,
+    "focused_tests_passed": 66,
+    "repository_tests_passed": 327,
+    "repository_tests_skipped": 10,
+    "ruff": "passed",
+    "mypy": "passed across 173 source files",
+    "schemas": "fresh",
+    "compileall": "passed",
+    "diff_check": "passed"
+  },
+  "limitations": [
+    "Phrase timing is injected by a deterministic STT adapter fixture rather than a deployable physical-microphone client.",
+    "No acoustic playback-stop or first-audio latency measurement was performed.",
+    "Intent classification deliberately covers explicit safe forms and clarifies ambiguity."
+  ]
+}

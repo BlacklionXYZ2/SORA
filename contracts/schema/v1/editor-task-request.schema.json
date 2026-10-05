@@ -1,0 +1,174 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "EditorContextRequest": {
+      "additionalProperties": false,
+      "description": "Metadata emitted by an authenticated cooperating editor integration.",
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "desktop_target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "editor_name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "relative_file_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Relative File Path",
+          "type": "string"
+        },
+        "repository_root": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Repository Root",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "selected_text": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Selected Text",
+          "type": "string"
+        },
+        "selection": {
+          "$ref": "#/$defs/EditorSelection"
+        },
+        "source": {
+          "const": "app_integration",
+          "default": "app_integration",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "editor_name",
+        "repository_root",
+        "relative_file_path",
+        "document_sha256",
+        "selection",
+        "selected_text",
+        "desktop_target_id",
+        "captured_at"
+      ],
+      "title": "EditorContextRequest",
+      "type": "object"
+    },
+    "EditorPosition": {
+      "additionalProperties": false,
+      "description": "One-based Unicode-code-point position; range ends are exclusive.",
+      "properties": {
+        "column": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Column",
+          "type": "integer"
+        },
+        "line": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "line",
+        "column"
+      ],
+      "title": "EditorPosition",
+      "type": "object"
+    },
+    "EditorSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/EditorPosition"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "start": {
+          "$ref": "#/$defs/EditorPosition"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "EditorSelection",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "editor_context": {
+      "$ref": "#/$defs/EditorContextRequest"
+    },
+    "explicit_provider": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "idempotency_key": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "intent": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "intent",
+    "editor_context"
+  ],
+  "title": "EditorTaskRequest",
+  "type": "object"
+}

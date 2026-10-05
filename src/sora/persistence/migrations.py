@@ -13,7 +13,7 @@ class Migration:
     statements: tuple[str, ...]
 
 
-MIGRATIONS = (
+MIGRATIONS: tuple[Migration, ...] = (
     Migration(
         1,
         (
@@ -67,6 +67,80 @@ MIGRATIONS = (
         4,
         (
             "ALTER TABLE submissions ADD COLUMN acknowledgement_id TEXT REFERENCES messages(message_id)",
+        ),
+    ),
+    Migration(
+        5,
+        (
+            "CREATE TABLE desktop_action_attempts (attempt_id TEXT PRIMARY KEY, request_hash TEXT NOT NULL, target_id TEXT NOT NULL, action TEXT NOT NULL, status TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)",
+            "CREATE INDEX desktop_action_attempts_status_idx ON desktop_action_attempts(status, updated_at)",
+        ),
+    ),
+    Migration(
+        6,
+        (
+            "CREATE TABLE voice_utterances (utterance_key TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(owner_id), device_id TEXT NOT NULL, project_id TEXT REFERENCES projects(project_id), conversation_id TEXT NOT NULL REFERENCES conversations(conversation_id), session_id TEXT NOT NULL, utterance_id TEXT NOT NULL, transcript_sha256 TEXT NOT NULL, user_message_id TEXT NOT NULL REFERENCES messages(message_id), assistant_message_id TEXT NOT NULL REFERENCES messages(message_id), created_at TEXT NOT NULL, UNIQUE(owner_id, device_id, session_id, utterance_id))",
+            "CREATE INDEX voice_utterances_conversation_idx ON voice_utterances(conversation_id, created_at)",
+        ),
+    ),
+    Migration(
+        7,
+        (
+            "CREATE TABLE pairing_invitations (invitation_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(owner_id), code_hash TEXT NOT NULL UNIQUE, label TEXT NOT NULL, scopes_json TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, claimed_at TEXT, claimed_device_id TEXT)",
+            "CREATE INDEX pairing_invitations_expiry_idx ON pairing_invitations(owner_id, expires_at)",
+            "CREATE TABLE paired_devices (device_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(owner_id), label TEXT NOT NULL, credential_hash TEXT NOT NULL, scopes_json TEXT NOT NULL, paired_at TEXT NOT NULL, last_seen_at TEXT, revoked_at TEXT)",
+            "CREATE INDEX paired_devices_owner_idx ON paired_devices(owner_id, revoked_at)",
+            "CREATE TABLE remote_sessions (session_id TEXT PRIMARY KEY, device_id TEXT NOT NULL REFERENCES paired_devices(device_id), token_hash TEXT NOT NULL, scopes_json TEXT NOT NULL, created_at TEXT NOT NULL, expires_at TEXT NOT NULL, last_seen_at TEXT, revoked_at TEXT)",
+            "CREATE INDEX remote_sessions_device_idx ON remote_sessions(device_id, expires_at, revoked_at)",
+            "CREATE TABLE remote_access_audit (audit_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(owner_id), device_id TEXT, session_id TEXT, source_ip TEXT NOT NULL, method TEXT NOT NULL, path TEXT NOT NULL, action TEXT NOT NULL, outcome TEXT NOT NULL, created_at TEXT NOT NULL, details_json TEXT NOT NULL)",
+            "CREATE INDEX remote_access_audit_owner_idx ON remote_access_audit(owner_id, created_at)",
+        ),
+    ),
+    Migration(
+        8,
+        (
+            "CREATE TABLE board_plan_requests (idempotency_key TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(task_id), intent TEXT NOT NULL, created_at TEXT NOT NULL)",
+        ),
+    ),
+    Migration(
+        9,
+        (
+            "CREATE TABLE board_cards (task_id TEXT PRIMARY KEY REFERENCES tasks(task_id), column_name TEXT, assigned_agent TEXT, archived_at TEXT, version INTEGER NOT NULL, updated_by TEXT NOT NULL, updated_at TEXT NOT NULL)",
+            "CREATE TABLE board_card_events (event_id TEXT PRIMARY KEY, task_id TEXT NOT NULL REFERENCES tasks(task_id), action TEXT NOT NULL, actor TEXT NOT NULL, column_name TEXT, assigned_agent TEXT, occurred_at TEXT NOT NULL)",
+            "CREATE INDEX board_card_events_task_idx ON board_card_events(task_id, occurred_at)",
+        ),
+    ),
+)
+
+MIGRATIONS += (
+    Migration(
+        10,
+        (
+            "CREATE TABLE path_leases (run_id TEXT PRIMARY KEY REFERENCES agent_runs(run_id), task_id TEXT NOT NULL REFERENCES tasks(task_id), canonical_root TEXT NOT NULL, display_root TEXT NOT NULL, job_name TEXT NOT NULL UNIQUE, status TEXT NOT NULL, acquired_at TEXT NOT NULL, owner_pid INTEGER NOT NULL)",
+            "CREATE TABLE path_events (event_id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES agent_runs(run_id), path TEXT NOT NULL, operation TEXT NOT NULL, status TEXT NOT NULL, source TEXT NOT NULL, occurred_at TEXT NOT NULL)",
+            "CREATE INDEX path_events_run_idx ON path_events(run_id, occurred_at)",
+        ),
+    ),
+)
+
+MIGRATIONS += (
+    Migration(
+        11,
+        (
+            "CREATE TABLE memory_mutation_receipts (owner_id TEXT NOT NULL REFERENCES owners(owner_id), project_scope TEXT NOT NULL, request_id TEXT NOT NULL, request_hash TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(owner_id, project_scope, request_id))",
+        ),
+    ),
+)
+
+MIGRATIONS += (
+    Migration(
+        12,
+        (
+            "CREATE TABLE automation_definitions (automation_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES owners(owner_id), project_id TEXT REFERENCES projects(project_id), entity_version INTEGER NOT NULL CHECK(entity_version>=1), state TEXT NOT NULL CHECK(state IN ('active','paused','deleted')), payload TEXT NOT NULL, next_slot_json TEXT)",
+            "CREATE INDEX automation_definitions_scope_idx ON automation_definitions(owner_id,project_id,state)",
+            "CREATE TABLE automation_occurrences (occurrence_id TEXT PRIMARY KEY, automation_id TEXT NOT NULL REFERENCES automation_definitions(automation_id), definition_version INTEGER NOT NULL CHECK(definition_version>=1), origin TEXT NOT NULL CHECK(origin IN ('scheduled','manual')), slot_key TEXT NOT NULL, status TEXT NOT NULL, submission_key TEXT NOT NULL UNIQUE, task_id TEXT REFERENCES tasks(task_id), run_id TEXT REFERENCES agent_runs(run_id), payload TEXT NOT NULL, UNIQUE(automation_id,definition_version,origin,slot_key))",
+            "CREATE INDEX automation_occurrences_active_idx ON automation_occurrences(automation_id,status)",
+            "CREATE TABLE automation_mutation_receipts (owner_id TEXT NOT NULL REFERENCES owners(owner_id), project_scope TEXT NOT NULL, request_id TEXT NOT NULL, request_hash TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(owner_id,project_scope,request_id))",
         ),
     ),
 )

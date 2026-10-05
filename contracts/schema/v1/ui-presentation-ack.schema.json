@@ -1,0 +1,157 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Generation": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "anchor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScreenRect"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "expected_version": {
+      "minimum": 1,
+      "title": "Expected Version",
+      "type": "integer"
+    },
+    "highlighted": {
+      "default": false,
+      "title": "Highlighted",
+      "type": "boolean"
+    },
+    "host_id": {
+      "format": "uuid",
+      "title": "Host Id",
+      "type": "string"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "format": "uuid",
+      "title": "Lease Id",
+      "type": "string"
+    },
+    "memory_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "panel_visible": {
+      "title": "Panel Visible",
+      "type": "boolean"
+    },
+    "registry_generation": {
+      "$ref": "#/$defs/Generation"
+    },
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "selected_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "selected_version": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Selected Version"
+    },
+    "status": {
+      "enum": [
+        "selected",
+        "already-visible",
+        "deferred",
+        "unavailable",
+        "rejected"
+      ],
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "instance_id",
+    "host_id",
+    "lease_id",
+    "request_id",
+    "memory_id",
+    "expected_version",
+    "registry_generation",
+    "status",
+    "panel_visible"
+  ],
+  "title": "UiPresentationAck",
+  "type": "object"
+}

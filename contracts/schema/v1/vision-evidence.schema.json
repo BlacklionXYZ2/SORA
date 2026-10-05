@@ -1,0 +1,252 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopCaptureProvenance": {
+      "enum": [
+        "windows_gdi_on_demand",
+        "deterministic_fixture"
+      ],
+      "type": "string"
+    },
+    "FrameRect": {
+      "additionalProperties": false,
+      "description": "Pixel rectangle relative to the top-left of one captured frame.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "FrameRect",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    },
+    "VisionEvidenceDisposition": {
+      "enum": [
+        "candidate",
+        "low_confidence",
+        "captured_instruction"
+      ],
+      "title": "VisionEvidenceDisposition",
+      "type": "string"
+    },
+    "VisionEvidenceKind": {
+      "enum": [
+        "ui_element",
+        "text",
+        "icon",
+        "region",
+        "instruction"
+      ],
+      "title": "VisionEvidenceKind",
+      "type": "string"
+    },
+    "VisionEvidenceProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "capture_provenance": {
+          "$ref": "#/$defs/DesktopCaptureProvenance"
+        },
+        "capture_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Capture Sha256",
+          "type": "string"
+        },
+        "detector_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "detector_version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Detector Version",
+          "type": "string"
+        },
+        "normalizer_version": {
+          "const": "p13.3-v1",
+          "default": "p13.3-v1",
+          "title": "Normalizer Version",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "capture_sha256",
+        "capture_provenance",
+        "detector_id",
+        "detector_version"
+      ],
+      "title": "VisionEvidenceProvenance",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Short-lived observation with explicit non-authority and non-fact semantics.",
+  "properties": {
+    "action_authority": {
+      "const": false,
+      "default": false,
+      "title": "Action Authority",
+      "type": "boolean"
+    },
+    "canonical_fact": {
+      "const": false,
+      "default": false,
+      "title": "Canonical Fact",
+      "type": "boolean"
+    },
+    "capture_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "detection_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "disposition": {
+      "$ref": "#/$defs/VisionEvidenceDisposition"
+    },
+    "evidence_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "frame_region": {
+      "$ref": "#/$defs/FrameRect"
+    },
+    "inferred_at": {
+      "format": "date-time",
+      "title": "Inferred At",
+      "type": "string"
+    },
+    "instruction_authority": {
+      "const": false,
+      "default": false,
+      "title": "Instruction Authority",
+      "type": "boolean"
+    },
+    "kind": {
+      "$ref": "#/$defs/VisionEvidenceKind"
+    },
+    "label": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/VisionEvidenceProvenance"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "screen_region": {
+      "$ref": "#/$defs/ScreenRect"
+    },
+    "topology_revision": {
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "usable_for_context": {
+      "title": "Usable For Context",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "evidence_id",
+    "capture_id",
+    "detection_id",
+    "kind",
+    "label",
+    "captured_at",
+    "inferred_at",
+    "expires_at",
+    "topology_revision",
+    "frame_region",
+    "screen_region",
+    "confidence",
+    "disposition",
+    "usable_for_context",
+    "provenance"
+  ],
+  "title": "VisionEvidence",
+  "type": "object"
+}

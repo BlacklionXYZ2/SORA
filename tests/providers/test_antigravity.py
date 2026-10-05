@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -114,8 +115,8 @@ async def test_antigravity_execution_lifecycle_with_fake_script(tmp_path: Path) 
         "out = {\n"
         "    'conversation_id': conv_id,\n"
         "    'status': 'SUCCESS',\n"
-        "    'response': '{\\\"conclusion\\\": \\\"Research verified\\\", "
-        "\\\"facts\\\": [\\\"Discovered fact\\\"]}',\n"
+        '    \'response\': \'{\\"conclusion\\": \\"Research verified\\", '
+        '\\"facts\\": [\\"Discovered fact\\"]}\',\n'
         "    'usage': {'tokens': 42}\n"
         "}\n"
         "print(json.dumps(out))\n",
@@ -190,3 +191,81 @@ async def test_antigravity_cancel_handling(tmp_path: Path) -> None:
     assert await provider.status("cancel-run") == "cancelled"
     with pytest.raises(ProviderLaunchError):
         await provider.result("cancel-run")
+
+
+def test_antigravity_parses_agent_changelog_fields() -> None:
+    inner = json.dumps(
+        {
+            "conclusion": "Did the work",
+            "changelog_path": "changelog/20260929T120000_work_agy.md",
+            "changelog_entry": "Wrote one note.",
+        }
+    )
+    agy_stdout = json.dumps(
+        {"conversation_id": "conv-1", "status": "SUCCESS", "response": inner}
+    )
+    result = parse_antigravity_result(agy_stdout, make_request())
+    assert result.changelog_path == "changelog/20260929T120000_work_agy.md"
+    assert result.changelog_entry == "Wrote one note."
+
+
+@pytest.mark.asyncio
+async def test_antigravity_tiered_model_drops_conflicting_effort(tmp_path: Path) -> None:
+    capture = tmp_path / "argv.json"
+    fake_cli = tmp_path / "fake_agy_record.py"
+    fake_cli.write_text(
+        "import json, sys\n"
+        "capture = sys.argv[1]\n"
+        "open(capture, 'w', encoding='utf-8').write(json.dumps(sys.argv[2:]))\n"
+        "print(json.dumps({'conversation_id': 'conv-1', 'status': 'SUCCESS', 'response': 'ok'}))\n",
+        encoding="utf-8",
+    )
+
+    tiered = AntigravityProvider(
+        command=sys.executable,
+        args=(str(fake_cli), str(capture)),
+        model="gpt-oss-120b-medium",
+        effort="low",
+        timeout_seconds=5.0,
+        cwd=str(tmp_path),
+    )
+    await tiered.result(await tiered.start(make_request(run_id="tiered-run")))
+    recorded = json.loads(capture.read_text(encoding="utf-8"))
+    assert "--model" in recorded and "--effort" not in recorded
+    # The working directory is granted explicitly so resumed conversations can still write.
+    assert recorded[recorded.index("--add-dir") + 1] == str(tmp_path)
+
+    plain = AntigravityProvider(
+        command=sys.executable,
+        args=(str(fake_cli), str(capture)),
+        model="claude-sonnet-4-6",
+        effort="low",
+        timeout_seconds=5.0,
+        cwd=str(tmp_path),
+    )
+    await plain.result(await plain.start(make_request(run_id="plain-run")))
+    recorded = json.loads(capture.read_text(encoding="utf-8"))
+    assert recorded[recorded.index("--effort") + 1] == "low"
+
+
+@pytest.mark.asyncio
+async def test_antigravity_error_payload_surfaces_cli_message_and_no_session(
+    tmp_path: Path,
+) -> None:
+    fake_cli = tmp_path / "fake_agy_error.py"
+    fake_cli.write_text(
+        "import json\n"
+        "print(json.dumps({'conversation_id': '', 'status': 'ERROR', 'response': '',\n"
+        "                  'error': 'invalid model selection: --model x conflicts'\n"
+        "                           ' with --effort=low'}))\n",
+        encoding="utf-8",
+    )
+    provider = AntigravityProvider(
+        command=sys.executable, args=(str(fake_cli),), timeout_seconds=5.0,
+    )
+    await provider.start(make_request(run_id="error-run"))
+    with pytest.raises(ProviderLaunchError) as exc_info:
+        await provider.result("error-run")
+    assert "invalid model selection" in str(exc_info.value)
+    # A failed run must not leave an empty conversation id behind as if it were a session.
+    assert await provider.session_id("error-run") is None

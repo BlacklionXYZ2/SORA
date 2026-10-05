@@ -10,9 +10,18 @@ from typing import Annotated, Literal
 from pydantic import Field, JsonValue, model_validator
 
 from .base import ContractModel, Identifier, NonEmptyText, StrictModel, require_aware
+from .content import ReferenceCandidate
+from .editor import EditorContextSnapshot, EditorFinding
+
+ModelId = Annotated[
+    str, Field(min_length=1, max_length=256, pattern=r"^[^\s\x00-\x1f\x7f]+$")
+]
+ReasoningEffort = Literal["none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"]
+WorkspaceMode = Literal["direct", "isolated", "read-only"]
 
 
 class TaskStatus(StrEnum):
+    PLANNED = "planned"
     QUEUED = "queued"
     ROUTING = "routing"
     REASONING = "reasoning"
@@ -88,6 +97,7 @@ class CapabilityOperation(StrEnum):
     DESKTOP_PRESENT = "desktop.present"
     DESKTOP_NAVIGATE = "desktop.navigate"
     DESKTOP_INTERACT = "desktop.interact"
+    VOICE_SESSION = "voice.session"
 
 
 class TaskRecord(ContractModel):
@@ -98,10 +108,18 @@ class TaskRecord(ContractModel):
     status: TaskStatus
     requested_backend: Identifier = "auto"
     effective_backend: Identifier | None = None
+    requested_model: ModelId | None = None
+    requested_effort: ReasoningEffort | None = None
+    working_directory: str | None = Field(default=None, max_length=4096)
+    workspace_mode: WorkspaceMode | None = None
+    workspace_base_ref: str | None = Field(default=None, max_length=256)
+    companion_brief: str | None = Field(default=None, max_length=8000)
     base_revision: Annotated[int, Field(ge=0)]
     active_run_id: Identifier | None = None
     grant_ids: tuple[Identifier, ...] = ()
     constraints: tuple[NonEmptyText, ...] = ()
+    editor_context: EditorContextSnapshot | None = None
+    reference_context: tuple[ReferenceCandidate, ...] = ()
     result_ref: Identifier | None = None
     created_at: datetime
     updated_at: datetime
@@ -114,6 +132,8 @@ class TaskRecord(ContractModel):
             raise ValueError("updated_at cannot precede created_at")
         if len(set(self.grant_ids)) != len(self.grant_ids):
             raise ValueError("grant_ids must be unique")
+        if self.status is TaskStatus.PLANNED and (self.active_run_id or self.result_ref):
+            raise ValueError("planned tasks cannot have a run or result")
         if self.status is TaskStatus.COMPLETED and self.result_ref is None:
             raise ValueError("completed tasks require result_ref")
         if (
@@ -135,6 +155,7 @@ class AgentRunRecord(ContractModel):
     started_at: datetime | None = None
     finished_at: datetime | None = None
     outcome: ProviderOutcome | None = None
+    local_delegation_epoch: Annotated[int, Field(ge=0)] | None = None
 
     @model_validator(mode="after")
     def validate_record(self) -> AgentRunRecord:
@@ -206,6 +227,11 @@ class ProviderRequest(ContractModel):
     owner_id: Identifier
     project_id: Identifier | None = None
     intent: NonEmptyText
+    model: ModelId | None = None
+    reasoning_effort: ReasoningEffort | None = None
+    working_directory: str | None = Field(default=None, max_length=4096)
+    workspace_mode: WorkspaceMode | None = None
+    write_lease_ref: Identifier | None = None
     context: NonEmptyText
     context_manifest_ref: Identifier
     session_ref: Identifier | None = None
@@ -322,7 +348,10 @@ class NormalizedResult(ContractModel):
     warnings: tuple[NonEmptyText, ...] = ()
     memory_updates: tuple[NonEmptyText, ...] = ()
     task_updates: tuple[NonEmptyText, ...] = ()
+    editor_findings: tuple[EditorFinding, ...] = ()
     suggested_response: NonEmptyText | None = None
+    changelog_path: NonEmptyText | None = None
+    changelog_entry: NonEmptyText | None = None
     error: ProviderError | None = None
     patch: PatchEnvelope | None = None
     usage: dict[str, JsonValue] | None = None
@@ -339,6 +368,9 @@ class NormalizedResult(ContractModel):
             raise ValueError("only failed results can carry error")
         if self.patch is not None and self.patch.source_run_id != self.run_id:
             raise ValueError("patch source_run_id must match result run_id")
+        finding_ids = [finding.finding_id for finding in self.editor_findings]
+        if len(set(finding_ids)) != len(finding_ids):
+            raise ValueError("editor finding IDs must be unique")
         return self
 
 
@@ -463,6 +495,7 @@ class SemanticVerb(StrEnum):
     SHOW = "show"
     LOOK = "look"
     POINT = "point"
+    TOUCH = "touch"
     TYPE = "type"
     PLAY = "play"
     PAUSE = "pause"
@@ -556,19 +589,25 @@ class AttentionTarget(ContractModel):
     expires_at: datetime
     owner_id: Identifier
     device_id: Identifier
+    project_id: Identifier | None = None
     window_title: str | None = None
     ui_element: str | None = None
     screen_rect: tuple[int, int, int, int] | None = None
     crop_ref: Identifier | None = None
     confidence: Annotated[float, Field(ge=0, le=1)] = 1.0
     pinned: bool = False
+    topology_revision: Annotated[int, Field(ge=1)] | None = None
+    desktop_target_id: Identifier | None = None
+    provenance: NonEmptyText = "unspecified"
 
     @model_validator(mode="after")
     def validate_record(self) -> AttentionTarget:
         require_aware(self.created_at, "created_at")
         require_aware(self.expires_at, "expires_at")
-        if self.expires_at < self.created_at:
-            raise ValueError("expires_at cannot precede created_at")
+        if self.expires_at <= self.created_at:
+            raise ValueError("expires_at must follow created_at")
+        if self.screen_rect is not None and (self.screen_rect[2] <= 0 or self.screen_rect[3] <= 0):
+            raise ValueError("screen_rect width and height must be positive")
         return self
 
 
@@ -609,9 +648,9 @@ class SocialEventRecord(ContractModel):
     actor: NonEmptyText
     content: NonEmptyText
     timestamp: datetime
-    trust_classification: Literal[
-        "untrusted_external", "trusted_contact", "verified_peer"
-    ] = "untrusted_external"
+    trust_classification: Literal["untrusted_external", "trusted_contact", "verified_peer"] = (
+        "untrusted_external"
+    )
 
     @model_validator(mode="after")
     def validate_record(self) -> SocialEventRecord:
@@ -641,4 +680,5 @@ class ExtensionRegistration(ContractModel):
     enabled: bool = True
     capability_ids: tuple[Identifier, ...] = ()
     required_grants: tuple[str, ...] = ()
+    schema_ref: Identifier | None = None
     config: dict[str, JsonValue] = Field(default_factory=dict)

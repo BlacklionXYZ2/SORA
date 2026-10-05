@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "events": [
+    {
+      "recorded_at": "2026-09-22T18:28:56.1903387Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "target_selected",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1190,
+        "y": 1689
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:28:56.1988497Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "navigate",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1190,
+        "y": 1689
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:28:58.6576562Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "align",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:28:58.6749035Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "reach",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:28:58.8237817Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "contact",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:28:58.8409879Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "invoke",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:29:01.3578026Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "verify",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:29:01.375328Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "retract",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-22T18:29:01.5761416Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "completed",
+      "target_id": "desktop-target-eca6aeda-6f42-4ea9-a309-4942eed7a46d",
+      "position": {
+        "x": -1112,
+        "y": 1198
+      },
+      "reason": "completed",
+      "effect_attempted": true,
+      "verified": true
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "expected_version": {
+      "minimum": 1,
+      "title": "Expected Version",
+      "type": "integer"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "memory_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "instance_id",
+    "request_id",
+    "memory_id",
+    "expected_version"
+  ],
+  "title": "UiMemoryCommand",
+  "type": "object"
+}

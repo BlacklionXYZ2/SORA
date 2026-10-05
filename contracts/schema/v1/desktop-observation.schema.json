@@ -1,0 +1,242 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopNode": {
+      "additionalProperties": false,
+      "properties": {
+        "automation_id": {
+          "maxLength": 256,
+          "title": "Automation Id",
+          "type": "string"
+        },
+        "control_type": {
+          "maxLength": 128,
+          "title": "Control Type",
+          "type": "string"
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "focused": {
+          "title": "Focused",
+          "type": "boolean"
+        },
+        "name": {
+          "maxLength": 256,
+          "title": "Name",
+          "type": "string"
+        },
+        "node_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Node Id",
+          "type": "string"
+        },
+        "offscreen": {
+          "title": "Offscreen",
+          "type": "boolean"
+        },
+        "parent_id": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Id"
+        },
+        "password": {
+          "title": "Password",
+          "type": "boolean"
+        },
+        "process_id": {
+          "maximum": 4294967295,
+          "minimum": 1,
+          "title": "Process Id",
+          "type": "integer"
+        },
+        "process_started_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Process Started At"
+        },
+        "rect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScreenRect"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runtime_id": {
+          "default": [],
+          "items": {
+            "type": "integer"
+          },
+          "maxItems": 32,
+          "title": "Runtime Id",
+          "type": "array"
+        },
+        "selected_text": {
+          "default": "",
+          "maxLength": 32768,
+          "title": "Selected Text",
+          "type": "string"
+        },
+        "selection_available": {
+          "default": false,
+          "title": "Selection Available",
+          "type": "boolean"
+        },
+        "text": {
+          "default": "",
+          "maxLength": 32768,
+          "title": "Text",
+          "type": "string"
+        },
+        "text_available": {
+          "default": false,
+          "title": "Text Available",
+          "type": "boolean"
+        },
+        "text_truncated": {
+          "default": false,
+          "title": "Text Truncated",
+          "type": "boolean"
+        },
+        "window_handle": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Window Handle",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "node_id",
+        "process_id",
+        "window_handle",
+        "name",
+        "automation_id",
+        "control_type",
+        "rect",
+        "focused",
+        "enabled",
+        "offscreen",
+        "password"
+      ],
+      "title": "DesktopNode",
+      "type": "object"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "nodes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DesktopNode"
+      },
+      "maxItems": 256,
+      "title": "Nodes",
+      "type": "array"
+    },
+    "process_started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Process Started At"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "timeout",
+        "unavailable",
+        "access_denied",
+        "elevated_target",
+        "invalid_request",
+        "protocol_error",
+        "not_configured",
+        "busy",
+        "stale_layout"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "topology_revision": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "truncated": {
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "DesktopObservation",
+  "type": "object"
+}

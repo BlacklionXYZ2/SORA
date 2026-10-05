@@ -1,0 +1,37 @@
+{
+  "stage": "P15.2",
+  "status": "in_review",
+  "implemented_at": "2026-09-22T13:43:41+01:00",
+  "model": "GPT-5.6 Sol",
+  "acceptance": {
+    "paired_device_connects": "verified_with_real_tls_listener_and_browser_compatible_fixture",
+    "physical_phone_connects": "not_run_no_phone_or_device_trusted_certificate_available",
+    "revoked_device_fails": "verified_before_and_after_core_restart",
+    "unpaired_private_network_client_fails": "verified",
+    "owner_bearer_rejected_remotely": "verified",
+    "encrypted_transport": "verified_tls_listener_and_plaintext_failure",
+    "scope_escalation_and_unlisted_routes_fail": "verified",
+    "rate_limits_and_redacted_audit": "verified",
+    "no_public_dev_endpoint": "verified_by_fail_closed_configuration",
+    "non_loopback_private_interface_bind": "verified_on_192.168.1.185_over_test_tls"
+  },
+  "verification": {
+    "remote_pwa_persistence_focus": { "passed": 9, "failed": 0 },
+    "local_and_remote_security_regression": { "passed": 11, "failed": 0 },
+    "browser_runtime": { "passed": 7, "failed": 0 },
+    "repository": { "passed": 334, "skipped_opt_in": 10, "failed": 0 },
+    "ruff": "passed",
+    "mypy_source_files": 178,
+    "schemas": "fresh",
+    "compileall": "passed",
+    "wheel_remote_pwa_assets": "present",
+    "private_interface_smoke": "tls_health_passed_and_unpaired_state_denied"
+  },
+  "boundaries": [
+    "remote access is disabled by default",
+    "owner listener and bearer remain loopback-only",
+    "no public address wildcard tunnel or plaintext remote listener",
+    "test certificate is never suitable for production",
+    "physical phone and production certificate trust remain pending"
+  ]
+}

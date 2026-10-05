@@ -1,0 +1,36 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "reference_time": {
+      "format": "date-time",
+      "title": "Reference Time",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "source": {
+      "enum": [
+        "hover",
+        "click",
+        "selection",
+        "circle"
+      ],
+      "title": "Source",
+      "type": "string"
+    }
+  },
+  "required": [
+    "source",
+    "reference_time"
+  ],
+  "title": "AttentionResolveRequest",
+  "type": "object"
+}

@@ -46,6 +46,21 @@
     "intent": {
       "$ref": "#/$defs/NonEmptyText"
     },
+    "model": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[^\\s\\x00-\\x1f\\x7f]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model"
+    },
     "owner_id": {
       "$ref": "#/$defs/Identifier"
     },
@@ -59,6 +74,28 @@
         }
       ],
       "default": null
+    },
+    "reasoning_effort": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reasoning Effort"
     },
     "request_id": {
       "$ref": "#/$defs/Identifier"
@@ -97,7 +134,48 @@
       "default": null,
       "title": "Token Budget"
     },
+    "working_directory": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Working Directory"
+    },
+    "workspace_mode": {
+      "anyOf": [
+        {
+          "enum": [
+            "direct",
+            "isolated",
+            "read-only"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workspace Mode"
+    },
     "workspace_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "write_lease_ref": {
       "anyOf": [
         {
           "$ref": "#/$defs/Identifier"

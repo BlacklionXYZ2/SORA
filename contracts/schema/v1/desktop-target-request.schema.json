@@ -1,0 +1,82 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Acquire one short-lived target from a fresh, process-scoped UIA tree.",
+  "properties": {
+    "automation_id": {
+      "default": "",
+      "maxLength": 256,
+      "title": "Automation Id",
+      "type": "string"
+    },
+    "control_type": {
+      "default": "",
+      "maxLength": 128,
+      "title": "Control Type",
+      "type": "string"
+    },
+    "max_depth": {
+      "default": 12,
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Max Depth",
+      "type": "integer"
+    },
+    "max_nodes": {
+      "default": 256,
+      "maximum": 256,
+      "minimum": 1,
+      "title": "Max Nodes",
+      "type": "integer"
+    },
+    "name": {
+      "default": "",
+      "maxLength": 256,
+      "title": "Name",
+      "type": "string"
+    },
+    "process_id": {
+      "maximum": 4294967295,
+      "minimum": 1,
+      "title": "Process Id",
+      "type": "integer"
+    },
+    "runtime_id": {
+      "default": [],
+      "items": {
+        "type": "integer"
+      },
+      "maxItems": 32,
+      "title": "Runtime Id",
+      "type": "array"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "ttl_seconds": {
+      "default": 60.0,
+      "exclusiveMinimum": 0,
+      "maximum": 300,
+      "title": "Ttl Seconds",
+      "type": "number"
+    },
+    "window_handle": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "title": "Window Handle",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "process_id",
+    "window_handle"
+  ],
+  "title": "DesktopTargetRequest",
+  "type": "object"
+}

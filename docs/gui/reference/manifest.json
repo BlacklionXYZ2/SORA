@@ -1,0 +1,36 @@
+{
+  "description": "Original user-supplied GUI design and concept images; byte-for-byte copies, no editing or recompression.",
+  "copied_on": "2026-10-03",
+  "files": [
+    {
+      "supplied_filename": "1-SORA_GUI_Design_and_Interface_Architecture_v0.1.md",
+      "repository_filename": "SORA_GUI_Design_and_Interface_Architecture_v0.1.md",
+      "bytes": 12294,
+      "sha256": "094060ffac64fb38cd48940285ca479e1cd70fd4ff572e8e2375571864fc884a"
+    },
+    {
+      "supplied_filename": "2-Photo-2.jpg",
+      "repository_filename": "02-chat.jpg",
+      "bytes": 134468,
+      "sha256": "4e44da4f4f8a966a778a4c256a2748e9ddfde223ba1d11a56dabd0ee2ef37c90"
+    },
+    {
+      "supplied_filename": "3-Photo-3.jpg",
+      "repository_filename": "03-automations.jpg",
+      "bytes": 158619,
+      "sha256": "336efc48535d1cbeb42f90952f7b3a1af4e50084f8034a77ef0fac24551fb7e9"
+    },
+    {
+      "supplied_filename": "4-Photo-4.jpg",
+      "repository_filename": "04-memory.jpg",
+      "bytes": 154315,
+      "sha256": "b34b8acb133a5c32ced6643e66734ad610385f9aa8a9c32340c61498ccab5861"
+    },
+    {
+      "supplied_filename": "5-Photo-5.jpg",
+      "repository_filename": "05-settings.jpg",
+      "bytes": 158711,
+      "sha256": "41b6bbab47c88400c87e2d4a2e3a2aa74ee212aa2805de3a57ea9f32c3e1eccd"
+    }
+  ]
+}

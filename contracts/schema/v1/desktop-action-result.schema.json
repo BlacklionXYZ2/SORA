@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopActionStatus": {
+      "enum": [
+        "pending",
+        "executing",
+        "completed",
+        "failed",
+        "unknown_outcome"
+      ],
+      "title": "DesktopActionStatus",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Persisted safety result for one semantic desktop effect attempt.",
+  "properties": {
+    "action": {
+      "default": "press",
+      "enum": [
+        "press",
+        "type"
+      ],
+      "title": "Action",
+      "type": "string"
+    },
+    "attempt_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "effect_attempted": {
+      "default": false,
+      "title": "Effect Attempted",
+      "type": "boolean"
+    },
+    "reason": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "$ref": "#/$defs/DesktopActionStatus"
+    },
+    "target_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "verified": {
+      "default": false,
+      "title": "Verified",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "attempt_id",
+    "target_id",
+    "status",
+    "reason",
+    "created_at",
+    "updated_at"
+  ],
+  "title": "DesktopActionResult",
+  "type": "object"
+}

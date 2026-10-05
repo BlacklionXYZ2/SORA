@@ -1,0 +1,184 @@
+{
+  "recorded_at": "2026-09-22T18:28:47.675492+00:00",
+  "player": "C:\\Users\\oscar\\Desktop\\SORA\\.local\\releases\\sora-p15.3-acceptance-20260922\\payload\\unity\\SORA.exe",
+  "topology": {
+    "schema_version": "1.0",
+    "virtual_desktop": {
+      "x": -1280,
+      "y": 0,
+      "width": 5120,
+      "height": 2160
+    },
+    "monitors": [
+      {
+        "schema_version": "1.0",
+        "id": "DISPLAY1",
+        "primary": true,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 3840,
+          "height": 2160
+        },
+        "work_area": {
+          "x": 0,
+          "y": 0,
+          "width": 3840,
+          "height": 2088
+        },
+        "dpi_scale": 1.5,
+        "orientation": "landscape"
+      },
+      {
+        "schema_version": "1.0",
+        "id": "DISPLAY6",
+        "primary": false,
+        "rect": {
+          "x": -1280,
+          "y": 813,
+          "width": 1280,
+          "height": 1024
+        },
+        "work_area": {
+          "x": -1280,
+          "y": 813,
+          "width": 1280,
+          "height": 976
+        },
+        "dpi_scale": 1.0,
+        "orientation": "landscape"
+      }
+    ],
+    "revision": 2
+  },
+  "initial_state": {
+    "schema_version": "1.0",
+    "visible": true,
+    "interpreted_target_id": null,
+    "marker_position": null,
+    "current_position": {
+      "x": 90,
+      "y": 300
+    },
+    "containing_monitor_id": "DISPLAY1",
+    "presentation_state": "idle",
+    "topology_revision": 2,
+    "connected_at": null,
+    "last_seen_at": null
+  },
+  "checks": [
+    "VRM visible",
+    "native topology",
+    "right/left arrival",
+    "gaze state",
+    "marker identity/expiry",
+    "idle reset",
+    "runtime SpringBone tuning",
+    "front/back/left/right ragdoll recovery",
+    "exclusive pose lease released",
+    "bounded constrained-joint recovery",
+    "Core-delivered bounded window support snapshot",
+    "moving/minimized/closed/occluded support lifecycle",
+    "debounced physical feedback received by Core",
+    "scoped desktop object look/point/touch lifecycle",
+    "desktop object canonical state unchanged",
+    "graceful close",
+    "Core survives",
+    "reconnect without movement replay"
+  ],
+  "hardware_transitions_tested": false,
+  "cross_process_input_tested": false,
+  "secondary_monitor_movement_tested": true,
+  "simple_physics": {
+    "status": "not_run",
+    "reason": "native input probe explicitly skipped by the caller",
+    "spring_joint_counts": {
+      "first": 28,
+      "reconnect": 28,
+      "recovery": 28,
+      "surfaces": 28
+    }
+  },
+  "ragdoll_recovery": {
+    "recorded_at_utc": "2026-09-22T18:28:31.0729284Z",
+    "constrained_joint_count": 12,
+    "body_collision_enabled": true,
+    "pose_lease_released": true,
+    "scenarios": [
+      {
+        "requested": "Front",
+        "detected": "Front",
+        "outcome": "Recovered",
+        "elapsed_seconds": 1.2073060274124146
+      },
+      {
+        "requested": "Back",
+        "detected": "Back",
+        "outcome": "Recovered",
+        "elapsed_seconds": 1.216843605041504
+      },
+      {
+        "requested": "LeftSide",
+        "detected": "LeftSide",
+        "outcome": "Recovered",
+        "elapsed_seconds": 1.216759204864502
+      },
+      {
+        "requested": "RightSide",
+        "detected": "RightSide",
+        "outcome": "Recovered",
+        "elapsed_seconds": 1.2168117761611938
+      }
+    ]
+  },
+  "support_surfaces": {
+    "recorded_at_utc": "2026-09-22T18:28:41.6615257Z",
+    "core_snapshot_received": true,
+    "moving_surface_carried_avatar": true,
+    "scenarios": [
+      {
+        "invalidation": "Minimized",
+        "landed_on": "window_top",
+        "final_support": "taskbar",
+        "resumed_falling": true
+      },
+      {
+        "invalidation": "Closed",
+        "landed_on": "window_top",
+        "final_support": "taskbar",
+        "resumed_falling": true
+      },
+      {
+        "invalidation": "Occluded",
+        "landed_on": "window_top",
+        "final_support": "taskbar",
+        "resumed_falling": true
+      }
+    ]
+  },
+  "physics_feedback": {
+    "kinds": [
+      "completed",
+      "fell",
+      "landed",
+      "support_removed"
+    ],
+    "event_count": 16,
+    "projection_count": 16
+  },
+  "desktop_object_affordance": {
+    "object_id": "object:packaged-fixture",
+    "commands": {
+      "look": "object-look-094b03e1-0fbb-4bde-a174-a4347d2d99c5",
+      "point": "object-point-4d1d429b-2373-405b-be33-98b910fd7be0",
+      "touch": "object-touch-ebf82036-0a6c-4ba7-ad87-162d36ca7283"
+    },
+    "projected_affordances": [
+      "look",
+      "point",
+      "touch"
+    ],
+    "completed_touch": true,
+    "canonical_version": 1
+  }
+}

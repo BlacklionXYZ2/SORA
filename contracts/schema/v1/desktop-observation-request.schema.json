@@ -1,0 +1,73 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "max_depth": {
+      "default": 6,
+      "maximum": 12,
+      "minimum": 0,
+      "title": "Max Depth",
+      "type": "integer"
+    },
+    "max_nodes": {
+      "default": 128,
+      "maximum": 256,
+      "minimum": 1,
+      "title": "Max Nodes",
+      "type": "integer"
+    },
+    "max_text_chars": {
+      "default": 8192,
+      "maximum": 32768,
+      "minimum": 1,
+      "title": "Max Text Chars",
+      "type": "integer"
+    },
+    "operation": {
+      "enum": [
+        "inventory",
+        "windows",
+        "tree",
+        "text",
+        "selection"
+      ],
+      "title": "Operation",
+      "type": "string"
+    },
+    "process_id": {
+      "default": 0,
+      "maximum": 4294967295,
+      "minimum": 0,
+      "title": "Process Id",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "window_handle": {
+      "anyOf": [
+        {
+          "maximum": 9223372036854775807,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Window Handle"
+    }
+  },
+  "required": [
+    "operation"
+  ],
+  "title": "DesktopObservationRequest",
+  "type": "object"
+}

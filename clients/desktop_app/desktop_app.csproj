@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>SoraDesktop</AssemblyName>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\desktop_widget\WidgetCore.cs" Link="WidgetCore.cs" />
+    <Compile Include="..\desktop_widget\FullAppModel.cs" Link="FullAppModel.cs" />
+    <Compile Include="..\desktop_widget\BoardNoteDraft.cs" Link="BoardNoteDraft.cs" />
+    <Compile Include="..\desktop_widget\VoiceForm.cs" Link="VoiceForm.cs" />
+    <Compile Include="..\desktop_widget\AgentCatalogueForm.cs" Link="AgentCatalogueForm.cs" />
+    <Compile Include="..\desktop_widget\ProjectPathsForm.cs" Link="ProjectPathsForm.cs" />
+    <Compile Include="..\desktop_widget\TaskEvidenceForm.cs" Link="TaskEvidenceForm.cs" />
+    <Compile Include="..\desktop_widget\ModelPurposeDraft.cs" Link="ModelPurposeDraft.cs" />
+    <Compile Include="..\desktop_widget\ModelPurposeForm.cs" Link="ModelPurposeForm.cs" />
+  </ItemGroup>
+</Project>

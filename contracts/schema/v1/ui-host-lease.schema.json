@@ -1,0 +1,52 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Generation": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "host_id": {
+      "format": "uuid",
+      "title": "Host Id",
+      "type": "string"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "format": "uuid",
+      "title": "Lease Id",
+      "type": "string"
+    },
+    "registry_generation": {
+      "$ref": "#/$defs/Generation"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "instance_id",
+    "host_id",
+    "lease_id",
+    "registry_generation",
+    "expires_at"
+  ],
+  "title": "UiHostLease",
+  "type": "object"
+}

@@ -71,6 +71,19 @@
       "default": null,
       "title": "Lease Expires At"
     },
+    "local_delegation_epoch": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Local Delegation Epoch"
+    },
     "native_session_id": {
       "anyOf": [
         {

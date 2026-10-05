@@ -1,0 +1,52 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "VoiceInterruptionKind": {
+      "enum": [
+        "barge_in",
+        "stop_speaking",
+        "cancel_response"
+      ],
+      "title": "VoiceInterruptionKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "kind": {
+      "$ref": "#/$defs/VoiceInterruptionKind"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "kind",
+    "occurred_at"
+  ],
+  "title": "VoiceInterruptionRequest",
+  "type": "object"
+}

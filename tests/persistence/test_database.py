@@ -68,5 +68,30 @@ async def test_previous_schema_fixture_migrates_forward(tmp_path: Path) -> None:
     def outbox_columns(connection: sqlite3.Connection) -> set[str]:
         return {str(row[1]) for row in connection.execute("PRAGMA table_info(outbox)")}
 
-    assert await current.schema_version() == CURRENT_SCHEMA_VERSION == 4
+    def action_columns(connection: sqlite3.Connection) -> set[str]:
+        return {
+            str(row[1])
+            for row in connection.execute("PRAGMA table_info(desktop_action_attempts)")
+        }
+
+    assert await current.schema_version() == CURRENT_SCHEMA_VERSION == 12
     assert "delivered_at" in await current.read(outbox_columns)
+    assert {"attempt_id", "request_hash", "status", "payload"} <= await current.read(
+        action_columns
+    )
+
+    def remote_tables(connection: sqlite3.Connection) -> set[str]:
+        return {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%remote%' "
+                "OR name IN ('paired_devices', 'pairing_invitations')"
+            )
+        }
+
+    assert {
+        "pairing_invitations",
+        "paired_devices",
+        "remote_sessions",
+        "remote_access_audit",
+    } <= await current.read(remote_tables)

@@ -9,6 +9,7 @@ from .errors import InvalidTransition
 from .models import ApprovalStatus, RunStatus, TaskStatus
 
 TASK_TRANSITIONS: Mapping[TaskStatus, frozenset[TaskStatus]] = {
+    TaskStatus.PLANNED: frozenset({TaskStatus.QUEUED, TaskStatus.CANCELLED}),
     TaskStatus.QUEUED: frozenset(
         {TaskStatus.ROUTING, TaskStatus.CANCEL_REQUESTED, TaskStatus.CANCELLED}
     ),

@@ -62,6 +62,17 @@
       "title": "Required Grants",
       "type": "array"
     },
+    "schema_ref": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "schema_version": {
       "$ref": "#/$defs/ContractVersion",
       "default": "1.0"

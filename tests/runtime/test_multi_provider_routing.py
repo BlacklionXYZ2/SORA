@@ -314,9 +314,7 @@ async def test_runtime_conversational_steering(tmp_path: Path) -> None:
     assert len(mock_hermes.steered_runs) == 1
 
     # Conversational steering to non-existent specialist
-    target_none, message_none = await runtime.steer_from_conversation(
-        "Tell Cody to fix formatting"
-    )
+    target_none, message_none = await runtime.steer_from_conversation("Tell Cody to fix formatting")
     assert target_none is None
 
     await runtime.wait_for_task(receipt_hermes.task.task_id)

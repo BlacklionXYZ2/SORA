@@ -1,0 +1,52 @@
+{
+  "recorded_at": "2026-09-17T10:07:06.979323+00:00",
+  "completed_at_local": "2026-09-17 11:09:00 +01:00",
+  "model": "GPT-5.6 Sol",
+  "unity": "6000.6.0f1",
+  "player_sha256": "718444F6A718FA668DA96EB0A58445B009673310E6129152A63DBF7A92B8DE00",
+  "simple_physics": {
+    "gravity_px_per_second_squared": 2400,
+    "maximum_horizontal_speed_px_per_second": 1400,
+    "maximum_fall_speed_px_per_second": 2600,
+    "maximum_simulated_frame_seconds": 0.1,
+    "maximum_substep_seconds": 0.008333333,
+    "settle_speed_px_per_second": 8,
+    "deterministic_repeated_drops": 100,
+    "mixed_dpi_monitors_covered": true,
+    "non_finite_release_reset_tested": true,
+    "large_frame_bound_tested": true
+  },
+  "packaged_acceptance": {
+    "vertical_lift_px": 160,
+    "actual_primary_support_y": 2087,
+    "core_observed_landing": true,
+    "anchor_restored": true,
+    "blank_click_received_by_fixture": true,
+    "avatar_click_not_received_by_fixture": true,
+    "spring_joints_tuned_initial": 28,
+    "spring_joints_tuned_reconnect": 28,
+    "clean_exit": true,
+    "reconnect_without_movement_replay": true,
+    "duration_seconds": 78.84
+  },
+  "springbone_bounds": {
+    "stiffness": [0, 4],
+    "gravity_power": [0, 1.5],
+    "drag": [0.35, 0.9],
+    "radius": [0, 0.2],
+    "finite_normalized_gravity_direction": true,
+    "runtime_only": true
+  },
+  "verification": {
+    "unity_playmode": {"passed": 29, "failed": 0},
+    "p12_2_playmode": {"passed": 5, "failed": 0},
+    "packaged_player": {"passed": 1, "failed": 0},
+    "portable_csharp": {"passed": 22, "failed": 0},
+    "embodiment": {"passed": 35, "skipped_opt_in": 3},
+    "repository": {"passed": 273, "skipped_opt_in": 9},
+    "ruff": "passed",
+    "mypy_source_files": 147,
+    "schemas": "fresh",
+    "compileall": "passed"
+  }
+}

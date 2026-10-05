@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopAttentionHint": {
+      "enum": [
+        "none",
+        "notice",
+        "important"
+      ],
+      "title": "DesktopAttentionHint",
+      "type": "string"
+    },
+    "DesktopEventDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "attention_hint": {
+          "$ref": "#/$defs/DesktopAttentionHint"
+        },
+        "context_invalidated": {
+          "default": false,
+          "title": "Context Invalidated",
+          "type": "boolean"
+        },
+        "disposition": {
+          "$ref": "#/$defs/DesktopEventDisposition"
+        },
+        "event_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "invalidated_references": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Invalidated References",
+          "type": "integer"
+        },
+        "invalidated_targets": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Invalidated Targets",
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/DesktopEventKind"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "event_id",
+        "kind",
+        "disposition",
+        "attention_hint"
+      ],
+      "title": "DesktopEventDecision",
+      "type": "object"
+    },
+    "DesktopEventDisposition": {
+      "enum": [
+        "accepted",
+        "deduplicated",
+        "debounced"
+      ],
+      "title": "DesktopEventDisposition",
+      "type": "string"
+    },
+    "DesktopEventKind": {
+      "enum": [
+        "foreground_changed",
+        "window_opened",
+        "window_closed",
+        "dialog_opened",
+        "dialog_closed",
+        "task_changed"
+      ],
+      "title": "DesktopEventKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "accepted_count": {
+      "minimum": 0,
+      "title": "Accepted Count",
+      "type": "integer"
+    },
+    "context_invalidation_count": {
+      "minimum": 0,
+      "title": "Context Invalidation Count",
+      "type": "integer"
+    },
+    "debounced_count": {
+      "minimum": 0,
+      "title": "Debounced Count",
+      "type": "integer"
+    },
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/DesktopEventDecision"
+      },
+      "maxItems": 128,
+      "title": "Decisions",
+      "type": "array"
+    },
+    "deduplicated_count": {
+      "minimum": 0,
+      "title": "Deduplicated Count",
+      "type": "integer"
+    },
+    "inference_requests": {
+      "default": 0,
+      "maximum": 0,
+      "minimum": 0,
+      "title": "Inference Requests",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "speech_requests": {
+      "default": 0,
+      "maximum": 0,
+      "minimum": 0,
+      "title": "Speech Requests",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "decisions",
+    "accepted_count",
+    "deduplicated_count",
+    "debounced_count",
+    "context_invalidation_count"
+  ],
+  "title": "DesktopEventBatchResult",
+  "type": "object"
+}

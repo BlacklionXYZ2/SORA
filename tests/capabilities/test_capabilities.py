@@ -43,7 +43,6 @@ def test_capability_index_construction() -> None:
         _make_descriptor("cap.tasks.add", CapabilityCategory.TASKS, (SemanticVerb.ADD_TASK,))
     )
     registry.register(
-
         _make_descriptor(
             "cap.social.post",
             CapabilityCategory.SOCIAL,
@@ -125,7 +124,6 @@ def test_large_synthetic_registry_bounded_selection() -> None:
                 desc=f"Task action {i}",
             )
         )
-
 
     resolver = CapabilityResolver(revision=1)
     request = CapabilityResolutionRequest(
@@ -304,7 +302,6 @@ def test_dispatch_capability_grant_validation() -> None:
         not_before=now,
         expires_at=now + timedelta(hours=1),
         max_uses=1,
-
         used_count=1,
         approval_id="app-2",
     )

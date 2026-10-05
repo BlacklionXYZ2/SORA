@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from enum import StrEnum
 
 from sora.contracts.base import NonEmptyText, StrictModel
@@ -32,6 +33,7 @@ def project_tasks_to_kanban(
     tasks: tuple[TaskRecord, ...],
     *,
     board_id: str = "sora-kanban-main",
+    summaries: Mapping[str, str] | None = None,
 ) -> KanbanBoardProjection:
     """Project canonical tasks onto Kanban columns deterministically."""
     cards: list[KanbanCard] = []
@@ -42,24 +44,26 @@ def project_tasks_to_kanban(
         if specialist == "auto":
             specialist = None
 
-        if task.status in {
-            TaskStatus.QUEUED,
-            TaskStatus.WAITING_FOR_PERMISSION,
-            TaskStatus.WAITING_FOR_INPUT,
-        }:
+        if task.status is TaskStatus.PLANNED:
             col = KanbanColumn.TODO
-            needs_att = task.status in {
-                TaskStatus.WAITING_FOR_PERMISSION,
-                TaskStatus.WAITING_FOR_INPUT,
-            }
+            needs_att = False
         elif task.status in {
+            TaskStatus.QUEUED,
             TaskStatus.ROUTING,
             TaskStatus.REASONING,
             TaskStatus.WORKING,
+            TaskStatus.WAITING_FOR_PERMISSION,
+            TaskStatus.WAITING_FOR_INPUT,
             TaskStatus.CANCEL_REQUESTED,
+            TaskStatus.INTERRUPTED,
         }:
             col = KanbanColumn.DOING
-            needs_att = task.status is TaskStatus.CANCEL_REQUESTED
+            needs_att = task.status in {
+                TaskStatus.WAITING_FOR_PERMISSION,
+                TaskStatus.WAITING_FOR_INPUT,
+                TaskStatus.CANCEL_REQUESTED,
+                TaskStatus.INTERRUPTED,
+            }
         elif task.status is TaskStatus.COMPLETED:
             col = KanbanColumn.DONE
             needs_att = False
@@ -68,10 +72,8 @@ def project_tasks_to_kanban(
             col = KanbanColumn.DONE
             needs_att = True
 
-        summary = (
-            task.constraints[0]
-            if task.constraints
-            else f"Task {task.task_id}"
+        summary = (summaries or {}).get(task.task_id) or (
+            task.constraints[0] if task.constraints else f"Task {task.task_id}"
         )
 
         cards.append(

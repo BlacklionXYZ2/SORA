@@ -4,6 +4,63 @@
       "const": "1.0",
       "type": "string"
     },
+    "EditorFinding": {
+      "additionalProperties": false,
+      "description": "Provider-reported finding bound to one verified editor snapshot.",
+      "properties": {
+        "context_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "end_line": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "End Line",
+          "type": "integer"
+        },
+        "evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "finding_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "selection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Sha256",
+          "type": "string"
+        },
+        "start_line": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Start Line",
+          "type": "integer"
+        },
+        "summary": {
+          "maxLength": 1024,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_id",
+        "context_id",
+        "selection_sha256",
+        "start_line",
+        "end_line",
+        "summary"
+      ],
+      "title": "EditorFinding",
+      "type": "object"
+    },
     "EntityPrecondition": {
       "additionalProperties": false,
       "properties": {
@@ -362,6 +419,28 @@
       "title": "Base Revision",
       "type": "integer"
     },
+    "changelog_entry": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "changelog_path": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "commands_run": {
       "default": [],
       "items": {
@@ -380,6 +459,14 @@
         }
       ],
       "default": null
+    },
+    "editor_findings": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EditorFinding"
+      },
+      "title": "Editor Findings",
+      "type": "array"
     },
     "error": {
       "anyOf": [

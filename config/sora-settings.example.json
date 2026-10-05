@@ -1,0 +1,93 @@
+{
+  "version": 9,
+  "revision": 0,
+  "local_companion": {
+    "desktop_observe": true,
+    "desktop_capture": true,
+    "file_read": true,
+    "desktop_interact": true,
+    "avatar_control": true,
+    "agent_delegation": true,
+    "direct_file_write": false,
+    "voice": true
+  },
+  "perception": {
+    "mode": "native-only",
+    "paused": false,
+    "window_context": true,
+    "desktop_context": true,
+    "interval_seconds": 30,
+    "context_max_age_seconds": 90
+  },
+  "dialogue": {
+    "backend": "managed-llama",
+    "timeout_seconds": 90,
+    "context_max_chars": 8000
+  },
+  "llama": {
+    "executable": "C:/llama.cpp/llama-server.exe",
+    "model_path": "C:/Models/your-model/model.gguf",
+    "mmproj_path": "C:/Models/your-model/mmproj-F16.gguf",
+    "port": 18771,
+    "context_size": 8192,
+    "gpu_layers": "auto",
+    "startup_timeout": 180,
+    "flash_attn": "auto",
+    "cache_type_k": "f16",
+    "cache_type_v": "f16",
+    "batch_size": 2048,
+    "ubatch_size": 512,
+    "speculative": {
+      "type": "none",
+      "draft_model_path": null
+    }
+  },
+  "external": { "model": "", "base_url": "", "model_folder": "" },
+  "runtime": { "worker_count": 2, "task_timeout_seconds": 300 },
+  "agents": {
+    "codex": {
+      "enabled": true,
+      "purpose": "Coding, repository changes, tests and specialist reasoning through Codex.",
+      "preferred_model": "",
+      "preferred_effort": "configured",
+      "model_purpose": "",
+      "model_choices": [],
+      "project_root": "",
+      "workspace_mode": "direct",
+      "base_ref": "HEAD"
+    },
+    "hermes": {
+      "enabled": true,
+      "purpose": "General specialist tasks using Hermes' own native tools and integrations.",
+      "preferred_model": "",
+      "preferred_effort": "configured",
+      "model_purpose": "",
+      "model_choices": [],
+      "project_root": "",
+      "workspace_mode": "direct",
+      "base_ref": "HEAD"
+    },
+    "antigravity": {
+      "enabled": true,
+      "purpose": "Research, planning and project work through Antigravity's native tools.",
+      "preferred_model": "",
+      "preferred_effort": "configured",
+      "model_purpose": "",
+      "model_choices": [],
+      "project_root": "",
+      "workspace_mode": "direct",
+      "base_ref": "HEAD"
+    }
+  },
+  "voice": {
+    "python_executable": "",
+    "stt_model_path": "",
+    "tts_model_path": "",
+    "voices_path": "",
+    "input_device": "",
+    "output_device": "",
+    "voice_id": "af_heart",
+    "recording_limit_seconds": 30,
+    "speech_speed": 1
+  }
+}

@@ -18,6 +18,8 @@ class ContextSource(StrEnum):
     INFERENCE = "INFERENCE"
     TASK = "TASK"
     TASK_STATUS = "TASK_STATUS"
+    EDITOR_CONTEXT = "EDITOR_CONTEXT"
+    REFERENCE_CONTEXT = "REFERENCE_CONTEXT"
     AGENT_RESULT = "AGENT_RESULT"
     TOOL_RESULT = "TOOL_RESULT"
     DESKTOP_STATE = "DESKTOP_STATE"
@@ -62,13 +64,15 @@ _PRIORITY = {
     ContextSource.FACT: 0,
     ContextSource.TASK_STATUS: 1,
     ContextSource.TASK: 2,
-    ContextSource.USER_MESSAGE: 3,
-    ContextSource.SORA_MESSAGE: 4,
-    ContextSource.AGENT_RESULT: 5,
-    ContextSource.TOOL_RESULT: 6,
-    ContextSource.MEMORY: 7,
-    ContextSource.DESKTOP_STATE: 8,
-    ContextSource.INFERENCE: 9,
+    ContextSource.EDITOR_CONTEXT: 3,
+    ContextSource.REFERENCE_CONTEXT: 3,
+    ContextSource.USER_MESSAGE: 4,
+    ContextSource.SORA_MESSAGE: 5,
+    ContextSource.AGENT_RESULT: 6,
+    ContextSource.TOOL_RESULT: 7,
+    ContextSource.MEMORY: 8,
+    ContextSource.DESKTOP_STATE: 9,
+    ContextSource.INFERENCE: 10,
 }
 
 
@@ -159,4 +163,3 @@ def compile_context(
             entries=tuple(entries),
         ),
     )
-

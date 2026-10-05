@@ -1,0 +1,6 @@
+{
+  "name": "Sora.Embodiment.PlayModeTests",
+  "references": ["Sora.Embodiment", "VRM10", "UniGLTF", "UniGLTF.Utils", "FastSpringBone10", "VrmLib"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

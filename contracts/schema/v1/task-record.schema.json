@@ -4,6 +4,155 @@
       "const": "1.0",
       "type": "string"
     },
+    "EditorContextSnapshot": {
+      "additionalProperties": false,
+      "description": "Verified task context persisted under the task's normal retention policy.",
+      "properties": {
+        "captured_at": {
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "context_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "desktop_target_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "device_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "document_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Document Sha256",
+          "type": "string"
+        },
+        "editor_name": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "owner_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "relative_file_path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Relative File Path",
+          "type": "string"
+        },
+        "repository_root": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Repository Root",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "selected_text": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Selected Text",
+          "type": "string"
+        },
+        "selection": {
+          "$ref": "#/$defs/EditorSelection"
+        },
+        "selection_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Selection Sha256",
+          "type": "string"
+        },
+        "source": {
+          "const": "app_integration",
+          "default": "app_integration",
+          "title": "Source",
+          "type": "string"
+        },
+        "verified_at": {
+          "format": "date-time",
+          "title": "Verified At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "context_id",
+        "owner_id",
+        "device_id",
+        "editor_name",
+        "repository_root",
+        "relative_file_path",
+        "document_sha256",
+        "selection",
+        "selected_text",
+        "selection_sha256",
+        "desktop_target_id",
+        "captured_at",
+        "verified_at"
+      ],
+      "title": "EditorContextSnapshot",
+      "type": "object"
+    },
+    "EditorPosition": {
+      "additionalProperties": false,
+      "description": "One-based Unicode-code-point position; range ends are exclusive.",
+      "properties": {
+        "column": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Column",
+          "type": "integer"
+        },
+        "line": {
+          "maximum": 10000000,
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "line",
+        "column"
+      ],
+      "title": "EditorPosition",
+      "type": "object"
+    },
+    "EditorSelection": {
+      "additionalProperties": false,
+      "properties": {
+        "end": {
+          "$ref": "#/$defs/EditorPosition"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "start": {
+          "$ref": "#/$defs/EditorPosition"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "EditorSelection",
+      "type": "object"
+    },
     "Identifier": {
       "maxLength": 128,
       "minLength": 1,
@@ -15,8 +164,252 @@
       "minLength": 1,
       "type": "string"
     },
+    "ReferenceCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "aliases": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/NonEmptyText"
+          },
+          "title": "Aliases",
+          "type": "array"
+        },
+        "attention_target_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "confidence": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "content_reference_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "crop_ref": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "desktop_target_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "device_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ReferenceKind"
+        },
+        "label": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "last_referenced_at": {
+          "format": "date-time",
+          "title": "Last Referenced At",
+          "type": "string"
+        },
+        "object_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "owner_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "pinned": {
+          "default": false,
+          "title": "Pinned",
+          "type": "boolean"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provenance": {
+          "$ref": "#/$defs/NonEmptyText",
+          "default": "unspecified"
+        },
+        "reference_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "screen_rect": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScreenRect"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "spatial_expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spatial Expires At"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "topology_revision": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Topology Revision"
+        },
+        "vision_evidence_refs": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Identifier"
+          },
+          "maxItems": 64,
+          "title": "Vision Evidence Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "reference_id",
+        "kind",
+        "label",
+        "owner_id",
+        "device_id",
+        "created_at",
+        "expires_at",
+        "last_referenced_at"
+      ],
+      "title": "ReferenceCandidate",
+      "type": "object"
+    },
+    "ReferenceKind": {
+      "enum": [
+        "ui",
+        "project",
+        "file",
+        "task",
+        "document",
+        "object",
+        "artifact"
+      ],
+      "title": "ReferenceKind",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    },
     "TaskStatus": {
       "enum": [
+        "planned",
         "queued",
         "routing",
         "reasoning",
@@ -51,6 +444,19 @@
       "title": "Base Revision",
       "type": "integer"
     },
+    "companion_brief": {
+      "anyOf": [
+        {
+          "maxLength": 8000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Companion Brief"
+    },
     "constraints": {
       "default": [],
       "items": {
@@ -66,6 +472,17 @@
     },
     "creator_message_id": {
       "$ref": "#/$defs/Identifier"
+    },
+    "editor_context": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EditorContextSnapshot"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
     },
     "effective_backend": {
       "anyOf": [
@@ -100,9 +517,54 @@
       ],
       "default": null
     },
+    "reference_context": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReferenceCandidate"
+      },
+      "title": "Reference Context",
+      "type": "array"
+    },
     "requested_backend": {
       "$ref": "#/$defs/Identifier",
       "default": "auto"
+    },
+    "requested_effort": {
+      "anyOf": [
+        {
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+            "ultra"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Requested Effort"
+    },
+    "requested_model": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[^\\s\\x00-\\x1f\\x7f]+$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Requested Model"
     },
     "result_ref": {
       "anyOf": [
@@ -129,6 +591,49 @@
       "format": "date-time",
       "title": "Updated At",
       "type": "string"
+    },
+    "working_directory": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Working Directory"
+    },
+    "workspace_base_ref": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workspace Base Ref"
+    },
+    "workspace_mode": {
+      "anyOf": [
+        {
+          "enum": [
+            "direct",
+            "isolated",
+            "read-only"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Workspace Mode"
     }
   },
   "required": [

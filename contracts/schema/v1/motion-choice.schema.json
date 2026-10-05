@@ -1,0 +1,28 @@
+{
+  "$defs": {
+    "MotionKeyword": {
+      "enum": [
+        "none",
+        "wave",
+        "sit",
+        "lean",
+        "climb",
+        "stand",
+        "walk"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One requested presentation or walk, or no motion. No coordinates or OS authority.",
+  "properties": {
+    "motion": {
+      "$ref": "#/$defs/MotionKeyword"
+    }
+  },
+  "required": [
+    "motion"
+  ],
+  "title": "MotionChoice",
+  "type": "object"
+}

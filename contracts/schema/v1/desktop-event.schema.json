@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopEventKind": {
+      "enum": [
+        "foreground_changed",
+        "window_opened",
+        "window_closed",
+        "dialog_opened",
+        "dialog_closed",
+        "task_changed"
+      ],
+      "title": "DesktopEventKind",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "TaskStatus": {
+      "enum": [
+        "planned",
+        "queued",
+        "routing",
+        "reasoning",
+        "working",
+        "waiting_for_permission",
+        "waiting_for_input",
+        "cancel_requested",
+        "interrupted",
+        "completed",
+        "failed",
+        "cancelled"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One content-free event from Windows or SORA's canonical task lifecycle.",
+  "properties": {
+    "event_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "kind": {
+      "$ref": "#/$defs/DesktopEventKind"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "process_id": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Process Id"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "task_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "task_status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TaskStatus"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "topology_revision": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Topology Revision"
+    },
+    "window_handle": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Window Handle"
+    }
+  },
+  "required": [
+    "event_id",
+    "kind",
+    "occurred_at"
+  ],
+  "title": "DesktopEvent",
+  "type": "object"
+}

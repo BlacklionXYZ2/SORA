@@ -1,0 +1,64 @@
+{
+  "recorded_at": "2026-09-16T19:21:07.522410+00:00",
+  "completed_at_local": "2026-09-16 20:21:08 +01:00",
+  "model": "GPT-5.6 Sol",
+  "unity": "6000.6.0f1",
+  "player_sha256": "718444F6A718FA668DA96EB0A58445B009673310E6129152A63DBF7A92B8DE00",
+  "actual_hardware": {
+    "virtual_desktop": {"x": -1280, "y": 0, "width": 5120, "height": 2160},
+    "monitors": [
+      {
+        "id": "DISPLAY1",
+        "primary": true,
+        "rect": {"x": 0, "y": 0, "width": 3840, "height": 2160},
+        "work_area": {"x": 0, "y": 0, "width": 3840, "height": 2088},
+        "dpi_scale": 1.5,
+        "orientation": "landscape"
+      },
+      {
+        "id": "DISPLAY6",
+        "primary": false,
+        "rect": {"x": -1280, "y": 813, "width": 1280, "height": 1024},
+        "work_area": {"x": -1280, "y": 813, "width": 1280, "height": 976},
+        "dpi_scale": 1.0,
+        "orientation": "landscape"
+      }
+    ],
+    "topology_revision": 2,
+    "secondary_monitor_movement_tested": true,
+    "physical_display_or_power_transitions_performed": false
+  },
+  "synthetic_transition_coverage": [
+    "resolution",
+    "dpi",
+    "hotplug_monitor_removal",
+    "work_area",
+    "unavailable_resume",
+    "offscreen_safe_relocation",
+    "adjacent_seam_and_real_gap"
+  ],
+  "native_input": {
+    "blank_window_routed_to_fixture": true,
+    "blank_click_received_by_fixture": true,
+    "avatar_click_routed_to_player": true,
+    "avatar_click_not_received_by_fixture": true,
+    "avatar_drag_injected_with_fixture_beneath": true,
+    "avatar_drag_start": {"x": 1280, "y": 1838},
+    "drag_end": {"x": 1430, "y": 1828},
+    "core_observed_minimum_horizontal_movement_px": 75,
+    "core_anchor_restored": true,
+    "composed_background_rgb": 16777215,
+    "topmost_layered_noactivate": true
+  },
+  "verification": {
+    "unity_playmode": {"passed": 24, "failed": 0},
+    "packaged_player": {"passed": 1, "failed": 0, "duration_seconds": 73.76},
+    "portable_csharp": {"passed": 22, "failed": 0},
+    "embodiment": {"passed": 35, "skipped_opt_in": 3},
+    "repository": {"passed": 273, "skipped_opt_in": 9},
+    "ruff": "passed",
+    "mypy_source_files": 147,
+    "schemas": "fresh",
+    "compileall": "passed"
+  }
+}

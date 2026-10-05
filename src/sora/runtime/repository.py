@@ -7,20 +7,25 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
+from collections.abc import Callable
 from datetime import datetime
 
 from pydantic import Field
 
 from sora.contracts.base import StrictModel
+from sora.contracts.content import ReferenceCandidate
+from sora.contracts.editor import EditorContextSnapshot
 from sora.contracts.models import (
     AgentRunRecord,
     AgentSessionRecord,
     NormalizedResult,
     ProviderOutcome,
+    ReasoningEffort,
     RunStatus,
     SessionStatus,
     TaskRecord,
     TaskStatus,
+    WorkspaceMode,
 )
 from sora.contracts.transitions import validate_run_transition, validate_task_transition
 from sora.persistence.records import MessageRecord
@@ -34,6 +39,11 @@ class SubmissionReceipt(StrictModel):
     message_id: str
     acknowledgement_id: str
     acknowledgement: str
+    created: bool
+
+
+class PlannedTaskReceipt(StrictModel):
+    task: TaskRecord
     created: bool
 
 
@@ -59,6 +69,183 @@ class RuntimeRepository:
         self.repository = repository
         self.database = repository.database
 
+    async def update_board_card(
+        self, task_id: str, *, owner_id: str, project_id: str,
+        action: str, actor: str, column: str | None = None,
+        assigned_agent: str | None = None, expected_version: int | None = None,
+        now: datetime,
+    ) -> int:
+        """Change only the board overlay; task/run evidence remains untouched."""
+        if action not in {"assign", "move", "remove"}:
+            raise ValueError("invalid board action")
+        if action == "move" and column not in {"TODO", "DOING", "DONE"}:
+            raise ValueError("invalid board column")
+        if action == "assign" and assigned_agent not in {
+            "codex", "claude", "hermes", "antigravity", "sora", "unassigned"
+        }:
+            raise ValueError("invalid assigned agent")
+
+        def write(db: sqlite3.Connection) -> int:
+            task = db.execute(
+                "SELECT owner_id, project_id FROM tasks WHERE task_id=?", (task_id,)
+            ).fetchone()
+            if task is None or task["owner_id"] != owner_id or task["project_id"] != project_id:
+                raise LookupError("board card is outside the active scope")
+            previous = db.execute(
+                "SELECT column_name, assigned_agent, archived_at, version FROM board_cards WHERE task_id=?",
+                (task_id,),
+            ).fetchone()
+            current_version = int(previous["version"]) if previous is not None else 0
+            if expected_version is not None and expected_version != current_version:
+                raise ValueError("board card changed before this edit")
+            if previous is not None and previous["archived_at"] is not None:
+                raise ValueError("board card has been removed")
+            next_column = column if action == "move" else (
+                previous["column_name"] if previous is not None else None
+            )
+            next_agent = assigned_agent if action == "assign" else (
+                previous["assigned_agent"] if previous is not None else None
+            )
+            archived_at = now.isoformat() if action == "remove" else None
+            version = current_version + 1
+            db.execute(
+                "INSERT INTO board_cards(task_id, column_name, assigned_agent, archived_at, version, updated_by, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(task_id) DO UPDATE SET "
+                "column_name=excluded.column_name, assigned_agent=excluded.assigned_agent, "
+                "archived_at=excluded.archived_at, version=excluded.version, "
+                "updated_by=excluded.updated_by, updated_at=excluded.updated_at",
+                (task_id, next_column, next_agent, archived_at, version, actor, now.isoformat()),
+            )
+            db.execute(
+                "INSERT INTO board_card_events(event_id, task_id, action, actor, column_name, assigned_agent, occurred_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (f"board-event-{uuid.uuid4()}", task_id, action, actor,
+                 next_column, next_agent, now.isoformat()),
+            )
+            revision = self._next_revision(db)
+            self._append_event(db, owner_id, revision, f"board.card.{action}", task_id, None)
+            return version
+
+        return await self.database.write(write)
+
+    async def plan_task(
+        self, *, owner_id: str, project_id: str, conversation_id: str,
+        intent: str, idempotency_key: str, now: datetime,
+    ) -> PlannedTaskReceipt:
+        """Persist one canonical TODO without creating or queueing an agent run."""
+
+        def write(db: sqlite3.Connection) -> PlannedTaskReceipt:
+            existing = db.execute(
+                "SELECT task_id, intent FROM board_plan_requests WHERE idempotency_key=?",
+                (idempotency_key,),
+            ).fetchone()
+            if existing is not None:
+                if existing["intent"] != intent:
+                    raise ValueError("plan idempotency key was reused with a different intent")
+                task = self._task(db, existing["task_id"])
+                if task.owner_id != owner_id or task.project_id != project_id:
+                    raise ValueError("plan idempotency key belongs to a different scope")
+                return PlannedTaskReceipt(task=task, created=False)
+            task_id = f"task-{uuid.uuid4()}"
+            message_id = f"message-{uuid.uuid4()}"
+            acknowledgement_id = f"message-{uuid.uuid4()}"
+            task = TaskRecord(
+                task_id=task_id, owner_id=owner_id, project_id=project_id,
+                creator_message_id=message_id, status=TaskStatus.PLANNED,
+                requested_backend="auto", base_revision=self._revision(db),
+                constraints=(intent,), created_at=now, updated_at=now,
+            )
+            for record in (
+                MessageRecord(
+                    message_id=message_id, conversation_id=conversation_id,
+                    owner_id=owner_id, project_id=project_id, role="user",
+                    content=f"Fix this later: {intent}", provenance="owner board plan",
+                    created_at=now,
+                ),
+                MessageRecord(
+                    message_id=acknowledgement_id, conversation_id=conversation_id,
+                    owner_id=owner_id, project_id=project_id, role="assistant",
+                    content="Saved to TODO. No specialist has been started.",
+                    provenance="deterministic board acknowledgement", created_at=now,
+                ),
+            ):
+                db.execute(
+                    "INSERT INTO messages(message_id, conversation_id, owner_id, project_id, role, content, provenance, sensitivity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (record.message_id, record.conversation_id, record.owner_id,
+                     record.project_id, record.role, record.content, record.provenance,
+                     record.sensitivity, record.created_at.isoformat()),
+                )
+            db.execute(
+                "INSERT INTO tasks(task_id, owner_id, project_id, status, entity_version, payload) VALUES (?, ?, ?, ?, 1, ?)",
+                (task_id, owner_id, project_id, task.status.value, task.model_dump_json()),
+            )
+            db.execute(
+                "INSERT INTO board_plan_requests(idempotency_key, task_id, intent, created_at) VALUES (?, ?, ?, ?)",
+                (idempotency_key, task_id, intent, now.isoformat()),
+            )
+            revision = self._next_revision(db)
+            self._append_event(db, owner_id, revision, "message.finalized", task_id, None)
+            self._append_event(db, owner_id, revision, "task.planned", task_id, None)
+            return PlannedTaskReceipt(task=task, created=True)
+
+        return await self.database.write(write)
+
+    async def start_planned_task(
+        self, task_id: str, *, owner_id: str, project_id: str,
+        provider: str, requested_backend: str, now: datetime,
+        max_active_tasks: int,
+        local_delegation_epoch: int | None = None,
+        requested_model: str | None = None,
+        requested_effort: ReasoningEffort | None = None,
+        working_directory: str | None = None,
+        workspace_mode: WorkspaceMode | None = None,
+        workspace_base_ref: str | None = None,
+    ) -> AgentRunRecord:
+        """Atomically attach the first run to an existing planned task."""
+
+        def write(db: sqlite3.Connection) -> AgentRunRecord:
+            task = self._task(db, task_id)
+            if task.owner_id != owner_id or task.project_id != project_id:
+                raise LookupError("planned task is outside the active scope")
+            if task.status is not TaskStatus.PLANNED:
+                raise ValueError("only a planned task can be started from the board")
+            active_count = int(db.execute(
+                "SELECT COUNT(*) FROM tasks WHERE owner_id=? AND status NOT IN (?, ?, ?, ?)",
+                (owner_id, TaskStatus.PLANNED.value, TaskStatus.COMPLETED.value,
+                 TaskStatus.FAILED.value, TaskStatus.CANCELLED.value),
+            ).fetchone()[0])
+            if active_count >= max_active_tasks:
+                raise RuntimeError("runtime task capacity is currently exhausted")
+            validate_task_transition(task.status, TaskStatus.QUEUED)
+            run = AgentRunRecord(
+                run_id=f"run-{uuid.uuid4()}", task_id=task_id, attempt=1,
+                provider=provider, status=RunStatus.PENDING,
+                local_delegation_epoch=local_delegation_epoch,
+            )
+            updated = TaskRecord.model_validate({
+                **task.model_dump(), "status": TaskStatus.QUEUED,
+                "requested_backend": requested_backend,
+                "requested_model": requested_model, "requested_effort": requested_effort,
+                "working_directory": working_directory, "workspace_mode": workspace_mode,
+                "workspace_base_ref": workspace_base_ref,
+                "effective_backend": provider, "active_run_id": run.run_id,
+                "updated_at": now,
+            })
+            db.execute(
+                "INSERT INTO agent_runs(run_id, task_id, status, payload) VALUES (?, ?, ?, ?)",
+                (run.run_id, task_id, run.status.value, run.model_dump_json()),
+            )
+            db.execute(
+                "UPDATE tasks SET status=?, entity_version=entity_version+1, payload=? WHERE task_id=?",
+                (updated.status.value, updated.model_dump_json(), task_id),
+            )
+            revision = self._next_revision(db)
+            self._append_event(db, owner_id, revision, "task.started", task_id, run.run_id)
+            self._append_event(db, owner_id, revision, "run.created", task_id, run.run_id)
+            return run
+
+        return await self.database.write(write)
+
     async def submit(
         self,
         *,
@@ -70,15 +257,54 @@ class RuntimeRepository:
         now: datetime,
         provider: str,
         requested_backend: str | None = None,
+        requested_model: str | None = None,
+        requested_effort: ReasoningEffort | None = None,
+        working_directory: str | None = None,
+        workspace_mode: WorkspaceMode | None = None,
+        workspace_base_ref: str | None = None,
+        editor_context: EditorContextSnapshot | None = None,
+        reference_context: tuple[ReferenceCandidate, ...] = (),
         max_active_tasks: int | None = None,
+        local_delegation_epoch: int | None = None,
+        companion_brief: str | None = None,
+        admission_check: Callable[[], None] | None = None,
+        admission_guard: Callable[[sqlite3.Connection], None] | None = None,
+        admission_commit: Callable[[sqlite3.Connection, SubmissionReceipt], None] | None = None,
     ) -> SubmissionReceipt:
         def write(db: sqlite3.Connection) -> SubmissionReceipt:
+            if admission_check is not None:
+                admission_check()
+            if admission_guard is not None:
+                admission_guard(db)
             duplicate = db.execute(
                 "SELECT task_id, message_id, acknowledgement_id FROM submissions WHERE idempotency_key=?",
                 (idempotency_key,),
             ).fetchone()
             if duplicate:
                 task = self._task(db, duplicate["task_id"])
+                if (task.requested_model != requested_model
+                        or task.requested_effort != requested_effort
+                        or task.working_directory != working_directory
+                        or task.workspace_mode != workspace_mode
+                        or task.workspace_base_ref != workspace_base_ref
+                        or task.requested_backend != (requested_backend or provider)):
+                    raise ValueError("idempotency key was reused with a different agent/model selection")
+                if task.companion_brief != companion_brief:
+                    raise ValueError("idempotency key was reused with a different companion brief")
+                existing_editor = (
+                    task.editor_context.model_dump(exclude={"context_id", "verified_at"})
+                    if task.editor_context is not None
+                    else None
+                )
+                submitted_editor = (
+                    editor_context.model_dump(exclude={"context_id", "verified_at"})
+                    if editor_context is not None
+                    else None
+                )
+                if existing_editor != submitted_editor:
+                    raise ValueError("idempotency key was reused with different editor context")
+                if task.reference_context != reference_context:
+                    raise ValueError("idempotency key was reused with different reference context")
                 run = self._run(db, task.active_run_id or "")
                 acknowledgement = (
                     db.execute(
@@ -95,7 +321,7 @@ class RuntimeRepository:
                     ).fetchone()
                 if acknowledgement is None:
                     raise RuntimeError("submission acknowledgement is missing")
-                return SubmissionReceipt(
+                receipt = SubmissionReceipt(
                     task=task,
                     run=run,
                     message_id=duplicate["message_id"],
@@ -103,12 +329,16 @@ class RuntimeRepository:
                     acknowledgement=acknowledgement["content"],
                     created=False,
                 )
+                if admission_commit is not None:
+                    admission_commit(db, receipt)
+                return receipt
 
             if max_active_tasks is not None:
                 active_count = int(
                     db.execute(
-                        "SELECT COUNT(*) FROM tasks WHERE status NOT IN (?, ?, ?)",
+                        "SELECT COUNT(*) FROM tasks WHERE status NOT IN (?, ?, ?, ?)",
                         (
+                            TaskStatus.PLANNED.value,
                             TaskStatus.COMPLETED.value,
                             TaskStatus.FAILED.value,
                             TaskStatus.CANCELLED.value,
@@ -128,6 +358,14 @@ class RuntimeRepository:
                 "I started a queued reasoning task. Its completion will be reported only "
                 "after a validated result is stored."
             )
+            if companion_brief is not None:
+                acknowledgement_text = (
+                    f"I queued specialist task {task_id} with {provider}. "
+                    f"Model: {requested_model or 'saved/configured default'}. "
+                    f"Project: {working_directory or 'no project selected'}; "
+                    f"mode: {workspace_mode or 'configured specialist'}. "
+                    "Queued is not completed. Check Activity for progress and the final evidence."
+                )
             task = TaskRecord(
                 task_id=task_id,
                 owner_id=owner_id,
@@ -135,9 +373,17 @@ class RuntimeRepository:
                 creator_message_id=message_id,
                 status=TaskStatus.QUEUED,
                 requested_backend=requested_backend or provider,
+                requested_model=requested_model,
+                requested_effort=requested_effort,
+                working_directory=working_directory,
+                workspace_mode=workspace_mode,
+                workspace_base_ref=workspace_base_ref,
+                companion_brief=companion_brief,
                 effective_backend=provider,
                 base_revision=self._revision(db),
                 active_run_id=run_id,
+                editor_context=editor_context,
+                reference_context=reference_context,
                 created_at=now,
                 updated_at=now,
             )
@@ -147,6 +393,7 @@ class RuntimeRepository:
                 attempt=1,
                 provider=provider,
                 status=RunStatus.PENDING,
+                local_delegation_epoch=local_delegation_epoch,
             )
             messages = (
                 MessageRecord(
@@ -200,7 +447,7 @@ class RuntimeRepository:
             revision = self._next_revision(db)
             for event_type in ("message.finalized", "task.created", "run.created"):
                 self._append_event(db, owner_id, revision, event_type, task_id, run_id)
-            return SubmissionReceipt(
+            receipt = SubmissionReceipt(
                 task=task,
                 run=run,
                 message_id=message_id,
@@ -208,6 +455,9 @@ class RuntimeRepository:
                 acknowledgement=acknowledgement_text,
                 created=True,
             )
+            if admission_commit is not None:
+                admission_commit(db, receipt)
+            return receipt
 
         return await self.database.write(write)
 
@@ -315,31 +565,38 @@ class RuntimeRepository:
         )
 
     async def request_cancel(self, run_id: str, now: datetime) -> bool:
-        run = await self.get_run(run_id)
-        if run is None or run.status in {
-            RunStatus.COMPLETED,
-            RunStatus.FAILED,
-            RunStatus.CANCELLED,
-        }:
-            return False
-        if run.status is RunStatus.PENDING:
-            await self.finish(
-                run_id,
-                run_status=RunStatus.CANCELLED,
-                task_status=TaskStatus.CANCELLED,
-                outcome=ProviderOutcome.CANCELLED,
-                result_ref=None,
-                now=now,
-            )
+        def write(db: sqlite3.Connection) -> bool:
+            row = db.execute("SELECT payload FROM agent_runs WHERE run_id=?", (run_id,)).fetchone()
+            if row is None:
+                return False
+            run = AgentRunRecord.model_validate_json(row[0])
+            if run.status in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED,
+                              RunStatus.CANCEL_REQUESTED}:
+                return False
+            task = self._task(db, run.task_id)
+            pending = run.status is RunStatus.PENDING
+            run_status = RunStatus.CANCELLED if pending else RunStatus.CANCEL_REQUESTED
+            task_status = TaskStatus.CANCELLED if pending else TaskStatus.CANCEL_REQUESTED
+            validate_run_transition(run.status, run_status)
+            validate_task_transition(task.status, task_status)
+            update: dict[str, object] = {"status": run_status}
+            if pending:
+                update.update(finished_at=now, outcome=ProviderOutcome.CANCELLED)
+            updated_run = AgentRunRecord.model_validate({**run.model_dump(), **update})
+            updated_task = TaskRecord.model_validate({
+                **task.model_dump(), "status": task_status, "updated_at": now,
+            })
+            db.execute("UPDATE agent_runs SET status=?, payload=? WHERE run_id=?",
+                       (run_status.value, updated_run.model_dump_json(), run_id))
+            db.execute("UPDATE tasks SET status=?, entity_version=entity_version+1, payload=? WHERE task_id=?",
+                       (task_status.value, updated_task.model_dump_json(), task.task_id))
+            revision = self._next_revision(db)
+            self._append_event(db, task.owner_id, revision, f"run.{run_status.value}",
+                               task.task_id, run_id)
             return True
-        await self._transition(
-            run_id,
-            run_status=RunStatus.CANCEL_REQUESTED,
-            task_status=TaskStatus.CANCEL_REQUESTED,
-            now=now,
-            event_type="run.cancel_requested",
-        )
-        return True
+
+        # Admission and cancellation race on the same atomic row transition, not a prior read.
+        return await self.database.write(write)
 
     async def _transition(
         self,
@@ -355,6 +612,8 @@ class RuntimeRepository:
         def write(db: sqlite3.Connection) -> None:
             run = self._run(db, run_id)
             task = self._task(db, run.task_id)
+            if run.status is RunStatus.CANCEL_REQUESTED and run_status is RunStatus.RUNNING:
+                return  # A late launch acknowledgement cannot undo cancellation.
             validate_run_transition(run.status, run_status)
             validate_task_transition(task.status, task_status)
             run_update: dict[str, object] = {"status": run_status}
@@ -384,6 +643,34 @@ class RuntimeRepository:
         def read(db: sqlite3.Connection) -> AgentRunRecord | None:
             row = db.execute("SELECT payload FROM agent_runs WHERE run_id=?", (run_id,)).fetchone()
             return AgentRunRecord.model_validate_json(row[0]) if row else None
+
+        return await self.database.read(read)
+
+    async def latest_active_session(
+        self, *, provider: str, project_id: str | None
+    ) -> AgentSessionRecord | None:
+        """The most recently used resumable session for a provider in a project, if any.
+
+        A session is only offered back when it is still active, marked resume-capable, and belongs
+        to this project - project A's thread is never handed to project B.
+        """
+
+        def read(db: sqlite3.Connection) -> AgentSessionRecord | None:
+            rows = db.execute(
+                "SELECT payload FROM agent_sessions WHERE provider=? AND status=?",
+                (provider, SessionStatus.ACTIVE.value),
+            ).fetchall()
+            candidates: list[AgentSessionRecord] = []
+            for row in rows:
+                try:
+                    session = AgentSessionRecord.model_validate_json(row["payload"])
+                except ValueError:
+                    continue
+                if session.project_id == project_id and session.resume_supported:
+                    candidates.append(session)
+            if not candidates:
+                return None
+            return max(candidates, key=lambda item: item.last_seen_at)
 
         return await self.database.read(read)
 
@@ -491,6 +778,7 @@ class RuntimeRepository:
         *,
         now: datetime,
         max_attempts: int,
+        local_delegation_epoch: int | None = None,
     ) -> AgentRunRecord:
         """Create one new pending attempt without mutating prior run evidence."""
 
@@ -514,6 +802,7 @@ class RuntimeRepository:
                 attempt=attempt,
                 provider=previous.provider,
                 status=RunStatus.PENDING,
+                local_delegation_epoch=local_delegation_epoch,
             )
             updated_task = TaskRecord.model_validate(
                 {
@@ -535,6 +824,78 @@ class RuntimeRepository:
             revision = self._next_revision(db)
             self._append_event(db, task.owner_id, revision, "task.retried", task_id, run.run_id)
             return run
+
+        return await self.database.write(write)
+
+    async def create_branch_run(
+        self,
+        *,
+        task_id: str,
+        run_id: str,
+        provider: str,
+        now: datetime,
+        local_delegation_epoch: int | None = None,
+    ) -> AgentRunRecord:
+        def write(db: sqlite3.Connection) -> AgentRunRecord:
+            self._task(db, task_id)
+            run = AgentRunRecord(
+                run_id=run_id,
+                task_id=task_id,
+                attempt=1,
+                provider=provider,
+                status=RunStatus.PENDING,
+                local_delegation_epoch=local_delegation_epoch,
+            )
+            db.execute(
+                "INSERT INTO agent_runs(run_id, task_id, status, payload) VALUES (?, ?, ?, ?)",
+                (run.run_id, task_id, run.status.value, run.model_dump_json()),
+            )
+            return run
+
+        return await self.database.write(write)
+
+    async def transition_branch_run(
+        self,
+        run_id: str,
+        *,
+        status: RunStatus,
+        now: datetime,
+        outcome: ProviderOutcome | None = None,
+    ) -> AgentRunRecord:
+        """Advance a fan-out branch without mutating the coordinator task lifecycle."""
+
+        def write(db: sqlite3.Connection) -> AgentRunRecord:
+            run = self._run(db, run_id)
+            if run.status is RunStatus.CANCEL_REQUESTED and status in {
+                RunStatus.RUNNING, RunStatus.CANCEL_REQUESTED,
+            }:
+                return run
+            validate_run_transition(run.status, status)
+            update: dict[str, object] = {"status": status}
+            if status is RunStatus.RUNNING and run.started_at is None:
+                update["started_at"] = now
+            if status in {RunStatus.COMPLETED, RunStatus.FAILED, RunStatus.CANCELLED}:
+                if outcome is None:
+                    raise ValueError("terminal branch status requires an outcome")
+                update.update({"finished_at": now, "outcome": outcome})
+            elif outcome is not None:
+                raise ValueError("non-terminal branch status cannot carry an outcome")
+            updated = AgentRunRecord.model_validate({**run.model_dump(), **update})
+            db.execute(
+                "UPDATE agent_runs SET status=?, payload=? WHERE run_id=?",
+                (updated.status.value, updated.model_dump_json(), run_id),
+            )
+            task = self._task(db, run.task_id)
+            revision = self._next_revision(db)
+            self._append_event(
+                db,
+                task.owner_id,
+                revision,
+                f"fanout.branch.{status.value}",
+                task.task_id,
+                run_id,
+            )
+            return updated
 
         return await self.database.write(write)
 

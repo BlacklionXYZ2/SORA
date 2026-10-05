@@ -1,0 +1,70 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Generation": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "host_id": {
+      "format": "uuid",
+      "title": "Host Id",
+      "type": "string"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "lease_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Lease Id"
+    },
+    "panels": {
+      "default": [
+        "memory"
+      ],
+      "items": {
+        "const": "memory",
+        "type": "string"
+      },
+      "title": "Panels",
+      "type": "array"
+    },
+    "profile_key": {
+      "pattern": "^[a-f0-9]{64}$",
+      "title": "Profile Key",
+      "type": "string"
+    },
+    "registry_generation": {
+      "$ref": "#/$defs/Generation"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "instance_id",
+    "host_id",
+    "profile_key",
+    "registry_generation"
+  ],
+  "title": "UiHostRegistration",
+  "type": "object"
+}

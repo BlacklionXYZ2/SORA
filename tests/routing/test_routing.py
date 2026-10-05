@@ -29,6 +29,16 @@ def test_dialogue_fast_path_routing() -> None:
     assert decision.fallback_providers == ()
 
 
+@pytest.mark.parametrize("intent", [
+    "Ask Codex to create a new Python module",
+    "Hello, create a file named example.py",
+    "Create a file for an offline test",
+    "Check task status then edit file example.py",
+])
+def test_file_authoring_precedes_fast_paths(intent: str) -> None:
+    assert RoutingEngine().classify_intent(intent) is TaskIntentCategory.CODING_WRITE
+
+
 def test_status_lookup_fast_path_routing() -> None:
     engine = RoutingEngine()
     decision = engine.route("What are you doing right now?")
@@ -70,9 +80,7 @@ def test_coding_write_held_pending_p05_3() -> None:
     assert decision.category is TaskIntentCategory.CODING_WRITE
     assert decision.rule_name == "coding_write_rule"
     assert decision.metadata.get("p05_deferred") is True
-    assert "require configured P05 workspace isolation" in str(
-        decision.metadata.get("warning")
-    )
+    assert "require configured P05 workspace isolation" in str(decision.metadata.get("warning"))
 
 
 def test_coding_write_routes_only_to_codex_when_isolation_is_available() -> None:
@@ -95,6 +103,30 @@ def test_coding_write_classifier_recognizes_scoped_edit_wording() -> None:
     decision = engine.route("Edit only src/module.py and run its test.")
     assert decision.category is TaskIntentCategory.CODING_WRITE
     assert decision.selected_provider == "codex"
+
+
+def test_coding_write_classifier_recognizes_file_creation_wording() -> None:
+    engine = RoutingEngine(
+        registered_providers=["antigravity", "codex", "hermes", "deterministic"],
+        has_worktree_isolation=True,
+    )
+    for intent in (
+        "Create a file named report.txt containing the summary.",
+        "Make a new folder for the exports.",
+        "Add a script that prints the current revision.",
+        "Write a file with the notes from today.",
+    ):
+        decision = engine.route(intent)
+        assert decision.category is TaskIntentCategory.CODING_WRITE, intent
+        assert decision.selected_provider == "codex", intent
+
+
+def test_file_action_wording_does_not_capture_plain_research() -> None:
+    engine = RoutingEngine(
+        registered_providers=["antigravity", "codex", "hermes", "deterministic"],
+    )
+    decision = engine.route("Research the performance implications of SQLite WAL mode.")
+    assert decision.category is TaskIntentCategory.RESEARCH
 
 
 def test_explicit_coding_write_is_deferred_without_owned_workspace() -> None:
@@ -206,16 +238,10 @@ def test_conversational_steering_disambiguation() -> None:
     )
 
     # Ambiguous pronoun with multiple tasks returns None to avoid affecting arbitrary work
-    assert (
-        engine.disambiguate_steering("Tell him to stop", [task_cody, task_hermes])
-        is None
-    )
+    assert engine.disambiguate_steering("Tell him to stop", [task_cody, task_hermes]) is None
 
     # Unambiguous pronoun with exactly 1 active task resolves to that task
-    assert (
-        engine.disambiguate_steering("Tell him to stop", [task_cody])
-        == "task-cody-1"
-    )
+    assert engine.disambiguate_steering("Tell him to stop", [task_cody]) == "task-cody-1"
 
     # No active tasks returns None
     assert engine.disambiguate_steering("Tell him to stop", []) is None

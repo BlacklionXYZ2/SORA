@@ -1,0 +1,47 @@
+{
+  "stage": "P12.3",
+  "status": "complete",
+  "completed_at": "2026-09-17T11:33:37+01:00",
+  "model": "GPT-5.6 Sol",
+  "implementation": {
+    "kind": "bounded deterministic screen-plane joint recovery",
+    "constrained_joint_count": 12,
+    "body_collision_enabled": true,
+    "joint_limits_finite": true,
+    "hard_impact_threshold_px_per_second": 1000,
+    "side_impact_threshold_px_per_second": 350,
+    "settle_seconds": 0.22,
+    "get_up_seconds": 0.65,
+    "timeout_seconds": 3.0,
+    "pose_lease_released": true
+  },
+  "packaged_scenarios": [
+    {"requested": "Front", "detected": "Front", "outcome": "Recovered", "elapsed_seconds": 1.2167355},
+    {"requested": "Back", "detected": "Back", "outcome": "Recovered", "elapsed_seconds": 1.2170272},
+    {"requested": "LeftSide", "detected": "LeftSide", "outcome": "Recovered", "elapsed_seconds": 1.2166837},
+    {"requested": "RightSide", "detected": "RightSide", "outcome": "Recovered", "elapsed_seconds": 1.2169130}
+  ],
+  "verification": {
+    "unity_playmode": {"passed": 38, "failed": 0, "p12_3_tests": 9},
+    "packaged_acceptance": {"passed": 1, "duration_seconds": 83.60},
+    "portable_csharp": {"passed": 22, "failed": 0},
+    "embodiment": {"passed": 35, "skipped": 3},
+    "repository": {"passed": 273, "skipped": 9},
+    "codex_provider": {"passed": 6, "failed": 0},
+    "ruff": "passed",
+    "mypy_source_files": 147,
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "artifacts": {
+    "unity_launcher_sha256": "718444F6A718FA668DA96EB0A58445B009673310E6129152A63DBF7A92B8DE00",
+    "embodiment_managed_sha256": "85A6AC33740FFE4BC3D5099DA2CFD3E9336E481884310EEADC3E8B64A17A3160"
+  },
+  "boundaries": {
+    "unconstrained_rigidbody_ragdoll_claimed": false,
+    "limb_level_desktop_collision_claimed": false,
+    "window_surfaces_claimed": false,
+    "semantic_physics_events_claimed": false,
+    "physical_display_settings_changed": false
+  }
+}

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../unity/Assets/Scripts/Coordinates/OverlayPlacement.cs" Link="OverlayPlacement.cs" />
+    <Compile Include="../unity/Assets/Scripts/Native/WindowsDisplayTopology.cs" Link="WindowsDisplayTopology.cs" />
+    <Compile Include="../unity/Assets/Scripts/Coordinates/CoordinateTransformer.cs" Link="CoordinateTransformer.cs" />
+    <Compile Include="../unity/Assets/Scripts/Network/SoraCoreClient.cs" Link="SoraCoreClient.cs" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+</Project>

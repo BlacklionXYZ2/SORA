@@ -1,97 +1,94 @@
 # SORA
 
-SORA (Spatial Operator for Recursive Antics) is a Windows-local agent runtime under active
-development. The current G1 text core provides durable identity/history, bounded context, concurrent
-deterministic dialogue and reasoning tasks, validated results/patches, recovery, tracing, and a CLI.
+SORA (Spatial Operator for Recursive Antics) is a digital person living on a Windows desktop:
+one continuous character with her own personality, presence and capabilities, a local brain,
+voice, screen awareness, a 3D body and trusted specialist agents (Cody, Hermes, Aggie and
+Claude) for heavy work. Her identity, memory and task state live in Core, not in any model.
 
-The default provider is a hermetic deterministic mock. Hermes ACP is also available as an explicit
-external provider adapter; it requires the Hermes installation and configured credentials. Runtime
-state, credentials, local validation artifacts, backups, and provider installations are not committed.
+**Read [VISION.md](VISION.md) first. It is the top authority.** The current milestone is
+[V1](V1.md): a usable product you can talk to, and who talks, moves and indicates back.
 
-## Bootstrap and verify
+## Current state (2026-10-05)
 
-On Windows PowerShell, with `uv` available:
+- **Core runtime, phases P00–P15:** largely complete. The work covers durable SQLite state and
+  memory, concurrent tasks, Hermes/Codex/Antigravity/local-model providers, owned Git worktrees
+  for coding writes, an authenticated local API, Windows UI Automation perception and action,
+  the Unity avatar with physics, local voice, the PWA, the widget, the full app and the portable
+  release. Open items are listed at the top of the
+  [implementation plan](SORA_IMPLEMENTATION_PLAN.md).
+- **Active work: V1.** The windowless GUI host (from the owner's
+  [concept images](docs/gui/reference/README.md)) becomes the ordinary launch, and the local
+  model, voice, screen awareness, movement and agents are joined into one working product. Work
+  follows [V1.md](V1.md)'s acceptance test. GUI stage status is in the
+  [GUI roadmap](SORA_GUI_IMPLEMENTATION_ROADMAP.md) §4.0. Automations and the memory graph are
+  after V1.
+- **Verification:** `pytest` 904 passed / 25 opt-in hardware skips, `ruff` clean and
+  `mypy --strict` clean (independent rerun 2026-10-05). Component tests are not native GUI,
+  live-model or hardware acceptance; the roadmap tracks those gates separately.
 
-```powershell
-.\scripts\bootstrap.ps1
-.\scripts\verify.ps1
-```
-
-Inspect a fresh local runtime with:
-
-```powershell
-uv run --locked python -m sora --state
-```
-
-Run one deterministic background task and wait for its grounded result:
-
-```powershell
-uv run --locked python -m sora --once "Analyze the deterministic fixture." --wait
-```
-
-Run through the installed Hermes ACP backend when it is configured:
+## Quick start (Windows PowerShell, `uv` and the .NET SDK installed)
 
 ```powershell
-uv run --locked python -m sora --provider hermes --hermes-cwd C:\path\to\isolated\workspace --once "Analyze the repository." --wait
+.\scripts\bootstrap.ps1          # create the locked Python environment
+.\scripts\verify.ps1             # Python tests, lint, strict typing, schema and PWA checks
+.\Start-SORA.ps1 -Client Shell   # build, start Core, open the native app (windowless SORA)
 ```
 
-The Hermes adapter launches one `hermes acp` process per SORA run, requests a structured JSON
-result, and converts facts/memory updates into validated SORA patch proposals. An explicit existing
-`--hermes-cwd` assigns its workspace. Hermes retains its native tools and configured MCP integrations
-by default, and ACP permission requests select `allow_once`; use `--hermes-deny-approvals` or
-`--hermes-skip-configured-mcp` for an explicitly restricted run. SORA does not implement ACP
-client-side editor filesystem/terminal methods, which is separate from Hermes' own tools. Native
-session resume and cancellation are mapped; steering is not. `hermes acp --check` verifies the local
-ACP installation without starting a model run.
+Plain `.\Start-SORA.ps1` still opens the older, frozen full app; V1 makes the native app the
+default.
 
-Run a bounded read-only Codex task with the cost-sensitive default model:
+`Start-SORA.ps1` keeps state in `.local/manual-test`, binds Core to `127.0.0.1` and registers
+the specialists installed on this machine. See [local try-out](docs/runbooks/SORA_LOCAL_TRYOUT.md)
+for models, voice and the other launcher options.
+
+C# client checks are separate from `verify.ps1`:
 
 ```powershell
-uv run --locked python -m sora --provider codex --codex-cwd C:\path\to\repository --once "Inspect README.md." --wait --task-timeout 120
+dotnet test clients/csharp_tests/csharp_tests.csproj
+dotnet build clients/desktop_shell/desktop_shell.csproj
 ```
 
-The Codex adapter uses the documented App Server protocol, defaults to GPT-5.6 Luna at low effort,
-preserves native thread identity across resume, and maps interruption and activity into SORA's
-provider lifecycle. The direct CLI is deliberately read-only. Coding writes require an owned Git
-worktree plus a live `GitWorkspaceManager` lease; the adapter rejects unowned `workspace-write` and
-all `danger-full-access` runs.
+Headless Core, CLI and per-provider commands (`python -m sora --once …`, `--provider hermes`,
+`--provider codex`, `--serve`, remote pairing) are documented phase by phase in the
+[previous README](docs/history/README_PHASE_HISTORY_2026-10-03.md) and in
+[`docs/runbooks/`](docs/runbooks/).
 
-Run an auto-routed coding write in a managed worktree from an explicit base:
+## Repository layout
 
-```powershell
-uv run --locked python -m sora --provider codex --codex-cwd C:\path\to\repository --codex-write-base HEAD --codex-workspace-root C:\path\to\sora-workspaces --once "Edit the requested files and run focused tests." --wait --task-timeout 300
-```
+| Path | Contents |
+|---|---|
+| `src/sora/` | Python Core: runtime, API, persistence, providers, routing, workspaces, desktop, voice, vision, embodiment |
+| `tests/` | Python test suite. Hardware, native and live-model tests are opt-in skips |
+| `contracts/` | Versioned JSON Schemas (`schema/v1`) exported from the Pydantic contracts |
+| `clients/desktop_shell/` | **The native app**, SORA's only active client (opt-in launch until V1 makes it the default) |
+| `clients/desktop_app/`, `clients/desktop_widget/` | Older full app and compact widget. **Frozen**: kept, not developed |
+| `clients/unity/` | Unity 6 avatar/overlay project |
+| `clients/windows_*` | Out-of-process Windows helpers: UIA observation, capture, press, type |
+| `src/sora/pwa/`, `clients/pwa/` | Browser client (served by Core) and its tests. **Frozen** |
+| `clients/csharp_tests/` | C# client tests |
+| `identity/` | SORA's persona, values, behaviour, speech style and embodiment |
+| `config/` | Example settings and llama.cpp configuration |
+| `scripts/`, `packaging/` | Bootstrap, verification, release and install tooling |
+| `docs/` | Documentation; start at [docs/README.md](docs/README.md) |
+| `changelog/` | One model-attributed record per change; see [changelog/README.md](changelog/README.md) |
 
-The source checkout is not changed. SORA retains the worktree and a review artifact containing the
-base, head, status, diff, commands/tests, and uncertainties; it never merges the result automatically.
+Runtime state, credentials, models and QA artefacts (`.local/`, `data/`, `*.db`) are never
+committed.
 
-Start the interactive mock CLI with `uv run --locked python -m sora`. Its commands are:
+## Documentation
 
-```text
-/task TEXT
-/tasks
-/state
-/messages
-/wait TASK_ID
-/cancel TASK_ID
-/retry TASK_ID
-/quit
-```
+| Read | For |
+|---|---|
+| [VISION.md](VISION.md) | **Top authority:** who SORA is, how she works, where she is going |
+| [V1.md](V1.md) | The current milestone: scope, acceptance test, what is left |
+| [SORA_GUI_IMPLEMENTATION_ROADMAP.md](SORA_GUI_IMPLEMENTATION_ROADMAP.md) | GUI stage status (§4.0), stages and acceptance gates |
+| [SORA_IMPLEMENTATION_PLAN.md](SORA_IMPLEMENTATION_PLAN.md) | Architecture invariants, contracts, P00–P15 phase checklist and risks |
+| [SORA_OVERVIEW.md](SORA_OVERVIEW.md) | The original specification, preserved verbatim |
+| [docs/README.md](docs/README.md) | Map of every documentation folder and where history lives |
+| [docs/verification/README.md](docs/verification/README.md) | Evidence records and which phases were independently verified |
 
-Fault behavior is available for hermetic checks through `--mock-fault`; use `--help` for the
-currently supported modes and `--mock-delay` to inject latency. By default, canonical state is kept
-under `data/` at the selected `--root` and remains ignored by Git.
+## Contributing
 
-The engineering roadmap and verified progress are maintained in
-[`SORA_IMPLEMENTATION_PLAN.md`](SORA_IMPLEMENTATION_PLAN.md).
-
-P03 evidence and explicit limitations are recorded in
-[`docs/verification/P03_TEXT_RUNTIME_2026-09-07.md`](docs/verification/P03_TEXT_RUNTIME_2026-09-07.md).
-
-Completed P04 Hermes live-adapter evidence and limitations are recorded in
-[`docs/verification/P04_HERMES_LIVE_2026-09-08.md`](docs/verification/P04_HERMES_LIVE_2026-09-08.md).
-The earlier credential-free implementation record remains at
-[`docs/verification/P04_HERMES_ADAPTER_2026-09-07.md`](docs/verification/P04_HERMES_ADAPTER_2026-09-07.md).
-
-Current P05 Codex/App Server and worktree evidence is recorded in
-[`docs/verification/P05_CODEX_APP_SERVER_2026-09-08.md`](docs/verification/P05_CODEX_APP_SERVER_2026-09-08.md).
+All contributors, human or model, follow [AGENTS.md](AGENTS.md). In short: never delete files;
+write a changelog in your own model name for every change; keep fixture, component, native,
+live-model and hardware evidence separate; and don't commit or push unless the owner asks.

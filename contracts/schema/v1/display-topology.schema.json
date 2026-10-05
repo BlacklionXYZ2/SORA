@@ -1,0 +1,129 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "MonitorDescriptor": {
+      "additionalProperties": false,
+      "description": "Authoritative descriptor of a single physical display monitor.",
+      "properties": {
+        "dpi_scale": {
+          "default": 1.0,
+          "exclusiveMinimum": 0,
+          "title": "Dpi Scale",
+          "type": "number"
+        },
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "orientation": {
+          "default": "landscape",
+          "enum": [
+            "landscape",
+            "portrait"
+          ],
+          "title": "Orientation",
+          "type": "string"
+        },
+        "primary": {
+          "default": false,
+          "title": "Primary",
+          "type": "boolean"
+        },
+        "rect": {
+          "$ref": "#/$defs/ScreenRect"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "work_area": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScreenRect"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "rect"
+      ],
+      "title": "MonitorDescriptor",
+      "type": "object"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Snapshot of active Windows display layout and virtual desktop bounds.",
+  "properties": {
+    "monitors": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MonitorDescriptor"
+      },
+      "title": "Monitors",
+      "type": "array"
+    },
+    "revision": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "virtual_desktop": {
+      "$ref": "#/$defs/ScreenRect"
+    }
+  },
+  "required": [
+    "virtual_desktop"
+  ],
+  "title": "DisplayTopology",
+  "type": "object"
+}

@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopObjectAffordance": {
+      "description": "Small semantic vocabulary understood by the generic embodiment bridge.",
+      "enum": [
+        "look",
+        "point",
+        "touch"
+      ],
+      "title": "DesktopObjectAffordance",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request one advertised physical presentation without mutating object state.",
+  "properties": {
+    "affordance": {
+      "$ref": "#/$defs/DesktopObjectAffordance"
+    },
+    "expected_version": {
+      "minimum": 0,
+      "title": "Expected Version",
+      "type": "integer"
+    },
+    "object_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "request_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "request_id",
+    "object_id",
+    "affordance",
+    "expected_version"
+  ],
+  "title": "DesktopObjectAffordanceRequest",
+  "type": "object"
+}

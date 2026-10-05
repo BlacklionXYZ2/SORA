@@ -13,11 +13,13 @@ from enum import StrEnum
 from pydantic import Field
 
 from sora.contracts.base import StrictModel
+from sora.contracts.desktop import DesktopActionResult, DesktopActionStatus
 from sora.contracts.models import (
     AgentRunRecord,
     AgentSessionRecord,
     ApprovalRequest,
     CapabilityGrant,
+    GrantStatus,
     NormalizedResult,
     PatchEnvelope,
     ProposeFactOperation,
@@ -29,7 +31,13 @@ from sora.contracts.patches import PatchConflict, PatchDisposition
 from sora.identity.loader import IdentityBundle
 
 from .database import SQLiteDatabase
-from .records import IdentityRevisionRecord, MemoryState, MessageRecord, StoredMemory
+from .records import (
+    IdentityRevisionRecord,
+    MemoryState,
+    MessageRecord,
+    StoredMemory,
+    VoiceTurnReceipt,
+)
 
 
 def _now() -> str:
@@ -130,7 +138,7 @@ class SoraRepository:
     async def list_messages(self, conversation_id: str) -> list[MessageRecord]:
         def read(db: sqlite3.Connection) -> list[MessageRecord]:
             rows = db.execute(
-                "SELECT * FROM messages WHERE conversation_id=? ORDER BY created_at, message_id",
+                "SELECT * FROM messages WHERE conversation_id=? ORDER BY created_at, rowid",
                 (conversation_id,),
             ).fetchall()
             return [
@@ -149,6 +157,193 @@ class SoraRepository:
             ]
 
         return await self.database.read(read)
+
+    async def recent_messages(
+        self, conversation_id: str, owner_id: str, project_id: str, *, limit: int = 8
+    ) -> list[MessageRecord]:
+        """Read bounded, owner/project-scoped history for direct dialogue context."""
+        if not 1 <= limit <= 32:
+            raise ValueError("recent message limit must be between 1 and 32")
+
+        def read(db: sqlite3.Connection) -> list[MessageRecord]:
+            rows = db.execute(
+                "SELECT * FROM messages WHERE conversation_id=? AND owner_id=? AND project_id=? "
+                "ORDER BY created_at DESC, rowid DESC LIMIT ?",
+                (conversation_id, owner_id, project_id, limit),
+            ).fetchall()
+            return [
+                MessageRecord(
+                    message_id=row["message_id"],
+                    conversation_id=row["conversation_id"],
+                    owner_id=row["owner_id"],
+                    project_id=row["project_id"],
+                    role=row["role"],
+                    content=row["content"],
+                    provenance=row["provenance"],
+                    sensitivity=row["sensitivity"],
+                    created_at=datetime.fromisoformat(row["created_at"]),
+                )
+                for row in reversed(rows)
+            ]
+
+        return await self.database.read(read)
+
+    async def append_dialogue_turn(
+        self, user_message: MessageRecord, assistant_message: MessageRecord
+    ) -> None:
+        """Commit a complete text turn and its two replay events in one transaction."""
+        if (
+            user_message.role != "user"
+            or assistant_message.role != "assistant"
+            or user_message.conversation_id != assistant_message.conversation_id
+            or user_message.owner_id != assistant_message.owner_id
+            or user_message.project_id != assistant_message.project_id
+        ):
+            raise ValueError("dialogue turn requires matching user and assistant messages")
+
+        def write(db: sqlite3.Connection) -> None:
+            for message in (user_message, assistant_message):
+                db.execute(
+                    "INSERT INTO messages(message_id, conversation_id, owner_id, project_id, role, content, provenance, sensitivity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        message.message_id,
+                        message.conversation_id,
+                        message.owner_id,
+                        message.project_id,
+                        message.role,
+                        message.content,
+                        message.provenance,
+                        message.sensitivity,
+                        message.created_at.isoformat(),
+                    ),
+                )
+                revision = self._next_revision(db)
+                self._append_event(db, message.owner_id, revision, "message.finalized", None, None)
+
+        await self.database.write(write)
+
+    async def get_voice_turn(self, utterance_key: str) -> VoiceTurnReceipt | None:
+        """Read an already-finalized voice turn without exposing volatile transcript state."""
+
+        def read(db: sqlite3.Connection) -> VoiceTurnReceipt | None:
+            row = db.execute(
+                "SELECT * FROM voice_utterances WHERE utterance_key=?", (utterance_key,)
+            ).fetchone()
+            if row is None:
+                return None
+            return self._voice_turn_from_row(db, row, created=False)
+
+        return await self.database.read(read)
+
+    async def append_voice_turn_once(
+        self,
+        *,
+        utterance_key: str,
+        device_id: str,
+        session_id: str,
+        utterance_id: str,
+        transcript_sha256: str,
+        user_message: MessageRecord,
+        assistant_message: MessageRecord,
+    ) -> VoiceTurnReceipt:
+        """Atomically append one user/assistant turn or return its exact prior receipt."""
+
+        if user_message.conversation_id != assistant_message.conversation_id:
+            raise ValueError("voice turn messages must share a conversation")
+        if user_message.owner_id != assistant_message.owner_id:
+            raise ValueError("voice turn messages must share an owner")
+        if user_message.project_id != assistant_message.project_id:
+            raise ValueError("voice turn messages must share a project")
+        if user_message.role != "user" or assistant_message.role != "assistant":
+            raise ValueError("voice turn roles must be user then assistant")
+
+        def write(db: sqlite3.Connection) -> VoiceTurnReceipt:
+            existing = db.execute(
+                "SELECT * FROM voice_utterances WHERE utterance_key=?", (utterance_key,)
+            ).fetchone()
+            if existing is not None:
+                if existing["transcript_sha256"] != transcript_sha256:
+                    raise ValueError("voice utterance key was reused with different final text")
+                return self._voice_turn_from_row(db, existing, created=False)
+
+            for message in (user_message, assistant_message):
+                db.execute(
+                    "INSERT INTO messages(message_id, conversation_id, owner_id, project_id, role, content, provenance, sensitivity, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        message.message_id,
+                        message.conversation_id,
+                        message.owner_id,
+                        message.project_id,
+                        message.role,
+                        message.content,
+                        message.provenance,
+                        message.sensitivity,
+                        message.created_at.isoformat(),
+                    ),
+                )
+                revision = self._next_revision(db)
+                self._append_event(db, message.owner_id, revision, "message.finalized", None, None)
+            db.execute(
+                "INSERT INTO voice_utterances(utterance_key, owner_id, device_id, project_id, conversation_id, session_id, utterance_id, transcript_sha256, user_message_id, assistant_message_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    utterance_key,
+                    user_message.owner_id,
+                    device_id,
+                    user_message.project_id,
+                    user_message.conversation_id,
+                    session_id,
+                    utterance_id,
+                    transcript_sha256,
+                    user_message.message_id,
+                    assistant_message.message_id,
+                    user_message.created_at.isoformat(),
+                ),
+            )
+            return VoiceTurnReceipt(
+                utterance_key=utterance_key,
+                transcript_sha256=transcript_sha256,
+                user_message=user_message,
+                assistant_message=assistant_message,
+                created=True,
+            )
+
+        return await self.database.write(write)
+
+    @staticmethod
+    def _voice_turn_from_row(
+        db: sqlite3.Connection, row: sqlite3.Row, *, created: bool
+    ) -> VoiceTurnReceipt:
+        message_rows = {
+            message_row["message_id"]: message_row
+            for message_row in db.execute(
+                "SELECT * FROM messages WHERE message_id IN (?, ?)",
+                (row["user_message_id"], row["assistant_message_id"]),
+            ).fetchall()
+        }
+
+        def message(message_id: str) -> MessageRecord:
+            message_row = message_rows.get(message_id)
+            if message_row is None:
+                raise RuntimeError("voice utterance references a missing durable message")
+            return MessageRecord(
+                message_id=message_row["message_id"],
+                conversation_id=message_row["conversation_id"],
+                owner_id=message_row["owner_id"],
+                project_id=message_row["project_id"],
+                role=message_row["role"],
+                content=message_row["content"],
+                provenance=message_row["provenance"],
+                sensitivity=message_row["sensitivity"],
+                created_at=datetime.fromisoformat(message_row["created_at"]),
+            )
+
+        return VoiceTurnReceipt(
+            utterance_key=row["utterance_key"],
+            transcript_sha256=row["transcript_sha256"],
+            user_message=message(row["user_message_id"]),
+            assistant_message=message(row["assistant_message_id"]),
+            created=created,
+        )
 
     async def activate_identity(
         self,
@@ -433,6 +628,152 @@ class SoraRepository:
 
         return await self.database.read(read)
 
+    async def get_approval(self, approval_id: str) -> ApprovalRequest | None:
+        def read(db: sqlite3.Connection) -> ApprovalRequest | None:
+            row = db.execute(
+                "SELECT payload FROM approvals WHERE approval_id=?", (approval_id,)
+            ).fetchone()
+            return ApprovalRequest.model_validate_json(row[0]) if row else None
+
+        return await self.database.read(read)
+
+    async def consume_grant(self, grant_id: str) -> CapabilityGrant:
+        """Atomically account for one successful use of a bounded grant."""
+
+        def write(db: sqlite3.Connection) -> CapabilityGrant:
+            row = db.execute("SELECT payload FROM grants WHERE grant_id=?", (grant_id,)).fetchone()
+            if row is None:
+                raise LookupError(f"grant '{grant_id}' was not found")
+            grant = CapabilityGrant.model_validate_json(row[0])
+            if grant.max_uses is None:
+                return grant
+            if grant.used_count >= grant.max_uses:
+                raise PermissionError(f"grant '{grant_id}' has no remaining uses")
+            used_count = grant.used_count + 1
+            status = GrantStatus.EXHAUSTED if used_count >= grant.max_uses else grant.status
+            updated = grant.model_copy(update={"used_count": used_count, "status": status})
+            db.execute(
+                "UPDATE grants SET status=?, payload=? WHERE grant_id=?",
+                (updated.status.value, updated.model_dump_json(), grant_id),
+            )
+            revision = self._next_revision(db)
+            self._append_event(db, updated.owner_id, revision, "grant.consumed", None, None)
+            return updated
+
+        return await self.database.write(write)
+
+    async def reserve_desktop_action(
+        self,
+        result: DesktopActionResult,
+        *,
+        request_hash: str,
+    ) -> tuple[DesktopActionResult, bool]:
+        """Atomically reserve one semantic effect attempt before any native side effect."""
+
+        def write(db: sqlite3.Connection) -> tuple[DesktopActionResult, bool]:
+            row = db.execute(
+                "SELECT request_hash, payload FROM desktop_action_attempts WHERE attempt_id=?",
+                (result.attempt_id,),
+            ).fetchone()
+            if row is not None:
+                if row["request_hash"] != request_hash:
+                    raise ValueError("desktop action attempt ID was reused with different input")
+                return DesktopActionResult.model_validate_json(row["payload"]), False
+            db.execute(
+                "INSERT INTO desktop_action_attempts(attempt_id, request_hash, target_id, action, status, payload, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    result.attempt_id,
+                    request_hash,
+                    result.target_id,
+                    result.action,
+                    result.status.value,
+                    result.model_dump_json(),
+                    result.created_at.isoformat(),
+                    result.updated_at.isoformat(),
+                ),
+            )
+            return result, True
+
+        return await self.database.write(write)
+
+    async def transition_desktop_action(
+        self,
+        attempt_id: str,
+        *,
+        expected: DesktopActionStatus,
+        result: DesktopActionResult,
+    ) -> DesktopActionResult:
+        """Compare-and-set an attempt so only its owner can reach the side effect."""
+
+        def write(db: sqlite3.Connection) -> DesktopActionResult:
+            row = db.execute(
+                "SELECT status FROM desktop_action_attempts WHERE attempt_id=?", (attempt_id,)
+            ).fetchone()
+            if row is None:
+                raise LookupError(f"desktop action attempt '{attempt_id}' was not found")
+            if row["status"] != expected.value:
+                raise RuntimeError(
+                    f"desktop action attempt '{attempt_id}' is {row['status']}, not {expected.value}"
+                )
+            db.execute(
+                "UPDATE desktop_action_attempts SET status=?, payload=?, updated_at=? WHERE attempt_id=?",
+                (
+                    result.status.value,
+                    result.model_dump_json(),
+                    result.updated_at.isoformat(),
+                    attempt_id,
+                ),
+            )
+            return result
+
+        return await self.database.write(write)
+
+    async def get_desktop_action(self, attempt_id: str) -> DesktopActionResult | None:
+        def read(db: sqlite3.Connection) -> DesktopActionResult | None:
+            row = db.execute(
+                "SELECT payload FROM desktop_action_attempts WHERE attempt_id=?", (attempt_id,)
+            ).fetchone()
+            return DesktopActionResult.model_validate_json(row[0]) if row else None
+
+        return await self.database.read(read)
+
+    async def recover_interrupted_desktop_actions(self, *, now: datetime) -> int:
+        """Persist unknown outcomes for crash-window attempts; never replay them."""
+
+        def write(db: sqlite3.Connection) -> int:
+            rows = db.execute(
+                "SELECT payload FROM desktop_action_attempts WHERE status IN (?, ?)",
+                (DesktopActionStatus.PENDING.value, DesktopActionStatus.EXECUTING.value),
+            ).fetchall()
+            for row in rows:
+                previous = DesktopActionResult.model_validate_json(row["payload"])
+                executing = previous.status is DesktopActionStatus.EXECUTING
+                recovered = previous.model_copy(
+                    update={
+                        "status": (
+                            DesktopActionStatus.UNKNOWN_OUTCOME
+                            if executing
+                            else DesktopActionStatus.FAILED
+                        ),
+                        "reason": "core_restarted_during_effect" if executing else "core_restarted",
+                        "effect_attempted": executing,
+                        "verified": False,
+                        "updated_at": now,
+                    }
+                )
+                db.execute(
+                    "UPDATE desktop_action_attempts SET status=?, payload=?, updated_at=? WHERE attempt_id=?",
+                    (
+                        recovered.status.value,
+                        recovered.model_dump_json(),
+                        now.isoformat(),
+                        recovered.attempt_id,
+                    ),
+                )
+            return len(rows)
+
+        return await self.database.write(write)
+
     async def get_task(self, task_id: str) -> TaskRecord | None:
         def read(db: sqlite3.Connection) -> TaskRecord | None:
             row = db.execute("SELECT payload FROM tasks WHERE task_id=?", (task_id,)).fetchone()
@@ -685,6 +1026,7 @@ class SoraRepository:
         event_type: str,
         task_id: str | None,
         run_id: str | None,
+        event_payload: dict[str, object] | None = None,
     ) -> str:
         sequence = int(
             db.execute(
@@ -705,7 +1047,7 @@ class SoraRepository:
             "run_id": run_id,
             "correlation_id": task_id or run_id or event_id,
             "revision": revision,
-            "payload": {},
+            "payload": event_payload or {},
         }
         db.execute(
             "INSERT INTO events(event_id, stream_id, sequence, revision, payload) VALUES (?, ?, ?, ?, ?)",

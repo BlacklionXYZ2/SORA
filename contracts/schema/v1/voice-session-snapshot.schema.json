@@ -1,0 +1,174 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "VoicePlaybackState": {
+      "enum": [
+        "queued",
+        "started",
+        "completed",
+        "failed"
+      ],
+      "title": "VoicePlaybackState",
+      "type": "string"
+    },
+    "VoiceSessionStatus": {
+      "enum": [
+        "active",
+        "input_unavailable",
+        "output_unavailable",
+        "devices_unavailable",
+        "closed"
+      ],
+      "title": "VoiceSessionStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "active_generation_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "active_playback_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "finalized_utterances": {
+      "minimum": 0,
+      "title": "Finalized Utterances",
+      "type": "integer"
+    },
+    "generation_cancel_requested": {
+      "default": false,
+      "title": "Generation Cancel Requested",
+      "type": "boolean"
+    },
+    "input_device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "input_generation": {
+      "minimum": 1,
+      "title": "Input Generation",
+      "type": "integer"
+    },
+    "language": {
+      "title": "Language",
+      "type": "string"
+    },
+    "opened_at": {
+      "format": "date-time",
+      "title": "Opened At",
+      "type": "string"
+    },
+    "output_device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "output_epoch": {
+      "minimum": 0,
+      "title": "Output Epoch",
+      "type": "integer"
+    },
+    "output_generation": {
+      "minimum": 1,
+      "title": "Output Generation",
+      "type": "integer"
+    },
+    "output_suppressed": {
+      "default": false,
+      "title": "Output Suppressed",
+      "type": "boolean"
+    },
+    "partial_text": {
+      "anyOf": [
+        {
+          "maxLength": 16384,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Partial Text"
+    },
+    "partial_utterance_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "playback_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VoicePlaybackState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "status": {
+      "$ref": "#/$defs/VoiceSessionStatus"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "voice_id": {
+      "$ref": "#/$defs/Identifier"
+    }
+  },
+  "required": [
+    "session_id",
+    "status",
+    "input_device_id",
+    "output_device_id",
+    "input_generation",
+    "output_generation",
+    "language",
+    "voice_id",
+    "finalized_utterances",
+    "output_epoch",
+    "opened_at",
+    "updated_at"
+  ],
+  "title": "VoiceSessionSnapshot",
+  "type": "object"
+}

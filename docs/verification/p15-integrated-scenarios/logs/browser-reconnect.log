@@ -1,0 +1,25 @@
+COMMAND: node --test clients/pwa/tests/pwa.test.mjs
+STARTED: 2026-09-22T19:27:07.6214434+01:00
+FINISHED: 2026-09-22T19:27:07.7751109+01:00
+EXIT_CODE: 0
+
+STDOUT
+✔ API credentials stay in memory and every authenticated fetch is network-only (16.1428ms)
+✔ paired devices exchange a long-lived device credential for a memory-only scoped session (0.7546ms)
+✔ a disconnected client converges to the same authoritative projections (1.0869ms)
+✔ service worker caches only its fixed shell and explicitly bypasses API data (3.3726ms)
+✔ manifest and generated PNGs meet installable app-shell requirements (1.3268ms)
+✔ conversation, microphone, task control, and optional traces are present (0.898ms)
+✔ remote pairing UI and vault never persist the owner or short-lived session token (0.9241ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 90.693
+
+STDERR
+
+

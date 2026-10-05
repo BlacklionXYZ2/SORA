@@ -1,0 +1,320 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "EmbodimentPresentationState": {
+      "description": "High-level semantic presentation state for avatar embodiment.",
+      "enum": [
+        "idle",
+        "moving",
+        "looking",
+        "thinking",
+        "listening",
+        "speaking",
+        "waiting_for_agent",
+        "reading",
+        "typing",
+        "waving",
+        "sitting",
+        "leaning",
+        "climbing"
+      ],
+      "title": "EmbodimentPresentationState",
+      "type": "string"
+    },
+    "EmbodimentSemanticAction": {
+      "description": "Presentation-facing action kind; never action authority or effect evidence.",
+      "enum": [
+        "point",
+        "press",
+        "type",
+        "touch",
+        "place_object"
+      ],
+      "title": "EmbodimentSemanticAction",
+      "type": "string"
+    },
+    "EmbodimentSupportSurface": {
+      "additionalProperties": false,
+      "description": "Short-lived selected desktop surface; contains no title, text, or process data.",
+      "properties": {
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "kind": {
+          "const": "window_top",
+          "default": "window_top",
+          "title": "Kind",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "rect": {
+          "$ref": "#/$defs/ScreenRect"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "state": {
+          "default": "active",
+          "enum": [
+            "active",
+            "moving",
+            "minimized",
+            "closed",
+            "occluded"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "surface_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "surface_id",
+        "rect",
+        "observed_at",
+        "expires_at"
+      ],
+      "title": "EmbodimentSupportSurface",
+      "type": "object"
+    },
+    "EmbodimentVerb": {
+      "description": "Action verbs for avatar embodiment commands.",
+      "enum": [
+        "move_to",
+        "look_at",
+        "set_state",
+        "show_marker",
+        "hide_marker",
+        "presentation_phase",
+        "interaction_start",
+        "set_supports"
+      ],
+      "title": "EmbodimentVerb",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    },
+    "VirtualDesktopPoint": {
+      "additionalProperties": false,
+      "description": "Global Windows virtual-desktop coordinate in physical pixels.",
+      "properties": {
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "title": "VirtualDesktopPoint",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Command from Core to embodiment client directing movement or presentation.",
+  "properties": {
+    "command_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "marker_duration_seconds": {
+      "default": 5.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Marker Duration Seconds",
+      "type": "number"
+    },
+    "presentation_style": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "semantic_action": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EmbodimentSemanticAction"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "semantic_action_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "semantic_phase": {
+      "anyOf": [
+        {
+          "enum": [
+            "navigate",
+            "align",
+            "reach",
+            "contact",
+            "verify",
+            "retract",
+            "completed",
+            "cancelled",
+            "failed"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Semantic Phase"
+    },
+    "speed_px_per_sec": {
+      "default": 150.0,
+      "exclusiveMinimum": 0,
+      "maximum": 10000,
+      "title": "Speed Px Per Sec",
+      "type": "number"
+    },
+    "state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EmbodimentPresentationState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "support_surfaces": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EmbodimentSupportSurface"
+      },
+      "maxItems": 32,
+      "title": "Support Surfaces",
+      "type": "array"
+    },
+    "target_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "target_point": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VirtualDesktopPoint"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "target_rect": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScreenRect"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "topology_revision": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "verb": {
+      "$ref": "#/$defs/EmbodimentVerb"
+    }
+  },
+  "required": [
+    "command_id",
+    "verb",
+    "created_at"
+  ],
+  "title": "EmbodimentCommand",
+  "type": "object"
+}

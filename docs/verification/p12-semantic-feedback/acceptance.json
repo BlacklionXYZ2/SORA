@@ -1,0 +1,44 @@
+{
+  "stage": "P12.5",
+  "status": "complete",
+  "completed_at": "2026-09-17T12:06:02+01:00",
+  "model": "GPT-5.6 Sol",
+  "kinds_supported": [
+    "grabbed", "released", "fell", "landed", "support_removed",
+    "clicked", "poked", "completed", "failed"
+  ],
+  "packaged": {
+    "event_count": 26,
+    "projection_count": 20,
+    "kinds_exercised": [
+      "clicked", "fell", "grabbed", "landed", "poked", "released", "support_removed"
+    ],
+    "duration_seconds": 95.01
+  },
+  "bounds": {
+    "unity_pending_capacity": 64,
+    "physical_cooldown_ms": 200,
+    "click_poke_cooldown_ms": 500,
+    "core_rate_events": 20,
+    "core_rate_window_seconds": 5,
+    "core_seen_id_capacity": 1024,
+    "core_retention_capacity": 256,
+    "projection_capacity": 20,
+    "replayed_after_disconnect": false
+  },
+  "verification": {
+    "unity_playmode": {"passed": 47, "failed": 0, "p12_5_tests": 2},
+    "portable_csharp": {"passed": 22, "failed": 0},
+    "embodiment": {"passed": 39, "skipped": 3},
+    "repository": {"passed": 277, "skipped": 9},
+    "mypy_source_files": 148,
+    "ruff": "passed",
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "privacy": {
+    "credentials_in_feedback": false,
+    "desktop_text_in_feedback": false,
+    "continuous_pose_stream": false
+  }
+}

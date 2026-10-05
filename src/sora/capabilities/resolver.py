@@ -36,10 +36,16 @@ _SCOPE_HIERARCHY: dict[CapabilityScope, set[CapabilityScope]] = {
 _CATEGORY_KEYWORDS: dict[CapabilityCategory, tuple[str, ...]] = {
     CapabilityCategory.MEDIA: ("play", "pause", "track", "song", "volume", "music", "spotify"),
     CapabilityCategory.TASKS: (
-        "task", "board", "todo", "doing", "done", "kanban", "cody", "assign"
+        "task",
+        "board",
+        "todo",
+        "doing",
+        "done",
+        "kanban",
+        "cody",
+        "assign",
     ),
     CapabilityCategory.FILES: ("file", "read", "write", "open", "code", "repo", "source"),
-
     CapabilityCategory.DESKTOP: ("window", "screen", "click", "point", "touch", "look", "button"),
     CapabilityCategory.SOCIAL: ("post", "reply", "social", "nekoverse", "feed", "message"),
     CapabilityCategory.CALENDAR: ("calendar", "meeting", "schedule", "event", "time"),

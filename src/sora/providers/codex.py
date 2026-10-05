@@ -6,11 +6,12 @@ import asyncio
 import json
 import re
 import shutil
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
+from sora.contracts.changelog import CHANGELOG_INSTRUCTION
 from sora.contracts.models import (
     EventEnvelope,
     NormalizedResult,
@@ -24,12 +25,31 @@ from sora.contracts.models import (
     ProviderOutcome,
     ProviderRequest,
 )
-from sora.providers.base import MalformedProviderResult, ProviderLaunchError
+from sora.providers.base import MalformedProviderResult, ProviderLaunchError, optional_text
+from sora.providers.windows_job import WindowsWriterJob, job_name
 from sora.workspaces import GitWorkspaceManager, WorkspaceError, WorkspaceRecord
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL | re.IGNORECASE)
 SandboxMode = Literal["read-only", "workspace-write", "danger-full-access"]
 _APP_SERVER_STREAM_LIMIT = 4 * 1024 * 1024
+
+
+def _match_direct_root(workspace: Path, direct_roots: tuple[str, ...]) -> Path | None:
+    """Return the granted root that contains this working directory, if one does.
+
+    A grant is one exact absolute directory and what is under it - never a drive root, never a
+    relative path. These roots are the only place this adapter may write without a worktree.
+    """
+    for raw in direct_roots:
+        candidate = Path(raw)
+        if not candidate.is_absolute():
+            continue
+        resolved = candidate.resolve()
+        if resolved == Path(resolved.anchor):
+            continue  # a bare drive or filesystem root is never a grant
+        if workspace == resolved or resolved in workspace.parents:
+            return resolved
+    return None
 
 
 @dataclass(slots=True)
@@ -40,6 +60,7 @@ class _Run:
     thread_id: str | None = None
     turn_id: str | None = None
     cancelled: bool = False
+    interrupt_sent: bool = False
     messages: list[str] = field(default_factory=list)
     commands: list[str] = field(default_factory=list)
     files_changed: list[str] = field(default_factory=list)
@@ -48,6 +69,8 @@ class _Run:
     write_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     request_number: int = 0
     resume_thread_id: str | None = None
+    writer_job: WindowsWriterJob | None = None
+    writer_stopped: bool = False
 
 
 def _json_object(text: str) -> dict[str, Any]:
@@ -142,6 +165,8 @@ def parse_codex_result(text: str, request: ProviderRequest) -> NormalizedResult:
             if isinstance(data.get("suggested_response"), str)
             else None
         ),
+        changelog_path=optional_text(data, "changelog_path"),
+        changelog_entry=optional_text(data, "changelog_entry"),
         patch=patch,
         usage=usage if isinstance(usage, dict) else None,
     )
@@ -164,6 +189,8 @@ class CodexAppServerProvider:
         workspace_record: WorkspaceRecord | None = None,
         workspace_manager: GitWorkspaceManager | None = None,
         lease_owner: str | None = None,
+        direct_roots: tuple[str, ...] = (),
+        lease_check: Callable[[str, str], bool] | None = None,
     ) -> None:
         workspace = Path(cwd).resolve()
         if not workspace.is_dir():
@@ -172,7 +199,9 @@ class CodexAppServerProvider:
             raise ValueError("max_output_chars must be positive")
         if sandbox == "danger-full-access":
             raise ValueError("danger-full-access is not permitted by the P05 adapter")
-        if sandbox == "workspace-write":
+        if sandbox == "workspace-write" and _match_direct_root(workspace, direct_roots) is None:
+            # Owner-granted project directories replace worktree isolation; without a grant the
+            # original owned-worktree rule is unchanged.
             if workspace_record is None or workspace_manager is None or lease_owner is None:
                 raise ValueError("workspace-write requires an owned workspace and write lease")
             if Path(workspace_record.worktree_path).resolve() != workspace:
@@ -188,8 +217,44 @@ class CodexAppServerProvider:
         self.workspace_record = workspace_record
         self.workspace_manager = workspace_manager
         self.lease_owner = lease_owner
+        self.direct_roots = direct_roots
+        self.lease_check = lease_check
         self._runs: dict[str, _Run] = {}
+        self._stopped_writers: set[str] = set()
         self._thread_ids: dict[str, str] = {}
+
+    def for_direct_root(
+        self, root: str, *, lease_check: Callable[[str, str], bool] | None = None,
+    ) -> CodexAppServerProvider:
+        """Bind this adapter to one owner-granted project directory, in place, with no worktree.
+
+        The owner's decision is that agents work in real project directories - isolation by
+        location is replaced by recorded evidence (a mandatory changelog entry and, in a git
+        project, a reviewable diff), not by a throwaway worktree.
+        """
+        return CodexAppServerProvider(
+            command=self.command,
+            args=self.args,
+            cwd=str(Path(root)),
+            model=self.model,
+            reasoning_effort=self.reasoning_effort,
+            sandbox="workspace-write",
+            timeout_seconds=self.timeout_seconds,
+            max_output_chars=self.max_output_chars,
+            direct_roots=(*self.direct_roots, root),
+            lease_check=lease_check,
+        )
+
+    def for_read_root(self, root: str) -> CodexAppServerProvider:
+        return CodexAppServerProvider(
+            command=self.command, args=self.args, cwd=root,
+            model=self.model, reasoning_effort=self.reasoning_effort, sandbox="read-only",
+            timeout_seconds=self.timeout_seconds, max_output_chars=self.max_output_chars,
+        )
+
+    def writer_stopped(self, run_id: str) -> bool:
+        state = self._runs.get(run_id)
+        return run_id in self._stopped_writers or bool(state and state.writer_stopped)
 
     def for_owned_workspace(
         self,
@@ -247,10 +312,20 @@ class CodexAppServerProvider:
             return request.run_id
         self._assert_write_authority(request)
         executable = shutil.which(self.command) or self.command
+        writer_job = None
         try:
+            command = [executable, *self.args]
+            if request.write_lease_ref is not None:
+                import sys
+
+                writer_job = WindowsWriterJob(job_name(request.run_id))
+                # A Windows venv python.exe is itself a launcher and can spawn the real
+                # interpreter before assignment. Use the real base interpreter here.
+                command = [str(Path(sys.base_prefix) / "python.exe"),
+                           str(Path(__file__).with_name("writer_bootstrap.py")),
+                           *command]
             process = await asyncio.create_subprocess_exec(
-                executable,
-                *self.args,
+                *command,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.DEVNULL,
@@ -258,17 +333,35 @@ class CodexAppServerProvider:
                 limit=_APP_SERVER_STREAM_LIMIT,
             )
         except (FileNotFoundError, OSError) as exc:
+            if writer_job is not None:
+                writer_job.close()
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
                 f"Codex App Server could not be started: {self.command}",
             ) from exc
         if process.stdin is None or process.stdout is None:
             process.kill()
+            await process.wait()
+            if writer_job is not None:
+                writer_job.close()
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
                 "Codex App Server has no stdio transport",
             )
-        state = _Run(process=process, request=request, resume_thread_id=resume_thread_id)
+        state = _Run(process=process, request=request, resume_thread_id=resume_thread_id,
+                     writer_job=writer_job)
+        if writer_job is not None:
+            try:
+                writer_job.attach(process.pid)
+                process.stdin.write(b"\n")
+                await process.stdin.drain()
+            except BaseException:
+                if process.returncode is None:
+                    process.kill()
+                await process.wait()
+                if state.writer_job:
+                    state.writer_job.close()
+                raise
         state.task = asyncio.create_task(
             self._execute(state),
             name=f"codex-app-server-{request.run_id}",
@@ -279,6 +372,15 @@ class CodexAppServerProvider:
     def _assert_write_authority(self, request: ProviderRequest) -> None:
         if self.sandbox == "read-only":
             return
+        if self.direct_roots and self.workspace_record is None:
+            if (request.working_directory == self.cwd
+                    and request.write_lease_ref == request.run_id and self.lease_check is not None
+                    and self.lease_check(request.run_id, self.cwd)):
+                return
+            raise ProviderLaunchError(
+                ProviderErrorCode.INVALID_REQUEST,
+                "Direct project write has no live Core root lease",
+            )
         if (
             self.workspace_record is None
             or self.workspace_manager is None
@@ -324,6 +426,11 @@ class CodexAppServerProvider:
             )
         try:
             return await state.task
+        except asyncio.CancelledError:
+            current = asyncio.current_task()
+            if state.cancelled and current is not None and current.cancelling() == 0:
+                return self._cancelled_result(state.request)
+            raise
         finally:
             self._runs.pop(run_id, None)
 
@@ -342,15 +449,26 @@ class CodexAppServerProvider:
         if state is None:
             return
         state.cancelled = True
-        if state.thread_id and state.turn_id and state.process.returncode is None:
-            await self._send(
-                state,
-                {
-                    "method": "turn/interrupt",
-                    "id": self._next_id(state, "interrupt"),
-                    "params": {"threadId": state.thread_id, "turnId": state.turn_id},
-                },
-            )
+        try:
+            async with asyncio.timeout(1):
+                await self._interrupt_if_started(state)
+        except (TimeoutError, BrokenPipeError, ConnectionResetError):
+            pass
+        if state.task is not None:
+            try:
+                async with asyncio.timeout(2):
+                    await asyncio.shield(state.task)
+            except TimeoutError:
+                state.task.cancel()
+                try:
+                    async with asyncio.timeout(5):
+                        await asyncio.shield(state.task)
+                except (TimeoutError, asyncio.CancelledError):
+                    pass
+            except (Exception, asyncio.CancelledError):
+                # Result consumption owns provider error reporting. Stop evidence is
+                # recorded by the task's finally, never inferred from this return.
+                pass
 
     async def steer(self, run_id: str, instruction: str) -> None:
         state = self._runs.get(run_id)
@@ -402,33 +520,62 @@ class CodexAppServerProvider:
         state = _Run(process=process, request=request)
         try:
             await self._initialize(state)
-            result = await self._rpc(
-                state,
-                "model/list",
-                {"limit": 100, "includeHidden": False},
-            )
-            data = result.get("data")
-            return (
-                tuple(item for item in data if isinstance(item, dict))
-                if isinstance(data, list)
-                else ()
-            )
+            models: list[dict[str, Any]] = []
+            cursor = None
+            seen: set[str] = set()
+            for _ in range(20):
+                params: dict[str, Any] = {"limit": 100, "includeHidden": True}
+                if cursor is not None:
+                    params["cursor"] = cursor
+                result = await self._rpc(state, "model/list", params)
+                data = result.get("data")
+                if not isinstance(data, list):
+                    raise ValueError("Codex returned an invalid model catalogue")
+                models.extend(item for item in data if isinstance(item, dict))
+                cursor = result.get("nextCursor")
+                if cursor is None:
+                    return tuple(models)
+                if not isinstance(cursor, str) or not cursor or cursor in seen:
+                    raise ValueError("Codex returned an invalid catalogue cursor")
+                seen.add(cursor)
+            raise ValueError("Codex model catalogue exceeds the bounded pagination limit")
         finally:
             await self._stop_process(process)
 
     async def _execute(self, state: _Run) -> NormalizedResult:
         try:
+            model = state.request.model or self.model
+            effort = state.request.reasoning_effort or self.reasoning_effort
             await self._initialize(state)
+            if state.cancelled:
+                return self._cancelled_result(state.request)
+            project_config: dict[str, Any] = {}
+            if state.request.working_directory is not None:
+                configuration = await self._rpc(state, "config/read", {"includeLayers": False})
+                servers = (configuration.get("config") or {}).get("mcp_servers", {})
+                if not isinstance(servers, dict):
+                    raise RuntimeError("Cannot determine the project's integration boundary")
+                project_config = {
+                    "features.apps": False, "features.multi_agent": False,
+                    "features.multi_agent_v2": False, "features.plugins": False,
+                    "features.remote_plugin": False, "features.browser_use": False,
+                    "features.browser_use_external": False,
+                    "features.browser_use_full_cdp_access": False,
+                    "features.in_app_browser": False,
+                    "web_search": "disabled",
+                    **{f"mcp_servers.{name}.enabled": False for name in servers},
+                }
             if state.resume_thread_id is None:
                 thread = await self._rpc(
                     state,
                     "thread/start",
                     {
-                        "model": self.model,
+                        "model": model,
                         "cwd": self.cwd,
                         "approvalPolicy": "never",
                         "sandbox": self.sandbox,
                         "serviceName": "sora-runtime",
+                        **({"config": project_config} if project_config else {}),
                         "developerInstructions": (
                             "This thread is driven by SORA. Keep work bounded to the assigned task "
                             "and deadline, do not spawn subagents, and do not inspect ignored or "
@@ -442,13 +589,20 @@ class CodexAppServerProvider:
                     "thread/resume",
                     {
                         "threadId": state.resume_thread_id,
-                        "model": self.model,
+                        "model": model,
                         "cwd": self.cwd,
                         "approvalPolicy": "never",
                         "sandbox": self.sandbox,
                     },
                 )
             thread_record = thread.get("thread") or {}
+            returned_model = thread.get("model")
+            if (state.request.model is not None and isinstance(returned_model, str)
+                    and returned_model != state.request.model):
+                raise ProviderLaunchError(
+                    ProviderErrorCode.INVALID_REQUEST,
+                    "Codex returned a different model; the requested task prompt was not sent",
+                )
             state.thread_id = str(thread_record.get("id") or "")
             if not state.thread_id:
                 raise RuntimeError("Codex App Server did not return a thread ID")
@@ -461,11 +615,18 @@ class CodexAppServerProvider:
                 "is read-only. For a read-only task, use no more than four focused commands. "
                 "Return ONLY JSON with fields conclusion, facts, actions_taken, "
                 "files_read, files_changed, commands_run, uncertainties, warnings, "
-                "memory_updates, task_updates, suggested_response, and usage. Use empty arrays "
-                "when appropriate. Do not claim actions or changes you did not perform.\n\n"
+                "memory_updates, task_updates, suggested_response, changelog_path, "
+                "changelog_entry, and usage. Use empty arrays when appropriate and an empty "
+                "string when a field does not apply. "
+                f"{CHANGELOG_INSTRUCTION} "
+                f"Harness-selected model name: {model}. Use this exact name for changelog "
+                "attribution rather than a generic GPT label. "
+                "Do not claim actions or changes you did not perform.\n\n"
                 f"TASK:\n{state.request.intent}\n\n"
                 f"CANONICAL CONTEXT:\n{state.request.context}"
             )
+            if state.cancelled:
+                return self._cancelled_result(state.request)
             turn = await self._rpc(
                 state,
                 "turn/start",
@@ -473,14 +634,23 @@ class CodexAppServerProvider:
                     "threadId": state.thread_id,
                     "input": [{"type": "text", "text": prompt}],
                     "cwd": self.cwd,
-                    "model": self.model,
-                    "effort": self.reasoning_effort,
+                    "model": model,
+                    "effort": effort,
+                    **({
+                        "approvalPolicy": "never",
+                        "sandboxPolicy": {
+                            "type": "workspaceWrite", "writableRoots": [self.cwd],
+                            "networkAccess": False, "excludeTmpdirEnvVar": True,
+                            "excludeSlashTmp": True,
+                        } if self.sandbox == "workspace-write" else {"type": "readOnly"},
+                    } if state.request.working_directory is not None else {}),
                 },
             )
             turn_record = turn.get("turn") or {}
             state.turn_id = str(turn_record.get("id") or "")
             if not state.turn_id:
                 raise RuntimeError("Codex App Server did not return a turn ID")
+            await self._interrupt_if_started(state)
             status = await self._wait_for_turn(state)
             if state.cancelled or status == "interrupted":
                 return self._cancelled_result(state.request)
@@ -502,7 +672,18 @@ class CodexAppServerProvider:
                 return self._cancelled_result(state.request)
             raise RuntimeError(f"Codex App Server request failed: {type(exc).__name__}") from exc
         finally:
-            await self._stop_process(state.process)
+            try:
+                await self._stop_process(state.process)
+            finally:
+                if state.writer_job is not None:
+                    try:
+                        state.writer_stopped = await asyncio.to_thread(state.writer_job.stop)
+                        if state.writer_stopped:
+                            self._stopped_writers.add(state.request.run_id)
+                            if len(self._stopped_writers) > 1000:
+                                self._stopped_writers.remove(next(iter(self._stopped_writers)))
+                    finally:
+                        state.writer_job.close()
 
     async def _initialize(self, state: _Run) -> None:
         await self._rpc(
@@ -517,6 +698,25 @@ class CodexAppServerProvider:
             },
         )
         await self._send(state, {"method": "initialized", "params": {}})
+
+    async def _interrupt_if_started(self, state: _Run) -> None:
+        if (
+            not state.cancelled
+            or state.interrupt_sent
+            or not state.thread_id
+            or not state.turn_id
+            or state.process.returncode is not None
+        ):
+            return
+        state.interrupt_sent = True
+        await self._send(
+            state,
+            {
+                "method": "turn/interrupt",
+                "id": self._next_id(state, "interrupt"),
+                "params": {"threadId": state.thread_id, "turnId": state.turn_id},
+            },
+        )
 
     async def _rpc(
         self,

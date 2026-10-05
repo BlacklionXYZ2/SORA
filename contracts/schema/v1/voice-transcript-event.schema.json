@@ -1,0 +1,117 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "VoiceTranscriptKind": {
+      "enum": [
+        "partial",
+        "final"
+      ],
+      "title": "VoiceTranscriptKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "device_generation": {
+      "maximum": 1000000,
+      "minimum": 1,
+      "title": "Device Generation",
+      "type": "integer"
+    },
+    "event_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "kind": {
+      "$ref": "#/$defs/VoiceTranscriptKind"
+    },
+    "reference_spoken_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reference Spoken At"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "sequence": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "title": "Sequence",
+      "type": "integer"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "speech_ended_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Speech Ended At"
+    },
+    "speech_started_at": {
+      "format": "date-time",
+      "title": "Speech Started At",
+      "type": "string"
+    },
+    "text": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "utterance_id": {
+      "$ref": "#/$defs/Identifier"
+    }
+  },
+  "required": [
+    "event_id",
+    "session_id",
+    "utterance_id",
+    "sequence",
+    "kind",
+    "text",
+    "confidence",
+    "device_generation",
+    "speech_started_at",
+    "captured_at"
+  ],
+  "title": "VoiceTranscriptEvent",
+  "type": "object"
+}

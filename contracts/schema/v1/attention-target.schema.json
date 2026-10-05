@@ -9,6 +9,11 @@
       "minLength": 1,
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
       "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
     }
   },
   "additionalProperties": false,
@@ -36,6 +41,17 @@
       ],
       "default": null
     },
+    "desktop_target_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
     "device_id": {
       "$ref": "#/$defs/Identifier"
     },
@@ -51,6 +67,21 @@
       "default": false,
       "title": "Pinned",
       "type": "boolean"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "provenance": {
+      "$ref": "#/$defs/NonEmptyText",
+      "default": "unspecified"
     },
     "schema_version": {
       "$ref": "#/$defs/ContractVersion",
@@ -100,6 +131,19 @@
     },
     "target_id": {
       "$ref": "#/$defs/Identifier"
+    },
+    "topology_revision": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Topology Revision"
     },
     "ui_element": {
       "anyOf": [

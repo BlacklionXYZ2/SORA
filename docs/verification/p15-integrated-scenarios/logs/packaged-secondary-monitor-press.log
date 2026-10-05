@@ -1,0 +1,12 @@
+COMMAND: uv run --locked pytest tests/embodiment/test_unity_interaction.py::test_packaged_pause_records_one_verified_embodied_interaction -q -s
+STARTED: 2026-09-22T19:28:47.8254281+01:00
+FINISHED: 2026-09-22T19:29:02.3209488+01:00
+EXIT_CODE: 0
+
+STDOUT
+.
+1 passed in 13.93s
+
+STDERR
+
+

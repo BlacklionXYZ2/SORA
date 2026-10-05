@@ -1,0 +1,313 @@
+{
+  "$defs": {
+    "AutomationBehavior": {
+      "additionalProperties": false,
+      "properties": {
+        "effort": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effort"
+        },
+        "intent": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "kind": {
+          "const": "agent_task",
+          "default": "agent_task",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier",
+          "default": "auto"
+        },
+        "working_directory": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Working Directory"
+        },
+        "workspace_mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "workspace",
+                "worktree"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workspace Mode"
+        }
+      },
+      "required": [
+        "intent"
+      ],
+      "title": "AutomationBehavior",
+      "type": "object"
+    },
+    "AutomationTrigger": {
+      "discriminator": {
+        "mapping": {
+          "daily": "#/$defs/DailyTrigger",
+          "interval": "#/$defs/IntervalTrigger",
+          "once": "#/$defs/OneOffTrigger",
+          "weekly": "#/$defs/WeeklyTrigger"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/OneOffTrigger"
+        },
+        {
+          "$ref": "#/$defs/DailyTrigger"
+        },
+        {
+          "$ref": "#/$defs/WeeklyTrigger"
+        },
+        {
+          "$ref": "#/$defs/IntervalTrigger"
+        }
+      ]
+    },
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DailyTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "daily",
+          "title": "Kind",
+          "type": "string"
+        },
+        "local_time": {
+          "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+          "title": "Local Time",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timezone",
+        "kind",
+        "local_time"
+      ],
+      "title": "DailyTrigger",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "IntervalTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor_at": {
+          "format": "date-time",
+          "title": "Anchor At",
+          "type": "string"
+        },
+        "kind": {
+          "const": "interval",
+          "title": "Kind",
+          "type": "string"
+        },
+        "seconds": {
+          "maximum": 31536000,
+          "minimum": 60,
+          "title": "Seconds",
+          "type": "integer"
+        },
+        "timezone": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timezone",
+        "kind",
+        "anchor_at",
+        "seconds"
+      ],
+      "title": "IntervalTrigger",
+      "type": "object"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "OneOffTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "kind": {
+          "const": "once",
+          "title": "Kind",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "timezone",
+        "kind",
+        "at"
+      ],
+      "title": "OneOffTrigger",
+      "type": "object"
+    },
+    "Weekday": {
+      "maximum": 6,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "WeeklyTrigger": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "weekly",
+          "title": "Kind",
+          "type": "string"
+        },
+        "local_time": {
+          "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+          "title": "Local Time",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        },
+        "weekdays": {
+          "items": {
+            "$ref": "#/$defs/Weekday"
+          },
+          "maxItems": 7,
+          "minItems": 1,
+          "title": "Weekdays",
+          "type": "array"
+        }
+      },
+      "required": [
+        "timezone",
+        "kind",
+        "local_time",
+        "weekdays"
+      ],
+      "title": "WeeklyTrigger",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "behavior": {
+      "$ref": "#/$defs/AutomationBehavior"
+    },
+    "catch_up_seconds": {
+      "default": 300,
+      "maximum": 86400,
+      "minimum": 0,
+      "title": "Catch Up Seconds",
+      "type": "integer"
+    },
+    "description": {
+      "default": "",
+      "maxLength": 2000,
+      "title": "Description",
+      "type": "string"
+    },
+    "missed_policy": {
+      "default": "skip",
+      "enum": [
+        "skip",
+        "run_once"
+      ],
+      "title": "Missed Policy",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "overlap_policy": {
+      "const": "skip",
+      "default": "skip",
+      "title": "Overlap Policy",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "trigger": {
+      "$ref": "#/$defs/AutomationTrigger"
+    }
+  },
+  "required": [
+    "name",
+    "trigger",
+    "behavior"
+  ],
+  "title": "AutomationSpec",
+  "type": "object"
+}

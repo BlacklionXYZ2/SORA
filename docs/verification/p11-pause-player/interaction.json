@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "events": [
+    {
+      "recorded_at": "2026-09-16T18:51:31.5353507Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "target_selected",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 90,
+        "y": 300
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:31.5438621Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "navigate",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 90,
+        "y": 300
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:33.0016443Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "align",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:33.018656Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "reach",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:33.1690663Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "contact",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:33.1855622Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "invoke",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:35.5354032Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "verify",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:35.5519444Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "retract",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:35.7538122Z",
+      "instance_id": "packaged-pause-once",
+      "action_id": "press",
+      "phase": "completed",
+      "target_id": "desktop-target-f5cb5d3c-e95f-4612-ac3d-a2dca82e3e9f",
+      "position": {
+        "x": 311,
+        "y": 499
+      },
+      "reason": "completed",
+      "effect_attempted": true,
+      "verified": true
+    }
+  ]
+}

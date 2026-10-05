@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "events": [
+    {
+      "recorded_at": "2026-09-16T18:51:42.2243306Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "target_selected",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 90,
+        "y": 300
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:42.2318481Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "navigate",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 90,
+        "y": 300
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:43.4396713Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "align",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:43.4566838Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "reach",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:43.6229798Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "contact",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:43.6406024Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "invoke",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:46.0234604Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "verify",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:46.0397647Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "retract",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": null,
+      "effect_attempted": false,
+      "verified": false
+    },
+    {
+      "recorded_at": "2026-09-16T18:51:46.2076012Z",
+      "instance_id": "packaged-type-once",
+      "action_id": "type",
+      "phase": "completed",
+      "target_id": "desktop-target-c614d4b5-eb65-4743-81f1-7478692b794b",
+      "position": {
+        "x": 251,
+        "y": 490
+      },
+      "reason": "completed",
+      "effect_attempted": true,
+      "verified": true
+    }
+  ]
+}

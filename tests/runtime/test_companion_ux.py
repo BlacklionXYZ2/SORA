@@ -34,9 +34,7 @@ async def test_dialogue_responsive_during_slow_reasoning_task(tmp_path: Path) ->
     reply = await runtime.dialogue("How are things going?")
     assert "You said: How are things going?" in reply
 
-    streamed_chunks = [
-        chunk async for chunk in runtime.stream_dialogue("Are you still with me?")
-    ]
+    streamed_chunks = [chunk async for chunk in runtime.stream_dialogue("Are you still with me?")]
     assert "You said: Are you still with me?" in "".join(streamed_chunks)
 
     report = await runtime.wait_for_task(receipt.task.task_id)
@@ -146,4 +144,3 @@ def test_adaptive_result_presentation_modes(tmp_path: Path) -> None:
 
     pres_walkthrough = runtime.present_result(result_simple, mode=PresentationMode.WALKTHROUGH)
     assert pres_walkthrough.mode is PresentationMode.WALKTHROUGH
-

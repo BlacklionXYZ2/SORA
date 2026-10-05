@@ -1,0 +1,169 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopCaptureProvenance": {
+      "enum": [
+        "windows_gdi_on_demand",
+        "deterministic_fixture"
+      ],
+      "type": "string"
+    },
+    "DesktopCaptureSource": {
+      "enum": [
+        "window",
+        "region"
+      ],
+      "title": "DesktopCaptureSource",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "byte_length": {
+      "maximum": 16777216,
+      "minimum": 1,
+      "title": "Byte Length",
+      "type": "integer"
+    },
+    "capture_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "captured_at": {
+      "format": "date-time",
+      "title": "Captured At",
+      "type": "string"
+    },
+    "desktop_target_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "expires_at": {
+      "format": "date-time",
+      "title": "Expires At",
+      "type": "string"
+    },
+    "image_base64": {
+      "maxLength": 22369624,
+      "minLength": 1,
+      "title": "Image Base64",
+      "type": "string"
+    },
+    "mime_type": {
+      "const": "image/png",
+      "default": "image/png",
+      "title": "Mime Type",
+      "type": "string"
+    },
+    "process_id": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Process Id"
+    },
+    "provenance": {
+      "$ref": "#/$defs/DesktopCaptureProvenance",
+      "default": "windows_gdi_on_demand"
+    },
+    "region": {
+      "$ref": "#/$defs/ScreenRect"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Sha256",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/DesktopCaptureSource"
+    },
+    "topology_revision": {
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "window_handle": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Window Handle"
+    }
+  },
+  "required": [
+    "capture_id",
+    "source",
+    "captured_at",
+    "expires_at",
+    "topology_revision",
+    "region",
+    "byte_length",
+    "sha256",
+    "image_base64"
+  ],
+  "title": "DesktopCaptureFrame",
+  "type": "object"
+}

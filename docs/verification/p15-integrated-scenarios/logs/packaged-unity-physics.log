@@ -1,0 +1,16 @@
+COMMAND: uv run --locked pytest tests/embodiment/test_unity_player.py::test_packaged_unity_core_acceptance -q -s
+STARTED: 2026-09-22T19:27:11.7043665+01:00
+FINISHED: 2026-09-22T19:28:47.8192038+01:00
+EXIT_CODE: 0
+
+STDOUT
+Unity fixture first PID=8460
+Unity fixture reconnect PID=17268
+Unity fixture recovery PID=22764
+Unity fixture surfaces PID=22072
+.
+1 passed in 95.53s (0:01:35)
+
+STDERR
+
+

@@ -69,3 +69,11 @@ class MessageRecord(StrictModel):
     @classmethod
     def validate_created_at(cls, value: datetime) -> datetime:
         return require_aware(value, "created_at")
+
+
+class VoiceTurnReceipt(StrictModel):
+    utterance_key: Identifier
+    transcript_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    user_message: MessageRecord
+    assistant_message: MessageRecord
+    created: bool

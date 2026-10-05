@@ -8,7 +8,8 @@
         "desktop.observe",
         "desktop.present",
         "desktop.navigate",
-        "desktop.interact"
+        "desktop.interact",
+        "voice.session"
       ],
       "title": "CapabilityOperation",
       "type": "string"

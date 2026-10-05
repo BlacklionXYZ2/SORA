@@ -1,0 +1,136 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "column": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Column"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "desktop_target_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "device_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "handler_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "kind": {
+      "enum": [
+        "repository",
+        "file",
+        "document",
+        "image",
+        "telemetry",
+        "artifact"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "label": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "line": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Line"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "path": {
+      "format": "path",
+      "title": "Path",
+      "type": "string"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "reference_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "root": {
+      "format": "path",
+      "title": "Root",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "reference_id",
+    "kind",
+    "label",
+    "owner_id",
+    "device_id",
+    "path",
+    "root",
+    "created_at"
+  ],
+  "title": "ContentReference",
+  "type": "object"
+}

@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0",
+  "fixtures": [
+    {
+      "fixture_id": "fixture_a_single_1080p",
+      "name": "Single 1080p Display",
+      "virtual_desktop": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+      "monitors": [
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "Primary top-left origin",
+          "global_px": [0, 0],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [0, 0],
+          "is_in_gap": false
+        },
+        {
+          "description": "Primary screen center",
+          "global_px": [960, 540],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [960, 540],
+          "is_in_gap": false
+        },
+        {
+          "description": "Primary bottom-right boundary",
+          "global_px": [1919, 1079],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [1919, 1079],
+          "is_in_gap": false
+        },
+        {
+          "description": "Point offscreen right",
+          "global_px": [2000, 540],
+          "expected_monitor_id": null,
+          "is_in_gap": true,
+          "expected_clamped_px": [1919, 540]
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_b_dual_right",
+      "name": "Dual Monitor (Secondary to Right)",
+      "virtual_desktop": { "x": 0, "y": 0, "width": 3840, "height": 1080 },
+      "monitors": [
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        },
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": 1920, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "Primary center",
+          "global_px": [960, 540],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [960, 540],
+          "is_in_gap": false
+        },
+        {
+          "description": "Display seam (first pixel of secondary)",
+          "global_px": [1920, 540],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [0, 540],
+          "is_in_gap": false
+        },
+        {
+          "description": "Secondary center",
+          "global_px": [2880, 540],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [960, 540],
+          "is_in_gap": false
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_c_dual_left_negative_x",
+      "name": "Dual Monitor (Secondary to Left with Negative X)",
+      "virtual_desktop": { "x": -1920, "y": 0, "width": 3840, "height": 1080 },
+      "monitors": [
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": -1920, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        },
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "Secondary left origin",
+          "global_px": [-1920, 0],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [0, 0],
+          "is_in_gap": false
+        },
+        {
+          "description": "Secondary center",
+          "global_px": [-960, 540],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [960, 540],
+          "is_in_gap": false
+        },
+        {
+          "description": "Negative border seam",
+          "global_px": [-1, 540],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [1919, 540],
+          "is_in_gap": false
+        },
+        {
+          "description": "Primary origin",
+          "global_px": [0, 540],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [0, 540],
+          "is_in_gap": false
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_d_dual_top_negative_y",
+      "name": "Dual Monitor (Secondary Above with Negative Y)",
+      "virtual_desktop": { "x": 0, "y": -1080, "width": 1920, "height": 2160 },
+      "monitors": [
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": 0, "y": -1080, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        },
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "Top monitor top-left",
+          "global_px": [0, -1080],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [0, 0],
+          "is_in_gap": false
+        },
+        {
+          "description": "Top monitor center",
+          "global_px": [960, -540],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [960, 540],
+          "is_in_gap": false
+        },
+        {
+          "description": "Vertical seam top edge",
+          "global_px": [960, -1],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [960, 1079],
+          "is_in_gap": false
+        },
+        {
+          "description": "Primary top edge",
+          "global_px": [960, 0],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [960, 0],
+          "is_in_gap": false
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_e_mixed_resolution",
+      "name": "Mixed Resolution (4K Primary + 1440p Secondary)",
+      "virtual_desktop": { "x": 0, "y": 0, "width": 6400, "height": 2160 },
+      "monitors": [
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 3840, "height": 2160 },
+          "dpi_scale": 1.5,
+          "orientation": "landscape"
+        },
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": 3840, "y": 720, "width": 2560, "height": 1440 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "4K primary center",
+          "global_px": [1920, 1080],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [1920, 1080],
+          "is_in_gap": false
+        },
+        {
+          "description": "1440p secondary center",
+          "global_px": [5120, 1440],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [1280, 720],
+          "is_in_gap": false
+        },
+        {
+          "description": "Void gap above secondary 1440p display",
+          "global_px": [4500, 200],
+          "expected_monitor_id": null,
+          "is_in_gap": true,
+          "expected_clamped_px": [4500, 720]
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_f_mixed_dpi",
+      "name": "Mixed DPI Scaling (150% 4K + 100% 1080p)",
+      "virtual_desktop": { "x": 0, "y": 0, "width": 5760, "height": 2160 },
+      "monitors": [
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 3840, "height": 2160 },
+          "dpi_scale": 1.5,
+          "orientation": "landscape"
+        },
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": 3840, "y": 1080, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "150% 4K display point",
+          "global_px": [2000, 1500],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [2000, 1500],
+          "is_in_gap": false
+        },
+        {
+          "description": "100% 1080p display point",
+          "global_px": [4500, 1500],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [660, 420],
+          "is_in_gap": false
+        },
+        {
+          "description": "Gap above 1080p monitor",
+          "global_px": [4500, 500],
+          "expected_monitor_id": null,
+          "is_in_gap": true,
+          "expected_clamped_px": [4500, 1080]
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_g_portrait_orientation",
+      "name": "Portrait Orientation Secondary",
+      "virtual_desktop": { "x": -1080, "y": -420, "width": 3000, "height": 1920 },
+      "monitors": [
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": -1080, "y": -420, "width": 1080, "height": 1920 },
+          "dpi_scale": 1.0,
+          "orientation": "portrait"
+        },
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "Portrait top center",
+          "global_px": [-540, 0],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [540, 420],
+          "is_in_gap": false
+        },
+        {
+          "description": "Portrait bottom center",
+          "global_px": [-540, 1400],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [540, 1820],
+          "is_in_gap": false
+        },
+        {
+          "description": "Gap below primary monitor in bounding box",
+          "global_px": [500, 1200],
+          "expected_monitor_id": null,
+          "is_in_gap": true,
+          "expected_clamped_px": [500, 1079]
+        }
+      ]
+    },
+    {
+      "fixture_id": "fixture_h_non_display_gap",
+      "name": "Horizontal Discontinuity (580px Physical Gap)",
+      "virtual_desktop": { "x": 0, "y": 0, "width": 4420, "height": 1080 },
+      "monitors": [
+        {
+          "id": "DISPLAY1",
+          "primary": true,
+          "rect": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        },
+        {
+          "id": "DISPLAY2",
+          "primary": false,
+          "rect": { "x": 2500, "y": 0, "width": 1920, "height": 1080 },
+          "dpi_scale": 1.0,
+          "orientation": "landscape"
+        }
+      ],
+      "test_points": [
+        {
+          "description": "Left monitor boundary",
+          "global_px": [1919, 500],
+          "expected_monitor_id": "DISPLAY1",
+          "expected_monitor_local_px": [1919, 500],
+          "is_in_gap": false
+        },
+        {
+          "description": "Point inside the horizontal gap",
+          "global_px": [2200, 500],
+          "expected_monitor_id": null,
+          "is_in_gap": true,
+          "expected_clamped_px": [1919, 500]
+        },
+        {
+          "description": "Point near right edge of gap",
+          "global_px": [2450, 500],
+          "expected_monitor_id": null,
+          "is_in_gap": true,
+          "expected_clamped_px": [2500, 500]
+        },
+        {
+          "description": "Right monitor boundary",
+          "global_px": [2500, 500],
+          "expected_monitor_id": "DISPLAY2",
+          "expected_monitor_local_px": [0, 500],
+          "is_in_gap": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "recorded_at": "2026-09-10T07:18:15.997430+00:00",
+  "player": "C:\\Users\\oscar\\Desktop\\SORA\\clients\\unity\\Builds\\Windows\\SORA.exe",
+  "topology": {
+    "schema_version": "1.0",
+    "virtual_desktop": {
+      "x": -1280,
+      "y": 0,
+      "width": 5120,
+      "height": 2160
+    },
+    "monitors": [
+      {
+        "schema_version": "1.0",
+        "id": "DISPLAY1",
+        "primary": true,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 3840,
+          "height": 2160
+        },
+        "work_area": {
+          "x": 0,
+          "y": 0,
+          "width": 3840,
+          "height": 2088
+        },
+        "dpi_scale": 1.5,
+        "orientation": "landscape"
+      },
+      {
+        "schema_version": "1.0",
+        "id": "DISPLAY6",
+        "primary": false,
+        "rect": {
+          "x": -1280,
+          "y": 813,
+          "width": 1280,
+          "height": 1024
+        },
+        "work_area": {
+          "x": -1280,
+          "y": 813,
+          "width": 1280,
+          "height": 976
+        },
+        "dpi_scale": 1.0,
+        "orientation": "landscape"
+      }
+    ],
+    "revision": 2
+  },
+  "initial_state": {
+    "schema_version": "1.0",
+    "visible": true,
+    "interpreted_target_id": null,
+    "marker_position": null,
+    "current_position": {
+      "x": 90,
+      "y": 300
+    },
+    "containing_monitor_id": "DISPLAY1",
+    "presentation_state": "idle",
+    "topology_revision": 2,
+    "connected_at": null,
+    "last_seen_at": null
+  },
+  "checks": [
+    "VRM visible",
+    "native topology",
+    "right/left arrival",
+    "gaze state",
+    "marker identity/expiry",
+    "idle reset",
+    "graceful close",
+    "Core survives",
+    "reconnect without movement replay"
+  ],
+  "hardware_transitions_tested": false,
+  "cross_process_input_tested": true,
+  "secondary_monitor_movement_tested": true
+}

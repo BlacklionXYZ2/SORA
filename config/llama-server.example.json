@@ -1,0 +1,9 @@
+{
+  "executable": "C:/llama.cpp/llama-server.exe",
+  "model_path": "C:/Models/your-model/model.gguf",
+  "mmproj_path": "C:/Models/your-model/mmproj-F16.gguf",
+  "port": 18771,
+  "context_size": 8192,
+  "gpu_layers": "auto",
+  "startup_timeout": 180
+}

@@ -1,0 +1,97 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "FrameRect": {
+      "additionalProperties": false,
+      "description": "Pixel rectangle relative to the top-left of one captured frame.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "minimum": 0,
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "minimum": 0,
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "FrameRect",
+      "type": "object"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "VisionEvidenceKind": {
+      "enum": [
+        "ui_element",
+        "text",
+        "icon",
+        "region",
+        "instruction"
+      ],
+      "title": "VisionEvidenceKind",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Untrusted detector output. It intentionally cannot request or authorize an action.",
+  "properties": {
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "detection_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "frame_region": {
+      "$ref": "#/$defs/FrameRect"
+    },
+    "kind": {
+      "$ref": "#/$defs/VisionEvidenceKind"
+    },
+    "label": {
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Label",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "detection_id",
+    "kind",
+    "label",
+    "frame_region",
+    "confidence"
+  ],
+  "title": "VisionDetection",
+  "type": "object"
+}

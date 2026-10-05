@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>SoraShell</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\desktop_app\ModelSettingsEditor.cs" Link="Panels\ModelSettingsEditor.cs" />
+    <Compile Include="..\desktop_app\SettingsDraftState.cs" Link="Presenters\SettingsDraftState.cs" />
+    <Compile Include="..\desktop_app\SettingsCategories.cs" Link="Presenters\SettingsCategories.cs" />
+    <Compile Include="..\desktop_app\SettingsLaunchPresentation.cs" Link="Presenters\SettingsLaunchPresentation.cs" />
+    <Compile Include="..\desktop_widget\WidgetCore.cs" Link="Transport\WidgetCore.cs" />
+    <Compile Include="..\desktop_widget\FullAppModel.cs" Link="Projections\FullAppModel.cs" />
+    <Compile Include="..\desktop_widget\BoardNoteDraft.cs" Link="Presenters\BoardNoteDraft.cs" />
+    <Compile Include="..\desktop_app\KanbanBoardForm.cs" Link="Panels\KanbanBoardForm.cs" />
+    <Compile Include="..\desktop_widget\AgentCatalogueForm.cs" Link="Panels\AgentCatalogueForm.cs" />
+    <Compile Include="..\desktop_widget\ProjectPathsForm.cs" Link="Panels\ProjectPathsForm.cs" />
+    <Compile Include="..\desktop_widget\ModelPurposeForm.cs" Link="Panels\ModelPurposeForm.cs" />
+    <Compile Include="..\desktop_widget\ModelPurposeDraft.cs" Link="Presenters\ModelPurposeDraft.cs" />
+  </ItemGroup>
+</Project>

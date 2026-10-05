@@ -1,0 +1,299 @@
+{
+  "$defs": {
+    "AutomationBehavior": {
+      "additionalProperties": false,
+      "properties": {
+        "effort": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Effort"
+        },
+        "intent": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "kind": {
+          "const": "agent_task",
+          "default": "agent_task",
+          "title": "Kind",
+          "type": "string"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "provider": {
+          "$ref": "#/$defs/Identifier",
+          "default": "auto"
+        },
+        "working_directory": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Working Directory"
+        },
+        "workspace_mode": {
+          "anyOf": [
+            {
+              "enum": [
+                "workspace",
+                "worktree"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Workspace Mode"
+        }
+      },
+      "required": [
+        "intent"
+      ],
+      "title": "AutomationBehavior",
+      "type": "object"
+    },
+    "AutomationOccurrence": {
+      "additionalProperties": false,
+      "properties": {
+        "automation_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "behavior": {
+          "$ref": "#/$defs/AutomationBehavior"
+        },
+        "definition_version": {
+          "$ref": "#/$defs/Version"
+        },
+        "occurrence_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "origin": {
+          "enum": [
+            "scheduled",
+            "manual"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "recorded_at": {
+          "format": "date-time",
+          "title": "Recorded At",
+          "type": "string"
+        },
+        "run_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "slot": {
+          "$ref": "#/$defs/AutomationSlot"
+        },
+        "status": {
+          "enum": [
+            "reserved",
+            "admitted",
+            "skipped",
+            "blocked",
+            "failed",
+            "unknown",
+            "completed"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "occurrence_id",
+        "automation_id",
+        "definition_version",
+        "origin",
+        "slot",
+        "status",
+        "behavior",
+        "recorded_at"
+      ],
+      "title": "AutomationOccurrence",
+      "type": "object"
+    },
+    "AutomationSlot": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_at": {
+          "format": "date-time",
+          "title": "Decision At",
+          "type": "string"
+        },
+        "disposition": {
+          "default": "due",
+          "enum": [
+            "due",
+            "skip_nonexistent"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "planned_local": {
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$",
+          "title": "Planned Local",
+          "type": "string"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "slot_key": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Slot Key",
+          "type": "string"
+        },
+        "timezone": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "slot_key",
+        "decision_at",
+        "planned_local",
+        "timezone"
+      ],
+      "title": "AutomationSlot",
+      "type": "object"
+    },
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "Version": {
+      "maximum": 9223372036854775807,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "automation_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "maxLength": 4096,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Cursor"
+    },
+    "occurrences": {
+      "items": {
+        "$ref": "#/$defs/AutomationOccurrence"
+      },
+      "maxItems": 50,
+      "title": "Occurrences",
+      "type": "array"
+    },
+    "projection_revision": {
+      "minimum": 0,
+      "title": "Projection Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "instance_id",
+    "projection_revision",
+    "automation_id",
+    "occurrences"
+  ],
+  "title": "AutomationHistory",
+  "type": "object"
+}

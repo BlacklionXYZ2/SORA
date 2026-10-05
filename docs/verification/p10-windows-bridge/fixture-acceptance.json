@@ -1,0 +1,217 @@
+{
+  "windows": {
+    "schema_version": "1.0",
+    "status": "ok",
+    "nodes": [
+      {
+        "node_id": "window-2622914",
+        "parent_id": null,
+        "process_id": 21592,
+        "window_handle": 2622914,
+        "name": "SORA UIA acceptance fixture",
+        "automation_id": "",
+        "control_type": "Window",
+        "rect": {
+          "x": 150,
+          "y": 150,
+          "width": 480,
+          "height": 300
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      }
+    ],
+    "truncated": false,
+    "topology_revision": 1
+  },
+  "tree": {
+    "schema_version": "1.0",
+    "status": "ok",
+    "nodes": [
+      {
+        "node_id": "node-0",
+        "parent_id": null,
+        "process_id": 21592,
+        "window_handle": 2622914,
+        "name": "SORA UIA acceptance fixture",
+        "automation_id": "",
+        "control_type": "ControlType.Window",
+        "rect": {
+          "x": 150,
+          "y": 150,
+          "width": 480,
+          "height": 300
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-1",
+        "parent_id": "node-0",
+        "process_id": 21592,
+        "window_handle": 1966268,
+        "name": "Confirm fixture",
+        "automation_id": "fixture-confirm",
+        "control_type": "ControlType.Button",
+        "rect": {
+          "x": 191,
+          "y": 235,
+          "width": 170,
+          "height": 40
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-2",
+        "parent_id": "node-0",
+        "process_id": 21592,
+        "window_handle": 1181876,
+        "name": "",
+        "automation_id": "fixture-password",
+        "control_type": "ControlType.Edit",
+        "rect": {
+          "x": 191,
+          "y": 295,
+          "width": 170,
+          "height": 31
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": true
+      },
+      {
+        "node_id": "node-3",
+        "parent_id": "node-0",
+        "process_id": 21592,
+        "window_handle": 0,
+        "name": "SORA UIA acceptance fixture",
+        "automation_id": "TitleBar",
+        "control_type": "ControlType.TitleBar",
+        "rect": {
+          "x": 161,
+          "y": 161,
+          "width": 458,
+          "height": 34
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-4",
+        "parent_id": "node-3",
+        "process_id": 21592,
+        "window_handle": 0,
+        "name": "System Menu Bar",
+        "automation_id": "",
+        "control_type": "ControlType.MenuBar",
+        "rect": {
+          "x": 161,
+          "y": 161,
+          "width": 33,
+          "height": 33
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-5",
+        "parent_id": "node-4",
+        "process_id": 21592,
+        "window_handle": 0,
+        "name": "System",
+        "automation_id": "Item 1",
+        "control_type": "ControlType.MenuItem",
+        "rect": {
+          "x": 161,
+          "y": 161,
+          "width": 33,
+          "height": 33
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-6",
+        "parent_id": "node-3",
+        "process_id": 21592,
+        "window_handle": 0,
+        "name": "Minimize",
+        "automation_id": "Minimize",
+        "control_type": "ControlType.Button",
+        "rect": {
+          "x": 408,
+          "y": 151,
+          "width": 71,
+          "height": 44
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-7",
+        "parent_id": "node-3",
+        "process_id": 21592,
+        "window_handle": 0,
+        "name": "Maximize",
+        "automation_id": "Maximize",
+        "control_type": "ControlType.Button",
+        "rect": {
+          "x": 479,
+          "y": 151,
+          "width": 70,
+          "height": 44
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      },
+      {
+        "node_id": "node-8",
+        "parent_id": "node-3",
+        "process_id": 21592,
+        "window_handle": 0,
+        "name": "Close",
+        "automation_id": "Close",
+        "control_type": "ControlType.Button",
+        "rect": {
+          "x": 549,
+          "y": 151,
+          "width": 71,
+          "height": 44
+        },
+        "focused": false,
+        "enabled": true,
+        "offscreen": false,
+        "password": false
+      }
+    ],
+    "truncated": false,
+    "topology_revision": 1
+  },
+  "expected_button": {
+    "x": 191,
+    "y": 235,
+    "width": 170,
+    "height": 40
+  },
+  "hung_status": "timeout",
+  "grant_uses": 6,
+  "closed_status": "unavailable"
+}

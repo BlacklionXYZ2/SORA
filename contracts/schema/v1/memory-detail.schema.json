@@ -1,0 +1,239 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "MemoryEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "repository",
+            "file",
+            "document",
+            "image",
+            "telemetry",
+            "artifact"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "reference_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        }
+      },
+      "required": [
+        "reference_id",
+        "label",
+        "kind"
+      ],
+      "title": "MemoryEvidence",
+      "type": "object"
+    },
+    "MemoryRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "content_preview": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Content Preview",
+          "type": "string"
+        },
+        "content_truncated": {
+          "title": "Content Truncated",
+          "type": "boolean"
+        },
+        "entity_version": {
+          "minimum": 1,
+          "title": "Entity Version",
+          "type": "integer"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/MemoryEvidence"
+          },
+          "maxItems": 64,
+          "title": "Evidence",
+          "type": "array"
+        },
+        "evidence_withheld": {
+          "default": false,
+          "title": "Evidence Withheld",
+          "type": "boolean"
+        },
+        "memory_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "metadata_truncated": {
+          "default": false,
+          "title": "Metadata Truncated",
+          "type": "boolean"
+        },
+        "owner_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provenance": {
+          "maxLength": 512,
+          "title": "Provenance",
+          "type": "string"
+        },
+        "retention": {
+          "$ref": "#/$defs/ShortMetadata"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "scope": {
+          "$ref": "#/$defs/ShortMetadata"
+        },
+        "sensitivity": {
+          "$ref": "#/$defs/ShortMetadata"
+        },
+        "state": {
+          "$ref": "#/$defs/VisibleMemoryState"
+        },
+        "superseded_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "memory_id",
+        "owner_id",
+        "entity_version",
+        "state",
+        "scope",
+        "sensitivity",
+        "retention",
+        "provenance",
+        "content_preview",
+        "content_truncated",
+        "content"
+      ],
+      "title": "MemoryRecord",
+      "type": "object"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ShortMetadata": {
+      "maxLength": 128,
+      "type": "string"
+    },
+    "VisibleMemoryState": {
+      "enum": [
+        "active",
+        "expired",
+        "superseded"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "evidence_note": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "memory": {
+      "$ref": "#/$defs/MemoryRecord"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "projection_revision": {
+      "minimum": 0,
+      "title": "Projection Revision",
+      "type": "integer"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    }
+  },
+  "required": [
+    "instance_id",
+    "owner_id",
+    "projection_revision",
+    "observed_at",
+    "evidence_note",
+    "memory"
+  ],
+  "title": "MemoryDetail",
+  "type": "object"
+}

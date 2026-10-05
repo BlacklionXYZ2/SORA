@@ -1,0 +1,46 @@
+{
+  "stage": "P15.3",
+  "status": "complete",
+  "completed_at": "2026-09-22T15:57:48+01:00",
+  "model": "GPT-5.6 Sol",
+  "release": {
+    "release_id": "sora-p15.3-acceptance-20260922-r5",
+    "manifested_files": 4644,
+    "bundle_bytes": 793249175,
+    "zip_bytes": 337358127,
+    "zip_sha256": "3e80c413c3ae264bc01e5e7f806b15498e904b016669e69cd8481a79c793bab3",
+    "portable_python": "3.12.10",
+    "signed": false
+  },
+  "acceptance": {
+    "clean_isolated_windows_profile_install": "passed",
+    "host_runtime_independence": "passed_portable_python_self_contained_helpers_unity_player",
+    "state_preserving_upgrade": "passed_one_task_two_messages_preserved",
+    "failed_upgrade_pointer_atomicity": "passed",
+    "rollback_previous_release_state_pair": "passed",
+    "optional_user_startup": "passed_isolated_startup_path",
+    "uninstall_retains_personal_data": "passed",
+    "reinstall_recovers_retained_data": "passed",
+    "explicit_marker_guarded_purge": "passed",
+    "archive_extraction_manifest": "passed_4644_files",
+    "packaged_helper_entrypoints": "passed_4_of_4_invalid_request_smokes",
+    "personal_data_handling": "documented_and_structurally_separate"
+  },
+  "verification": {
+    "release_operations": { "passed": 4, "failed": 0 },
+    "release_plus_backup_focus": { "passed": 8, "failed": 0 },
+    "unity_playmode": { "passed": 55, "failed": 0 },
+    "repository": { "passed": 338, "skipped_opt_in": 10, "failed": 0 },
+    "browser_runtime": { "passed": 7, "failed": 0 },
+    "ruff": "passed",
+    "mypy_source_files": 184,
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "boundaries": [
+    "clean profile was isolated paths on the reference Windows account, not a new OS account",
+    "release ZIP is unsigned",
+    "external provider CLIs credentials TLS keys and local voice models are not bundled",
+    "rollback does not undo external provider OS or repository side effects"
+  ]
+}

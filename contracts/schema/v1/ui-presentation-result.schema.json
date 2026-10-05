@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Generation": {
+      "maximum": 9223372036854775807,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "PresentationReason": {
+      "enum": [
+        "queued",
+        "host-acknowledged",
+        "host-deferred",
+        "host-unavailable",
+        "host-rejected",
+        "target-changed",
+        "deadline",
+        "host-lost",
+        "turn-cancelled"
+      ],
+      "type": "string"
+    },
+    "PresentationStatus": {
+      "enum": [
+        "pending",
+        "selected",
+        "already-visible",
+        "deferred",
+        "unavailable",
+        "rejected",
+        "expired"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "dialogue_request_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "event_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "expected_version": {
+      "minimum": 1,
+      "title": "Expected Version",
+      "type": "integer"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "memory_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "reason": {
+      "$ref": "#/$defs/PresentationReason"
+    },
+    "registry_generation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Generation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "status": {
+      "$ref": "#/$defs/PresentationStatus"
+    }
+  },
+  "required": [
+    "instance_id",
+    "request_id",
+    "memory_id",
+    "expected_version",
+    "status",
+    "reason"
+  ],
+  "title": "UiPresentationResult",
+  "type": "object"
+}

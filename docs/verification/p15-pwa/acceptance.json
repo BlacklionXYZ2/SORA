@@ -1,0 +1,29 @@
+{
+  "stage": "P15.1",
+  "status": "complete",
+  "completed_at": "2026-09-22T11:02:02+01:00",
+  "model": "GPT-5.6 Sol",
+  "acceptance": {
+    "responsive_installable_shell": "verified_by_manifest_asset_and_source_tests",
+    "conversation_and_task_controls": "verified_by_source_and_live_api_tests",
+    "reconnect_convergence": "verified_by_live_core_replay_and_two_store_browser_fixture",
+    "sensitive_service_worker_cache": "excluded_by_exact_allowlist_and_network_only_api_path",
+    "visual_browser_qa": "not_run_no_controllable_browser_surface"
+  },
+  "verification": {
+    "pwa_api": { "passed": 2, "failed": 0 },
+    "browser_runtime": { "passed": 5, "failed": 0 },
+    "repository": { "passed": 329, "skipped_opt_in": 10, "failed": 0 },
+    "ruff": "passed",
+    "mypy_source_files": 176,
+    "schemas": "fresh",
+    "compileall": "passed",
+    "generated_icons": "fresh"
+  },
+  "boundaries": [
+    "loopback-only local PWA",
+    "no remote transport or device pairing",
+    "browser speech recognition may not be local",
+    "no rendered-layout or install-prompt claim"
+  ]
+}

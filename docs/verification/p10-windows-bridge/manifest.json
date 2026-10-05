@@ -1,0 +1,35 @@
+{
+  "recorded_at": "2026-09-10T09:17:19.953367+01:00",
+  "model": "GPT 6 Astra",
+  "status": "P10.1 in review; P10 in progress",
+  "full_suite": {
+    "passed": 226,
+    "skipped": 1,
+    "seconds": 20.89,
+    "native_uia_enabled": true,
+    "csharp_enabled": true
+  },
+  "ruff": "passed",
+  "mypy_files": 124,
+  "schema_check": "passed",
+  "compileall": "passed",
+  "live_privileged_application_matrix_complete": false,
+  "fixture_sha256": "f09ab85bd333fe0e38ce4d75f39c0a14f56759ae7dc3635161b59de576874392",
+  "source_sha256": {
+    "clients/windows_bridge/Program.cs": "378b986dd12d9fce4d7836a388c0551c286be83d8fabc408209ee047e9f8e1ef",
+    "clients/windows_bridge/windows_bridge.csproj": "86c278ecd6eb10dd68a93c331bfc935a76425a18050915ecfad3c6d237fcddc6",
+    "clients/uia_fixture/Program.cs": "23a86aa6219d48f613a3b32f50fc8642fde26a2a14b93dacc6508b1a07446dc5",
+    "clients/uia_fixture/uia_fixture.csproj": "b8ff6f209c955e57950c1fee5a84d23803d1d88e28b7aad37c9524b3608c6bcb",
+    "src/sora/desktop/bridge.py": "7f69f09937b81aaa2ce3657a03ca422bbbb1d5e33069cbd1e4fea3a7eedb94a0",
+    "src/sora/contracts/desktop.py": "109ec6cf7f87e797b53b82982882ab5f8861704054bf7208dd282cc4f8146df0",
+    "tests/desktop/test_bridge.py": "c5799da3f9d9f5d43f953efa1009a54560ad3866ebd0e16e7e63a754f8fff229",
+    "tests/desktop/test_observation.py": "917cfbe82ad271169a0d963805a0a6c93dc0529c5ff88d5c3fe463c67c9e92f3",
+    "src/sora/runtime/service.py": "63dadb8467e7533d9b0c0efce949124f6f9badc16380e2d7ecc6ee1b4a6496b6",
+    "src/sora/api/routes.py": "b4aefa7889b8e12d4980c2cd19d6abb67f25b3452640f61f5daaca17a40f2d84",
+    "src/sora/__main__.py": "1340843a285434d0aca6ec4497ae451054925e7e6f6049c9b1bdb12050f1b149",
+    "scripts/verify-desktop.ps1": "4780486bad810f965496c83f19c0a307311e503ebd6d38b35ff28ef4a32e6a73",
+    "contracts/schema/v1/desktop-observation.schema.json": "23d52af562cd41aa70b13e3aa2dbc3d091c6610a5ddbe7a1d0796219e901a712",
+    "contracts/schema/v1/desktop-observation-request.schema.json": "1809e871f48e29d2ac72196f453e8690ab85e65fe8492f9e13d2243be3f37141"
+  },
+  "helper_sha256": "3f19d7bb235ba874e75d8b147f31c3867bebecfccc6fdbf91f20549109758b85"
+}

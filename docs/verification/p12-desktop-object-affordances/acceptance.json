@@ -1,0 +1,58 @@
+{
+  "stage": "P12.6",
+  "status": "complete",
+  "completed_at": "2026-09-18T08:01:57+01:00",
+  "model": "GPT-5.6 Sol",
+  "bridge": {
+    "default_capacity": 64,
+    "maximum_capacity": 256,
+    "affordances": ["look", "point", "touch"],
+    "uses_capability_resolver": true,
+    "action_specific_controller_branch": false,
+    "canonical_mutation": false
+  },
+  "packaged": {
+    "passed": true,
+    "duration_seconds": 95.27,
+    "look_received": true,
+    "point_received": true,
+    "touch_received": true,
+    "completed_touch": true,
+    "canonical_version_before": 1,
+    "canonical_version_after": 1,
+    "feedback_event_count": 27,
+    "feedback_projection_count": 20,
+    "managed_assembly_sha256": "D8A5717BAAD8C2477D1356FF92C05BE937EC050A5C97A64A49A5526A827995D9"
+  },
+  "privacy": {
+    "private_sentinel_in_public_projection": false,
+    "hidden_sentinel_in_public_projection": false,
+    "private_affordances_in_public_projection": false,
+    "hidden_private_missing_share_failure": true
+  },
+  "policy": {
+    "look_operation": "desktop.present",
+    "point_operation": "desktop.present",
+    "touch_operation": "desktop.interact",
+    "exact_resource_scope": "desktop.object:<object-id>:<affordance>",
+    "revocation_invalidates_delivery": true,
+    "wrong_operation_queues_command": false
+  },
+  "verification": {
+    "focused_core_api": {"passed": 4, "failed": 0},
+    "unity_playmode": {"passed": 49, "failed": 0, "p12_6_tests": 2},
+    "portable_csharp": {"passed": 22, "failed": 0},
+    "embodiment": {"passed": 43, "skipped": 3},
+    "repository": {"passed": 281, "skipped": 9},
+    "mypy_source_files": 151,
+    "ruff": "passed",
+    "schemas": "fresh",
+    "compileall": "passed"
+  },
+  "transparency_probe": {
+    "observed_fixture_pixel": "0xFEFEFE",
+    "minimum_accepted_channel": 254,
+    "window_ownership_check_unchanged": true,
+    "input_routing_check_unchanged": true
+  }
+}

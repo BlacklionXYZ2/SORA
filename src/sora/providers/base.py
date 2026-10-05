@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-from typing import Protocol, runtime_checkable
+from collections.abc import AsyncIterator, Mapping
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from sora.contracts.models import (
     EventEnvelope,
@@ -12,6 +12,9 @@ from sora.contracts.models import (
     ProviderErrorCode,
     ProviderRequest,
 )
+
+if TYPE_CHECKING:
+    from sora.workspaces.git import GitWorkspaceManager, WorkspaceRecord
 
 
 class ProviderLaunchError(RuntimeError):
@@ -28,6 +31,20 @@ class MalformedProviderResult(RuntimeError):
     def __init__(self, raw_output: str):
         super().__init__("provider returned malformed output")
         self.raw_output = raw_output
+
+
+def optional_text(data: Mapping[str, object], field_name: str) -> str | None:
+    """Read an optional non-empty string from an agent result payload.
+
+    A wrong type is malformed output and is never silently ignored; an empty string is simply
+    absent. Used for the agent-authored changelog note, which is optional by design.
+    """
+    value = data.get(field_name)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise MalformedProviderResult(f"invalid provider field: {field_name}")
+    return value.strip() or None
 
 
 class ReasoningProvider(Protocol):
@@ -53,3 +70,16 @@ class SessionProvider(Protocol):
     """Optional native-session identity surface for session-capable providers."""
 
     async def session_id(self, run_id: str) -> str | None: ...
+
+
+@runtime_checkable
+class OwnedWorkspaceProvider(Protocol):
+    """Optional provider surface for binding a coding run to an owned worktree."""
+
+    def for_owned_workspace(
+        self,
+        record: WorkspaceRecord,
+        manager: GitWorkspaceManager,
+        *,
+        lease_owner: str,
+    ) -> ReasoningProvider: ...

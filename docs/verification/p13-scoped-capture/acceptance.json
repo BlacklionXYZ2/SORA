@@ -1,0 +1,59 @@
+{
+  "stage": "P13.2",
+  "status": "complete",
+  "completed_at": "2026-09-18T09:57:44+01:00",
+  "model": "GPT-5.6 Sol",
+  "mechanism": {
+    "windows_graphics_capture_evaluated": true,
+    "selected_equivalent": "one-shot Win32 GDI region and PrintWindow window capture",
+    "helper_process_per_frame": true,
+    "continuous_capture_session": false,
+    "disk_frame_write": false
+  },
+  "scope": {
+    "region_must_fit_one_active_display": true,
+    "window_requires_existing_desktop_target": true,
+    "window_process_start_revalidated": true,
+    "exact_resource_prefix": "desktop.capture",
+    "operation": "desktop.observe",
+    "authorization_poll_milliseconds": 50,
+    "revocation_cancels_helper": true,
+    "topology_change_discards_frame": true
+  },
+  "retention": {
+    "storage": "volatile_process_memory",
+    "frame_capacity": 8,
+    "total_byte_capacity": 33554432,
+    "maximum_frame_bytes": 16777216,
+    "maximum_frame_pixels": 8294400,
+    "maximum_ttl_seconds": 30,
+    "cleared_on_topology_change": true,
+    "cleared_on_shutdown": true
+  },
+  "automation": {
+    "provider_called": false,
+    "vlm_loop_started": false,
+    "speech_requested": false,
+    "action_authority_conferred": false,
+    "canonical_persistence": false
+  },
+  "native_acceptance": {
+    "window_capture": "passed",
+    "exact_region_capture": "passed",
+    "png_dimensions_verified": true,
+    "digest_verified": true,
+    "sent_to_model": false
+  },
+  "verification": {
+    "deterministic_capture": {"passed": 6, "failed": 0},
+    "native_capture": {"passed": 1, "failed": 0},
+    "native_desktop_vision": {"passed": 57, "skipped": 1},
+    "repository": {"passed": 293, "skipped": 10},
+    "capture_build_warnings": 0,
+    "capture_build_errors": 0,
+    "mypy_source_files": 160,
+    "ruff": "passed",
+    "schemas": "fresh",
+    "compileall": "passed"
+  }
+}

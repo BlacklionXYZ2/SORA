@@ -1,0 +1,526 @@
+{
+  "$defs": {
+    "Delegate": {
+      "additionalProperties": false,
+      "properties": {
+        "model": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "op": {
+          "const": "delegate",
+          "title": "Op",
+          "type": "string"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        },
+        "provider": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "codex",
+            "hermes",
+            "antigravity"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "task": {
+          "maxLength": 8000,
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "task"
+      ],
+      "title": "Delegate",
+      "type": "object"
+    },
+    "FindMemory": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        },
+        "op": {
+          "const": "find_memory",
+          "title": "Op",
+          "type": "string"
+        },
+        "query": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "query"
+      ],
+      "title": "FindMemory",
+      "type": "object"
+    },
+    "FinishRead": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "finish",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "FinishRead",
+      "type": "object"
+    },
+    "InspectWindow": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "inspect_window",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "view": {
+          "enum": [
+            "summary",
+            "controls",
+            "text",
+            "selection"
+          ],
+          "title": "View",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "view"
+      ],
+      "title": "InspectWindow",
+      "type": "object"
+    },
+    "ListAgents": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        },
+        "op": {
+          "const": "list_agents",
+          "title": "Op",
+          "type": "string"
+        },
+        "provider": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "codex",
+            "hermes",
+            "antigravity"
+          ],
+          "title": "Provider",
+          "type": "string"
+        },
+        "query": {
+          "default": "",
+          "maxLength": 128,
+          "title": "Query",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "ListAgents",
+      "type": "object"
+    },
+    "ListFiles": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        },
+        "op": {
+          "const": "list_files",
+          "title": "Op",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "path"
+      ],
+      "title": "ListFiles",
+      "type": "object"
+    },
+    "ListWindows": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "list_windows",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "ListWindows",
+      "type": "object"
+    },
+    "Look": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "look",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "Look",
+      "type": "object"
+    },
+    "Move": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "move",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "const": "pointer",
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "Move",
+      "type": "object"
+    },
+    "Point": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "point",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "Point",
+      "type": "object"
+    },
+    "Pose": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "enum": [
+            "wave",
+            "sit",
+            "lean",
+            "climb",
+            "stand"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "op": {
+          "const": "pose",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "name"
+      ],
+      "title": "Pose",
+      "type": "object"
+    },
+    "PresentMemory": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "present_memory",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target"
+      ],
+      "title": "PresentMemory",
+      "type": "object"
+    },
+    "ReadFile": {
+      "additionalProperties": false,
+      "properties": {
+        "offset": {
+          "default": 0,
+          "maximum": 1048576,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "op": {
+          "const": "read_file",
+          "title": "Op",
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Path"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "ReadFile",
+      "type": "object"
+    },
+    "SearchFiles": {
+      "additionalProperties": false,
+      "properties": {
+        "cursor": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cursor"
+        },
+        "mode": {
+          "default": "name",
+          "enum": [
+            "name",
+            "text"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "op": {
+          "const": "search_files",
+          "title": "Op",
+          "type": "string"
+        },
+        "path": {
+          "maxLength": 4096,
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "query": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "path",
+        "query"
+      ],
+      "title": "SearchFiles",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "delegate": "#/$defs/Delegate",
+      "find_memory": "#/$defs/FindMemory",
+      "finish": "#/$defs/FinishRead",
+      "inspect_window": "#/$defs/InspectWindow",
+      "list_agents": "#/$defs/ListAgents",
+      "list_files": "#/$defs/ListFiles",
+      "list_windows": "#/$defs/ListWindows",
+      "look": "#/$defs/Look",
+      "move": "#/$defs/Move",
+      "point": "#/$defs/Point",
+      "pose": "#/$defs/Pose",
+      "present_memory": "#/$defs/PresentMemory",
+      "read_file": "#/$defs/ReadFile",
+      "search_files": "#/$defs/SearchFiles"
+    },
+    "propertyName": "op"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ListWindows"
+    },
+    {
+      "$ref": "#/$defs/InspectWindow"
+    },
+    {
+      "$ref": "#/$defs/ListFiles"
+    },
+    {
+      "$ref": "#/$defs/SearchFiles"
+    },
+    {
+      "$ref": "#/$defs/ReadFile"
+    },
+    {
+      "$ref": "#/$defs/FinishRead"
+    },
+    {
+      "$ref": "#/$defs/ListAgents"
+    },
+    {
+      "$ref": "#/$defs/Delegate"
+    },
+    {
+      "$ref": "#/$defs/Pose"
+    },
+    {
+      "$ref": "#/$defs/Move"
+    },
+    {
+      "$ref": "#/$defs/Look"
+    },
+    {
+      "$ref": "#/$defs/Point"
+    },
+    {
+      "$ref": "#/$defs/FindMemory"
+    },
+    {
+      "$ref": "#/$defs/PresentMemory"
+    }
+  ],
+  "title": "CompanionCall"
+}

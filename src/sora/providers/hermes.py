@@ -14,8 +14,10 @@ import re
 import shutil
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Literal
 
+from sora.contracts.changelog import CHANGELOG_INSTRUCTION
 from sora.contracts.models import (
     EventEnvelope,
     NormalizedResult,
@@ -29,7 +31,8 @@ from sora.contracts.models import (
     ProviderOutcome,
     ProviderRequest,
 )
-from sora.providers.base import MalformedProviderResult, ProviderLaunchError
+from sora.providers.base import MalformedProviderResult, ProviderLaunchError, optional_text
+from sora.workspaces.git import GitWorkspaceManager, WorkspaceRecord
 
 log = logging.getLogger(__name__)
 
@@ -47,6 +50,7 @@ class _Run:
     output_chars: int = 0
     write_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     resume_session_id: str | None = None
+    metadata_only: bool = False
 
 
 def _json_object(text: str) -> dict[str, Any]:
@@ -142,6 +146,8 @@ def parse_hermes_result(text: str, request: ProviderRequest) -> NormalizedResult
             if isinstance(data.get("suggested_response"), str)
             else None
         ),
+        changelog_path=optional_text(data, "changelog_path"),
+        changelog_entry=optional_text(data, "changelog_entry"),
         patch=patch,
         usage=usage if isinstance(usage, dict) else None,
     )
@@ -184,6 +190,29 @@ class HermesACPProvider:
         self._runs: dict[str, _Run] = {}
         self._session_ids: dict[str, str] = {}
 
+    def for_owned_workspace(
+        self,
+        record: WorkspaceRecord,
+        manager: GitWorkspaceManager,
+        *,
+        lease_owner: str,
+    ) -> HermesACPProvider:
+        """Clone this adapter with Hermes' native tools rooted in the owned worktree."""
+        del manager, lease_owner
+        workspace = Path(record.worktree_path).resolve()
+        if not workspace.is_dir():
+            raise ValueError("Hermes owned workspace must exist")
+        return HermesACPProvider(
+            command=self.command,
+            args=self.args,
+            cwd=str(workspace),
+            timeout_seconds=self.timeout_seconds,
+            max_output_chars=self.max_output_chars,
+            cancellation_grace_seconds=self.cancellation_grace_seconds,
+            permission_policy=self.permission_policy,
+            skip_configured_mcp=self.skip_configured_mcp,
+        )
+
     async def capabilities(self) -> ProviderCapabilities:
         return ProviderCapabilities(
             provider="hermes-acp",
@@ -195,6 +224,8 @@ class HermesACPProvider:
             steer=False,
             cancel=True,
             tool_restrictions=False,
+            filesystem=True,
+            worktree_support=True,
         )
 
     async def start(self, request: ProviderRequest) -> str:
@@ -205,6 +236,10 @@ class HermesACPProvider:
     ) -> str:
         if request.run_id in self._runs:
             return request.run_id
+        if request.reasoning_effort is not None:
+            raise ProviderLaunchError(
+                ProviderErrorCode.UNSUPPORTED, "Hermes per-run reasoning effort is not mapped yet"
+            )
         executable = shutil.which(self.command) or self.command
         environment = os.environ.copy()
         if self.skip_configured_mcp:
@@ -239,6 +274,51 @@ class HermesACPProvider:
         state.task = task
         self._runs[request.run_id] = state
         return request.run_id
+
+    async def available_models(self) -> tuple[dict[str, Any], ...]:
+        """Discover the ACP session catalogue; never send a prompt or change defaults.
+
+        ACP exposes models on session/new, so this creates one empty private session.
+        Configured MCP startup is disabled for this metadata-only probe.
+        """
+        from datetime import UTC, datetime, timedelta
+
+        environment = os.environ.copy()
+        environment["HERMES_ACP_SKIP_CONFIGURED_MCP"] = "1"
+        process = await asyncio.create_subprocess_exec(
+            shutil.which(self.command) or self.command, *self.args,
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL, cwd=self.cwd, env=environment,
+            limit=1_048_576,
+        )
+        request = ProviderRequest(
+            request_id="catalogue", task_id="catalogue", run_id="catalogue",
+            owner_id="owner-local", intent="Metadata only; no inference", context="Metadata probe",
+            context_manifest_ref="catalogue", deadline=datetime.now(UTC) + timedelta(seconds=20),
+            artifact_destination=self.cwd or ".", idempotency_key="catalogue",
+        )
+        state = _Run(process=process, request=request, metadata_only=True)
+        try:
+            async with asyncio.timeout(20):
+                initialized = await self._rpc(state, "initialize", {
+                    "protocolVersion": 1,
+                    "clientCapabilities": {"fs": {"readTextFile": False, "writeTextFile": False}},
+                    "clientInfo": {"name": "sora-catalogue", "version": "0.0.0"},
+                })
+                if initialized.get("protocolVersion") != 1:
+                    raise ValueError("Hermes catalogue protocol unsupported")
+                session = await self._rpc(state, "session/new", {
+                    "cwd": self.cwd or ".", "mcpServers": [],
+                })
+                models = (session.get("models") or {}).get("availableModels")
+                if not isinstance(models, list) or not models:
+                    raise ValueError("Hermes did not expose its ACP model catalogue")
+                return tuple({
+                    "model": entry.get("modelId"), "displayName": entry.get("name"),
+                    "description": entry.get("description", ""),
+                } for entry in models if isinstance(entry, dict))
+        finally:
+            await self._stop_process(process)
 
     async def result(self, run_id: str) -> NormalizedResult:
         state = self._runs.get(run_id)
@@ -356,6 +436,11 @@ class HermesACPProvider:
                 state.output_chars = 0
             if not state.session_id:
                 raise RuntimeError("Hermes ACP did not return a session ID")
+            if state.request.model is not None:
+                # ACP switches only this private session, never Hermes' persistent defaults.
+                await self._rpc(state, "session/set_model", {
+                    "sessionId": state.session_id, "modelId": state.request.model,
+                })
             self._session_ids[state.request.run_id] = state.session_id
             if len(self._session_ids) > 1_000:
                 self._session_ids.pop(next(iter(self._session_ids)))
@@ -366,7 +451,10 @@ class HermesACPProvider:
                 "Return ONLY JSON "
                 "with fields conclusion, facts, actions_taken, files_read, files_changed, "
                 "commands_run, uncertainties, warnings, memory_updates, task_updates, "
-                "suggested_response, and usage. Use empty arrays for fields with no entries. "
+                "suggested_response, changelog_path, changelog_entry, and usage. Use empty "
+                "arrays for fields with no entries and an empty string when a field does not "
+                "apply. "
+                f"{CHANGELOG_INSTRUCTION} "
                 "Do not claim tools or changes you did not perform.\n\n"
                 f"TASK:\n{state.request.intent}\n\nCANONICAL CONTEXT:\n{state.request.context}"
             )
@@ -427,12 +515,11 @@ class HermesACPProvider:
                     params = message.get("params") or {}
                     options = params.get("options") or []
                     option_ids = {
-                        option.get("optionId")
-                        for option in options
-                        if isinstance(option, dict)
+                        option.get("optionId") for option in options if isinstance(option, dict)
                     }
                     outcome: dict[str, str]
-                    if self.permission_policy == "allow_once" and "allow_once" in option_ids:
+                    if (not state.metadata_only and self.permission_policy == "allow_once"
+                            and "allow_once" in option_ids):
                         outcome = {"outcome": "selected", "optionId": "allow_once"}
                     else:
                         outcome = {"outcome": "cancelled"}
@@ -461,6 +548,11 @@ class HermesACPProvider:
                 if message.get("id") != request_id:
                     continue
                 if "error" in message:
+                    if method == "session/set_model":
+                        raise ProviderLaunchError(
+                            ProviderErrorCode.INVALID_REQUEST,
+                            "Hermes rejected the selected session model; no prompt was sent",
+                        )
                     raise RuntimeError(str(message["error"]))
                 result = message.get("result")
                 return result if isinstance(result, dict) else {}

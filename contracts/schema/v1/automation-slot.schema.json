@@ -1,0 +1,54 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "decision_at": {
+      "format": "date-time",
+      "title": "Decision At",
+      "type": "string"
+    },
+    "disposition": {
+      "default": "due",
+      "enum": [
+        "due",
+        "skip_nonexistent"
+      ],
+      "title": "Disposition",
+      "type": "string"
+    },
+    "planned_local": {
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$",
+      "title": "Planned Local",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "slot_key": {
+      "maxLength": 128,
+      "minLength": 1,
+      "title": "Slot Key",
+      "type": "string"
+    },
+    "timezone": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Timezone",
+      "type": "string"
+    }
+  },
+  "required": [
+    "slot_key",
+    "decision_at",
+    "planned_local",
+    "timezone"
+  ],
+  "title": "AutomationSlot",
+  "type": "object"
+}

@@ -1,0 +1,51 @@
+{
+  "source": "Win32 EnumDisplayMonitors/GetMonitorInfo/GetDpiForMonitor",
+  "recorded_at": "2026-09-09T17:20:03.1173927+00:00",
+  "topology": {
+    "virtual_desktop": {
+      "x": -1280,
+      "y": 0,
+      "width": 5120,
+      "height": 2160
+    },
+    "monitors": [
+      {
+        "id": "DISPLAY1",
+        "primary": true,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 3840,
+          "height": 2160
+        },
+        "work_area": {
+          "x": 0,
+          "y": 0,
+          "width": 3840,
+          "height": 2088
+        },
+        "dpi_scale": 1.5,
+        "orientation": "landscape"
+      },
+      {
+        "id": "DISPLAY6",
+        "primary": false,
+        "rect": {
+          "x": -1280,
+          "y": 813,
+          "width": 1280,
+          "height": 1024
+        },
+        "work_area": {
+          "x": -1280,
+          "y": 813,
+          "width": 1280,
+          "height": 976
+        },
+        "dpi_scale": 1.0,
+        "orientation": "landscape"
+      }
+    ],
+    "revision": 1
+  }
+}

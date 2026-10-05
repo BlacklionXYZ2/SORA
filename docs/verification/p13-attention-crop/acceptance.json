@@ -1,0 +1,60 @@
+{
+  "stage": "P13.4",
+  "status": "complete",
+  "completed_at": "2026-09-18T17:44:14+01:00",
+  "model": "GPT-5.6 Sol",
+  "request_boundary": {
+    "circle_only": true,
+    "fixed_reason": "uia_insufficient",
+    "caller_geometry_allowed": false,
+    "caller_pixels_allowed": false,
+    "caller_cursor_samples_allowed": false,
+    "caller_action_or_authority_fields_allowed": false,
+    "semantic_desktop_target_rejected": true
+  },
+  "capture_join": {
+    "region_source": "live_scoped_circle_reference",
+    "exact_capture_resource": true,
+    "post_capture_reference_recheck": true,
+    "shared_earliest_expiry": true,
+    "mid_capture_invalidation_discards_frame": true,
+    "topology_change_clears_join": true,
+    "maximum_ttl_seconds": 30
+  },
+  "task_reuse": {
+    "crop_id_persisted": true,
+    "usable_evidence_ids_persisted": true,
+    "raw_cursor_stream_persisted": false,
+    "png_or_base64_persisted": false,
+    "detector_record_or_label_persisted": false,
+    "low_confidence_linked": false,
+    "captured_instruction_linked": false,
+    "live_candidate_context_transient": true,
+    "action_authority": false,
+    "canonical_fact_authority": false
+  },
+  "fixture": {
+    "cursor_samples": 33,
+    "resolved_region": {"x": 340, "y": 240, "width": 120, "height": 120},
+    "captured_region_matches": true,
+    "useful_evidence_confidence": 0.94,
+    "captured_instruction_confidence": 0.99,
+    "referenced_task_completed": true,
+    "capture_backend": "deterministic_fixture",
+    "fresh_live_desktop_claimed": false,
+    "live_vlm_claimed": false
+  },
+  "verification": {
+    "p13_4": {"passed": 4, "failed": 0},
+    "focused": {"passed": 37, "skipped": 1},
+    "desktop_vision": {"passed": 61, "skipped": 6},
+    "repository": {"passed": 302, "skipped": 10},
+    "native_projects_built": 4,
+    "native_build_warnings": 0,
+    "native_build_errors": 0,
+    "mypy_source_files": 164,
+    "ruff": "passed",
+    "schemas": "fresh",
+    "compileall": "passed"
+  }
+}

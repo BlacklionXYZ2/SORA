@@ -1,0 +1,57 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "managed_session_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Managed Session Id"
+    },
+    "shutdown_request_id": {
+      "anyOf": [
+        {
+          "format": "uuid",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Shutdown Request Id"
+    },
+    "state": {
+      "enum": [
+        "external",
+        "managed",
+        "shutdown_requested"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "instance_id",
+    "state"
+  ],
+  "title": "RuntimeLifecycle",
+  "type": "object"
+}

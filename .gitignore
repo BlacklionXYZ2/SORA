@@ -13,3 +13,23 @@
 /data/
 *.db
 *.db-*
+
+# Generated C#/Unity build products are not source.
+/clients/**/bin/
+/clients/**/obj/
+/clients/**/*.csproj.user
+/clients/unity/Library/
+/clients/unity/Temp/
+/clients/unity/Logs/
+/clients/unity/Builds/
+/clients/unity/UserSettings/
+
+# Large third-party assets, re-downloadable from their source. The bundled sample avatar is
+# Seed-san (VRM Public License 1.0, see AVATAR_LICENSE.md beside it):
+# https://github.com/vrm-c/vrm-specification/blob/master/samples/Seed-san/vrm/Seed-san.vrm
+*.vrm
+
+# Local build output and stray artefacts created outside the source tree layout.
+/dist/
+/tmp_test/
+/%SystemDrive%/

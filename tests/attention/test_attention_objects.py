@@ -60,14 +60,12 @@ def test_cursor_ring_buffer_operations() -> None:
 
 
 def test_cursor_ring_buffer_rejects_naive_timestamp() -> None:
-    buf = CursorRingBuffer(capacity=5)
-    naive = CursorSample(
-        timestamp=datetime(2026, 9, 8, 12, 0, 0),  # no tzinfo
-        x=10,
-        y=10,
-    )
     with pytest.raises(ValueError, match="UTC offset"):
-        buf.append(naive)
+        CursorSample(
+            timestamp=datetime(2026, 9, 8, 12, 0, 0),  # no tzinfo
+            x=10,
+            y=10,
+        )
 
 
 def test_detect_hover_gesture() -> None:
@@ -156,7 +154,7 @@ def test_attention_target_and_desktop_object_contracts() -> None:
     assert target.screen_rect == (100, 100, 200, 200)
 
     # Disallow expires_at preceding created_at
-    with pytest.raises(ValueError, match="expires_at cannot precede created_at"):
+    with pytest.raises(ValueError, match="expires_at must follow created_at"):
         AttentionTarget(
             target_id="target-invalid",
             source="hover",
@@ -182,6 +180,16 @@ def test_kanban_board_projection() -> None:
     now = datetime(2026, 9, 8, 12, 0, 0, tzinfo=UTC)
 
     tasks = (
+        TaskRecord(
+            task_id="task-plan",
+            owner_id="owner-1",
+            creator_message_id="msg-plan",
+            status=TaskStatus.PLANNED,
+            base_revision=0,
+            constraints=("Fix this later",),
+            created_at=now,
+            updated_at=now,
+        ),
         TaskRecord(
             task_id="task-q",
             owner_id="owner-1",
@@ -238,14 +246,17 @@ def test_kanban_board_projection() -> None:
 
     board = project_tasks_to_kanban(tasks, board_id="kanban-custom")
     assert board.board_id == "kanban-custom"
-    assert len(board.cards) == 5
+    assert len(board.cards) == 6
 
     by_id = {c.task_id: c for c in board.cards}
 
-    assert by_id["task-q"].column is KanbanColumn.TODO
+    assert by_id["task-plan"].column is KanbanColumn.TODO
+    assert not by_id["task-plan"].needs_attention
+
+    assert by_id["task-q"].column is KanbanColumn.DOING
     assert not by_id["task-q"].needs_attention
 
-    assert by_id["task-perm"].column is KanbanColumn.TODO
+    assert by_id["task-perm"].column is KanbanColumn.DOING
     assert by_id["task-perm"].needs_attention
 
     assert by_id["task-run"].column is KanbanColumn.DOING

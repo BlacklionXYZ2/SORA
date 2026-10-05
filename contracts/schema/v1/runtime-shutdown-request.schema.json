@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "managed_session_id": {
+      "format": "uuid",
+      "title": "Managed Session Id",
+      "type": "string"
+    },
+    "request_id": {
+      "format": "uuid",
+      "title": "Request Id",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "managed_session_id",
+    "request_id"
+  ],
+  "title": "RuntimeShutdownRequest",
+  "type": "object"
+}

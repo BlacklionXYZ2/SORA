@@ -1,0 +1,54 @@
+# GUI-4 canonical Automations and scheduling contract
+
+Model name: **GPT-6.1 Sol**. Initial source checkpoint **2026-10-04 12:23:32 +01:00**. Status: **GUI-4a/c in progress; typed data/time foundation implemented, persistence/API/worker/UI not delivered**. The [original Automations reference](reference/03-automations.jpg) and [roadmap](../../SORA_GUI_IMPLEMENTATION_ROADMAP.md) remain the full product scope, not a fixture dashboard.
+
+**Later source update,12:48:42 +01:00:** [Storage/API/reservation contract](GUI4_AUTOMATION_STORAGE_CONTRACT_GPT-6.1-Sol_2026-10-04.md) implements migration12, canonical CRUD/history/receipts and internal reservations with component evidence. This supersedes the initial absent-persistence/API wording for those narrow scopes. Worker/task admission/recovery/manual Run now/shared UI and actual scheduled-run acceptance remain required. The numbered requirements below preserve the full contract rather than claiming all are implemented.
+
+## Product shape and supported initial behavior
+
+The reference's list/search/All/Active/Paused/New and selected Overview/Edit/Logs drive the UI. Show actual next dates/timezone, supported tools/provider/model/purpose and exact occurrence/task/run evidence. A configured automation is not a successful run. Paused is separate from task Cancel; Run now is separate from the next scheduled occurrence.
+
+The baseline supports one-off instants, daily local time, weekly selected weekdays and fixed elapsed intervals (including Every4 hours). Arbitrary cron, application/event triggers and workflow chains remain deferred. Behavior initially delegates an exact owner-authored task through the existing specialist admission pipeline. BeatLeader/news/wallpaper examples remain illustrative without an actual registered adapter; no invented tools, entitlement or effect claims.
+
+## Implemented schemas and time rules
+
+Four registered/exported closed contracts now exist: `AutomationSpec`, `AutomationDefinition`, `AutomationSlot`, `AutomationOccurrence`. Extra fields/caller authority are rejected. Specs carry name/description, discriminated trigger, agent-task behavior and missed/overlap policies. Definitions bind canonical owner/project/version/state/timestamps. Occurrences snapshot definition version/behavior, origin, slot and status with optional exact task/run linkage. Admission/completion cannot be represented without both task and run IDs; reserved/skipped/blocked records cannot claim them. Schema validity alone is not canonical evidence that those IDs exist.
+
+Timezone keys must resolve through Python `ZoneInfo`; naive instants are refused. Daily/weekly times are `HH:mm`; Monday is0 and weekdays are unique/sorted. Intervals retain an aware persisted anchor,60 seconds through365 days; calculations are in UTC elapsed time, never reset from restart time. `tzdata` is now a runtime dependency (locked2026.5), installed only in the isolated verification environment during this checkpoint. Windows commonly lacks IANA data; Python documents the first-party fallback in its [ZoneInfo data-source guidance](https://docs.python.org/3.12/library/zoneinfo.html#data-sources). No OS timezone or owner environment is changed.
+
+Pure `automation_clock.next_slot` returns the first slot strictly after an aware boundary. Calendar slots retain the requested local date/time; repeated autumn times use the first fold only. Nonexistent local times have disposition `skip_nonexistent`, not a shifted execution. Their `decision_at` is the transition's first valid UTC instant for recording the skip, **not an actual scheduled run time**. This avoids losing the next valid day's slot even after a whole-day transition. UI must show “skipped: nonexistent local time,” not “runs at” that bookkeeping instant.
+
+Pure `missed_disposition` evaluates one persisted slot. Before due means wait; nonexistent means skip; overlapping means skip. Normal live ticks have a small bounded5-second grace. Recovered/older slots default to Skip; optional Run once admits only within the configured catch-up window (0–24 hours, default5 minutes). It does not enumerate/admit a backlog. The eventual worker must bound each tick and advance missed schedule ranges without a run burst; no automatic retry is introduced.
+
+## Required canonical persistence and API — next implementation
+
+These operations are **contract requirements, not current endpoints/tables**:
+
+1. Migration from schema11 adds canonical definitions, occurrences and durable mutation/manual-run receipts. Preserve original rows/settings; test actual11→successor migration, forward reopen and atomic rollback. Store definitions by ID/owner/project/state/entity version; occurrences by automation/version/origin/slot key with unique scheduled slots and manual request keys. Explicit task/run foreign-key links reference existing records, not parallel execution state.
+2. Create/edit/pause/resume/delete derive owner/current-project in Core, require exact expected version and current Core identity. Closed requests include a stable mutation UUID; identical replay returns the original receipt, changed payload conflicts. Scope/permission/errors are redacted. Deleted is soft history exclusion, not erasure or cancellation of admitted work.
+3. List/detail/history are owner-local, bounded/signed paginated and contain only canonical fields. Search is literal; All/Active/Paused are real persisted states. Deleted/foreign targets cannot redirect to a nearby record. Core-instance changes invalidate cursor/selection/drafts. Paired/guest routes remain unavailable until a separate remote contract exists.
+4. Run now uses a distinct manual occurrence/idempotency key and the existing behavior snapshot. It does not change the persisted next scheduled slot. Default overlap skip applies. Effect-free run availability/validation is distinguishable from actual admission; missing/disabled provider/model/tool/current static policy yields a visible blocked/failure occurrence, not silent fallback.
+5. Definition changes cancel/reject still-unadmitted old-version reservations through an admission guard, without rewriting existing run history. Pause/delete prevent future admission, not cancel an admitted task. Resume computes a future slot rather than silently bursting the paused backlog; explicit catch-up semantics apply only to documented recovery policy.
+
+## Required scheduler/admission/recovery — next implementation
+
+**Later source update, 13:23:16 +01:00:** The [worker contract](GUI4_AUTOMATION_WORKER_CONTRACT_GPT-6.1-Sol_2026-10-04.md) now implements Core-owned timing/lifecycle, guarded canonical task/run admission and exact-key conservative recovery, with actual temporary Core reopen and deterministic owned-loop evidence. The requirements below remain the full acceptance scope. Manual Run now, shared UI, full persisted timezone/interval and supported live-provider/native acceptance are still required; this update does not mark GUI-4 complete.
+
+One Core-owned worker uses a bounded periodic tick and the existing task queue. No desktop/UI connection or dialogue model is needed to keep time. No new agent runtime, arbitrary shell executor or generic companion file-writing privilege.
+
+- Atomically reserve one due occurrence with a unique deterministic submission key and snapshot, advancing its persisted schedule as appropriate. Recheck current definition version/state/owner/project, overlap, static delegation/project/provider/model support at task admission, not merely when the automation was created.
+- Reuse `SoraRuntime.submit_task` and `RuntimeRepository.submit`. The existing submission transaction persists task/run/messages and idempotency linkage; duplicate receipts do not enqueue a second run. Scheduler scope/key checks must independently verify the original submission belongs to the occurrence's owner/project/behavior; generic idempotency alone is not an authority boundary.
+- Reservation → admission → task/run linking is a recoverable state machine, not atomic external execution. Link only actual canonical submission evidence. After a crash, inspect the exact submission key/task/run before any attempted retry. Already admitted work must not be re-enqueued; ambiguous external effects remain Unknown, not completed or automatically replayed.
+- No overlapping reserved/admitted/unknown work for an automation. Existing canonical terminal task/run evidence releases the guard; an unresolved Unknown requires evidence-based reconciliation, not an automatic reset, Resume or fabricated success. No automatic retries initially.
+- Record admitted/skipped/blocked/failed/unknown/outcome and manual-versus-scheduled origin with content-free public event/outbox metadata. Behavior/private documents/provider transcripts belong only in deliberate scoped inspectors, not public activity dumps.
+- Core shutdown stops/waits for its scheduler task using existing lifecycle ownership and time bounds. No ticks/admission after the shutdown fence; persisted pending records reconcile on the next authorized start. Tests need injected clocks/barriers/crash boundaries and actual temporary HTTP/SQLite, not sleep-only success assertions.
+
+## Required shared desktop UI — GUI-4b
+
+**Later source update, 13:44:05 +01:00:** [Durable manual Run now](GUI4_AUTOMATION_MANUAL_CONTRACT_GPT-6.1-Sol_2026-10-04.md) is now implemented through the owner-local API/worker with historical receipts, unchanged scheduled slot, overlap/unavailable outcomes and five-minute unadmitted expiry. Shared UI/control input and full connected/live acceptance remain required. The earlier then-missing-manual checkpoint is historical.
+
+Use the same profile/Core-bound session/refresh and retained-draft conventions as Memory/Settings; no client JSON store or extra polling owner. Add an Automations entry independent of model readiness. List/detail/Overview/Edit/Logs, validation, exact-version save, pause/resume/delete, explicit Run now and task Cancel/run-evidence navigation remain required. Preserve drafts on conflict/offline/hide; uncertain mutations retain their receipt key and reconcile, never automatically replay an effect. Show active versus saved draft and next date/timezone/disposition truthfully. Only registered tool/provider capability data may populate the reference's Tools chips.
+
+## Acceptance and remaining scope
+
+[Clock verification](../verification/GUI4_AUTOMATION_CLOCK_GPT-6.1-Sol_2026-10-04.md) proves pure calculations/contracts only. GUI-4a requires actual migration/repository/worker/admission/recovery; GUI-4b requires connected user-side operation; GUI-4c requires persisted restart/missed/DST/interval behavior. Final gate is a real scheduled supported task with inspectable evidence and no ambiguous-effect replay, alongside pause/overlap/failure/physical/native/release requirements. Earlier GUI acceptance and original completion dates remain open/preserved.

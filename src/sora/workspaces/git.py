@@ -5,8 +5,12 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
+import stat
 import subprocess
+import zipfile
 from datetime import UTC, datetime, timedelta
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +18,15 @@ from sora.contracts.base import NonEmptyText, StrictModel
 from sora.contracts.models import NormalizedResult
 
 _SAFE_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
+
+
+class WorkspaceStatus(StrEnum):
+    """Lifecycle status of an allocated workspace."""
+
+    ACTIVE = "active"
+    RELEASED = "released"
+    RECOVERED = "recovered"
+    DISCARDED = "discarded"
 
 
 class WorkspaceError(RuntimeError):
@@ -37,6 +50,7 @@ class WorkspaceRecord(StrictModel):
     lease_owner: NonEmptyText
     lease_expires_at: datetime
     created_at: datetime
+    status: WorkspaceStatus = WorkspaceStatus.ACTIVE
 
 
 class CodingArtifact(StrictModel):
@@ -229,10 +243,8 @@ class GitWorkspaceManager:
                 "--untracked-files=all",
             ).splitlines()
         )
-        changed_files = tuple(
-            line[3:] for line in status if len(line) > 3 and line[3:].strip()
-        )
-        tracked_diff = self._git(
+        changed_files = tuple(line[3:] for line in status if len(line) > 3 and line[3:].strip())
+        tracked_diff = self._git_diff(
             record.worktree_path,
             "diff",
             "--binary",
@@ -263,6 +275,12 @@ class GitWorkspaceManager:
         if lease.lease_owner != lease_owner:
             raise WorkspaceLeaseError("workspace lease belongs to another writer")
         self._release_lease_file(workspace_id, lease_owner)
+        path = self._record_path(workspace_id)
+        if path.is_file():
+            record = self.load(workspace_id)
+            if record.status is WorkspaceStatus.ACTIVE:
+                updated = record.model_copy(update={"status": WorkspaceStatus.RELEASED})
+                self._write_json(path, updated.model_dump(mode="json"))
 
     def capture_run_artifact(
         self,
@@ -302,6 +320,382 @@ class GitWorkspaceManager:
         destination.parent.mkdir(parents=True, exist_ok=True)
         self._write_json(destination, artifact.model_dump(mode="json"))
         return artifact, destination
+
+    def list_workspaces(self) -> list[WorkspaceRecord]:
+        """List all tracked workspace records."""
+        records: list[WorkspaceRecord] = []
+        for file in sorted(self.record_root.glob("*.json")):
+            try:
+                records.append(WorkspaceRecord.model_validate_json(file.read_text("utf-8")))
+            except Exception:
+                continue
+        return records
+
+    def diff_workspace(
+        self,
+        workspace_id: str,
+        *,
+        target_ref: str | None = None,
+    ) -> CodingArtifact:
+        """Diff workspace against an explicit target commit or its original base commit."""
+        record = self.load(workspace_id)
+        compare_ref = target_ref or record.base_commit
+        status = tuple(
+            self._git(
+                record.worktree_path,
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+            ).splitlines()
+        )
+        changed_files = tuple(line[3:] for line in status if len(line) > 3 and line[3:].strip())
+        tracked_diff = self._git_diff(
+            record.worktree_path,
+            "diff",
+            "--binary",
+            "--no-ext-diff",
+            compare_ref,
+            "--",
+        )
+        warnings = (
+            ("Untracked files are listed in status but are not embedded in the Git diff.",)
+            if any(line.startswith("?? ") for line in status)
+            else ()
+        )
+        return CodingArtifact(
+            workspace_id=workspace_id,
+            requested_base_ref=record.requested_base_ref,
+            base_commit=record.base_commit,
+            head_commit=self._git(record.worktree_path, "rev-parse", "HEAD").strip(),
+            status=status,
+            changed_files=changed_files,
+            diff=tracked_diff,
+            captured_at=datetime.now(UTC),
+            warnings=warnings,
+        )
+
+    def diff_between_workspaces(self, workspace_id_a: str, workspace_id_b: str) -> str:
+        """Compute the unified diff between two parallel candidate worktrees."""
+        record_a = self.load(workspace_id_a)
+        record_b = self.load(workspace_id_b)
+        self._require_beneath(record_a.worktree_path, self.worktree_root)
+        self._require_beneath(record_b.worktree_path, self.worktree_root)
+        if not record_a.worktree_path.is_dir() or not record_b.worktree_path.is_dir():
+            raise WorkspaceError("Both workspace directories must exist to compute diff")
+        return self._git_diff(
+            self.worktree_root,
+            "diff",
+            "--no-index",
+            "--binary",
+            "--",
+            str(record_a.worktree_path),
+            str(record_b.worktree_path),
+        )
+
+    def diff_file(
+        self,
+        workspace_id: str,
+        relative_path: str,
+        *,
+        target_ref: str | None = None,
+    ) -> str:
+        """Return the isolated binary-safe Git diff for one workspace-relative file."""
+        record = self.load(workspace_id)
+        candidate = (record.worktree_path / relative_path).resolve(strict=False)
+        self._require_beneath(candidate, record.worktree_path)
+        compare_ref = target_ref or record.base_commit
+        return self._git_diff(
+            record.worktree_path,
+            "diff",
+            "--binary",
+            "--no-ext-diff",
+            compare_ref,
+            "--",
+            relative_path,
+        )
+
+    def renew_lease(
+        self,
+        workspace_id: str,
+        *,
+        lease_owner: str,
+        extend_seconds: float = 900,
+    ) -> _LeaseRecord:
+        """Renew or extend the expiration deadline of an active lease."""
+        if extend_seconds <= 0:
+            raise WorkspaceError("extend_seconds must be positive")
+        lease = self._load_lease(workspace_id)
+        if lease.lease_owner != lease_owner:
+            raise WorkspaceLeaseError("workspace lease belongs to another writer")
+        now = datetime.now(UTC)
+        new_expires = max(lease.expires_at, now) + timedelta(seconds=extend_seconds)
+        updated_lease = lease.model_copy(update={"expires_at": new_expires})
+        self._write_json(self._lease_path(workspace_id), updated_lease.model_dump(mode="json"))
+        record_path = self._record_path(workspace_id)
+        if record_path.is_file():
+            record = self.load(workspace_id)
+            updated_record = record.model_copy(update={"lease_expires_at": new_expires})
+            self._write_json(record_path, updated_record.model_dump(mode="json"))
+        return updated_lease
+
+    def recover_workspace(
+        self,
+        workspace_id: str,
+        *,
+        reason: str = "orphaned",
+    ) -> tuple[CodingRunArtifact, Path]:
+        """Snapshot uncommitted or untracked changes from a crashed or orphaned worktree."""
+        record = self.load(workspace_id)
+        self._require_beneath(record.worktree_path, self.worktree_root)
+        if not record.worktree_path.is_dir():
+            raise WorkspaceError(
+                f"Workspace path does not exist for recovery: {record.worktree_path}"
+            )
+
+        status = tuple(
+            self._git(
+                record.worktree_path,
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+            ).splitlines()
+        )
+        changed_files = tuple(line[3:] for line in status if len(line) > 3 and line[3:].strip())
+        tracked_diff = self._git_diff(
+            record.worktree_path,
+            "diff",
+            "--binary",
+            "--no-ext-diff",
+            record.base_commit,
+            "--",
+        )
+        warnings: tuple[str, ...] = (f"Workspace recovered: reason={reason}",)
+        untracked_files = self._untracked_files(record.worktree_path)
+        recovery_directory = (self.artifact_root / workspace_id).resolve()
+        self._require_beneath(recovery_directory, self.artifact_root)
+        recovery_directory.mkdir(parents=True, exist_ok=True)
+        if untracked_files:
+            archive_path = recovery_directory / "untracked-files.zip"
+            self._archive_untracked_files(
+                record.worktree_path,
+                untracked_files,
+                archive_path,
+            )
+            warnings = warnings + (
+                f"Preserved {len(untracked_files)} untracked file(s) in {archive_path.name}.",
+            )
+
+        artifact = CodingRunArtifact(
+            workspace=CodingArtifact(
+                workspace_id=workspace_id,
+                requested_base_ref=record.requested_base_ref,
+                base_commit=record.base_commit,
+                head_commit=self._git(record.worktree_path, "rev-parse", "HEAD").strip(),
+                status=status,
+                changed_files=changed_files,
+                diff=tracked_diff,
+                captured_at=datetime.now(UTC),
+                warnings=warnings,
+            ),
+            provider="workspace-recovery",
+            result_id=f"recovery-{workspace_id}",
+            outcome="recovered",
+            warnings=warnings,
+        )
+        destination = (recovery_directory / "recovery.json").resolve()
+        self._require_beneath(destination, self.artifact_root)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        self._write_json(destination, artifact.model_dump(mode="json"))
+
+        updated_record = record.model_copy(update={"status": WorkspaceStatus.RECOVERED})
+        self._write_json(self._record_path(workspace_id), updated_record.model_dump(mode="json"))
+
+        lease_path = self._lease_path(workspace_id)
+        if lease_path.exists():
+            try:
+                lease_path.unlink()
+            except OSError:
+                pass
+
+        return artifact, destination
+
+    def discard(
+        self,
+        workspace_id: str,
+        *,
+        lease_owner: str | None = None,
+        force: bool = False,
+    ) -> None:
+        """Safely discard a workspace, preventing accidental data loss on dirty trees."""
+        record = self.load(workspace_id)
+        self._require_beneath(record.worktree_path, self.worktree_root)
+
+        lease_path = self._lease_path(workspace_id)
+        if lease_path.exists():
+            lease = self._load_lease(workspace_id)
+            if lease.expires_at > datetime.now(UTC):
+                if lease_owner is not None and lease.lease_owner != lease_owner:
+                    raise WorkspaceLeaseError(
+                        "Cannot discard workspace: active lease held by another writer"
+                    )
+                elif lease_owner is None and not force:
+                    raise WorkspaceLeaseError(
+                        "Cannot discard workspace with active lease; "
+                        "provide lease_owner or force=True"
+                    )
+
+        if record.worktree_path.is_dir():
+            status = tuple(
+                self._git(
+                    record.worktree_path,
+                    "status",
+                    "--porcelain=v1",
+                    "--untracked-files=all",
+                ).splitlines()
+            )
+            is_dirty = len(status) > 0
+            if is_dirty:
+                if not force:
+                    raise WorkspaceError(
+                        "Refusing to discard dirty workspace without recovery. "
+                        "Call recover_workspace first or specify force=True."
+                    )
+                # Ensure zero accidental data loss: snapshot before deletion
+                self.recover_workspace(workspace_id, reason="pre_discard_force")
+
+            try:
+                self._git(
+                    record.repository_root,
+                    "worktree",
+                    "remove",
+                    "--force",
+                    str(record.worktree_path),
+                )
+            except Exception:
+                pass
+            try:
+                self._git(record.repository_root, "worktree", "prune")
+            except Exception:
+                pass
+            if record.worktree_path.exists():
+                shutil.rmtree(record.worktree_path, ignore_errors=True)
+
+        updated_record = record.model_copy(update={"status": WorkspaceStatus.DISCARDED})
+        self._write_json(self._record_path(workspace_id), updated_record.model_dump(mode="json"))
+
+        if lease_path.exists():
+            try:
+                lease_path.unlink()
+            except OSError:
+                pass
+
+    def cleanup_expired(
+        self,
+        *,
+        max_age_seconds: float = 86400,
+        dry_run: bool = False,
+    ) -> list[str]:
+        """Identify and clean up expired workspaces that have lapsed past max_age_seconds."""
+        cleaned: list[str] = []
+        now = datetime.now(UTC)
+        threshold = timedelta(seconds=max_age_seconds)
+        for record in self.list_workspaces():
+            if record.status is WorkspaceStatus.DISCARDED:
+                continue
+
+            lease_path = self._lease_path(record.workspace_id)
+            if lease_path.exists():
+                try:
+                    lease = self._load_lease(record.workspace_id)
+                except Exception:
+                    # A corrupt lease is not permission to destroy a workspace.
+                    continue
+                if lease.expires_at > now:
+                    # An active writer always wins over age-based cleanup.
+                    continue
+                expired_at = lease.expires_at
+            else:
+                expired_at = record.lease_expires_at
+
+            if record.status is WorkspaceStatus.ACTIVE:
+                is_expired = now > expired_at and (now - expired_at) >= threshold
+            else:
+                is_expired = (now - record.created_at) >= threshold
+            if not is_expired:
+                continue
+            if not dry_run:
+                self.discard(record.workspace_id, force=True)
+            cleaned.append(record.workspace_id)
+        return cleaned
+
+    def _untracked_files(self, worktree: Path) -> tuple[str, ...]:
+        """Return raw, repository-relative untracked file names without porcelain quoting."""
+        completed = subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+            cwd=worktree,
+            capture_output=True,
+            check=False,
+        )
+        if completed.returncode != 0:
+            detail = completed.stderr.decode("utf-8", errors="replace").strip()
+            raise WorkspaceError(f"git ls-files failed during recovery: {detail}")
+        return tuple(
+            item.decode("utf-8", errors="surrogateescape")
+            for item in completed.stdout.split(b"\0")
+            if item
+        )
+
+    def _archive_untracked_files(
+        self,
+        worktree: Path,
+        relative_paths: tuple[str, ...],
+        destination: Path,
+    ) -> None:
+        """Create and verify a lossless archive before an owned worktree is removed."""
+        self._require_beneath(destination.resolve(), self.artifact_root)
+        temporary = destination.with_suffix(f".tmp-{os.getpid()}.zip")
+        archived_names: list[str] = []
+        try:
+            with zipfile.ZipFile(
+                temporary,
+                mode="w",
+                compression=zipfile.ZIP_DEFLATED,
+                allowZip64=True,
+            ) as archive:
+                for relative in relative_paths:
+                    source_entry = worktree / relative
+                    self._require_beneath(source_entry.parent.resolve(strict=False), worktree)
+                    if not source_entry.exists() and not source_entry.is_symlink():
+                        raise WorkspaceError(
+                            f"Untracked recovery source disappeared before capture: {relative}"
+                        )
+                    archive_name = Path(relative).as_posix()
+                    mode = os.lstat(source_entry).st_mode
+                    if stat.S_ISLNK(mode):
+                        info = zipfile.ZipInfo(archive_name)
+                        info.create_system = 3
+                        info.external_attr = (stat.S_IFLNK | 0o777) << 16
+                        archive.writestr(info, os.readlink(source_entry))
+                    elif stat.S_ISREG(mode):
+                        source = source_entry.resolve(strict=True)
+                        self._require_beneath(source, worktree)
+                        archive.write(source, archive_name)
+                    else:
+                        raise WorkspaceError(
+                            f"Unsupported untracked recovery entry type: {relative}"
+                        )
+                    archived_names.append(archive_name)
+
+            with zipfile.ZipFile(temporary, mode="r") as archive:
+                corrupt = archive.testzip()
+                if corrupt is not None:
+                    raise WorkspaceError(f"Recovery archive CRC validation failed: {corrupt}")
+                if sorted(archive.namelist()) != sorted(archived_names):
+                    raise WorkspaceError("Recovery archive file manifest did not round-trip")
+            os.replace(temporary, destination)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
 
     def _acquire_lease(
         self,
@@ -390,6 +784,24 @@ class GitWorkspaceManager:
             detail = completed.stderr.strip() or completed.stdout.strip() or "unknown Git error"
             raise WorkspaceError(f"git {' '.join(args[:2])} failed: {detail}")
         return completed.stdout
+
+    @staticmethod
+    def _git_diff(cwd: Path, *args: str) -> str:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=False,
+            check=False,
+        )
+        if completed.returncode not in (0, 1):
+            raw_detail = completed.stderr.strip() or completed.stdout.strip()
+            detail = raw_detail.decode("utf-8", errors="replace") or "unknown Git error"
+            raise WorkspaceError(f"git {' '.join(args[:2])} failed: {detail}")
+        # Keep the serialized patch byte-for-byte through subprocess transport.
+        # Git's textual diff still uses repository-normalized line endings, while
+        # binary patches remain ASCII encoded by Git.
+        return completed.stdout.decode("utf-8", errors="replace")
 
     @staticmethod
     def _write_json(path: Path, value: dict[str, Any]) -> None:

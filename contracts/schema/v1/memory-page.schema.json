@@ -1,0 +1,240 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "MemoryFilterState": {
+      "enum": [
+        "active",
+        "expired",
+        "superseded",
+        "all"
+      ],
+      "type": "string"
+    },
+    "MemoryProjectFilter": {
+      "enum": [
+        "all",
+        "project",
+        "global"
+      ],
+      "type": "string"
+    },
+    "MemorySummary": {
+      "additionalProperties": false,
+      "properties": {
+        "content_preview": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Content Preview",
+          "type": "string"
+        },
+        "content_truncated": {
+          "title": "Content Truncated",
+          "type": "boolean"
+        },
+        "entity_version": {
+          "minimum": 1,
+          "title": "Entity Version",
+          "type": "integer"
+        },
+        "memory_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "metadata_truncated": {
+          "default": false,
+          "title": "Metadata Truncated",
+          "type": "boolean"
+        },
+        "owner_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "project_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "provenance": {
+          "maxLength": 512,
+          "title": "Provenance",
+          "type": "string"
+        },
+        "retention": {
+          "$ref": "#/$defs/ShortMetadata"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "scope": {
+          "$ref": "#/$defs/ShortMetadata"
+        },
+        "sensitivity": {
+          "$ref": "#/$defs/ShortMetadata"
+        },
+        "state": {
+          "$ref": "#/$defs/VisibleMemoryState"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "memory_id",
+        "owner_id",
+        "entity_version",
+        "state",
+        "scope",
+        "sensitivity",
+        "retention",
+        "provenance",
+        "content_preview",
+        "content_truncated"
+      ],
+      "title": "MemorySummary",
+      "type": "object"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "ShortMetadata": {
+      "maxLength": 128,
+      "type": "string"
+    },
+    "VisibleMemoryState": {
+      "enum": [
+        "active",
+        "expired",
+        "superseded"
+      ],
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "evidence_note": {
+      "$ref": "#/$defs/NonEmptyText"
+    },
+    "instance_id": {
+      "format": "uuid",
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "limit": {
+      "default": 50,
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "memories": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/MemorySummary"
+      },
+      "maxItems": 100,
+      "title": "Memories",
+      "type": "array"
+    },
+    "next_cursor": {
+      "anyOf": [
+        {
+          "maxLength": 1024,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Next Cursor"
+    },
+    "observed_at": {
+      "format": "date-time",
+      "title": "Observed At",
+      "type": "string"
+    },
+    "owner_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "project_filter": {
+      "$ref": "#/$defs/MemoryProjectFilter"
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "projection_revision": {
+      "minimum": 0,
+      "title": "Projection Revision",
+      "type": "integer"
+    },
+    "query": {
+      "default": "",
+      "maxLength": 256,
+      "title": "Query",
+      "type": "string"
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "scope_filter": {
+      "$ref": "#/$defs/ShortMetadata",
+      "default": ""
+    },
+    "state_filter": {
+      "$ref": "#/$defs/MemoryFilterState"
+    },
+    "total": {
+      "minimum": 0,
+      "title": "Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "instance_id",
+    "owner_id",
+    "projection_revision",
+    "observed_at",
+    "evidence_note",
+    "state_filter",
+    "project_filter",
+    "total"
+  ],
+  "title": "MemoryPage",
+  "type": "object"
+}

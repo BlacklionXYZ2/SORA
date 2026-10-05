@@ -1,0 +1,44 @@
+# GUI-3a canonical Memory browser contract
+
+Contributor/model name: **GPT-6.1 Sol**. Contract/source checkpoint: **4 October 2026**. Scope: owner-local read service and connected Overview/Search/inspector. This does not deliver GUI-3b correction/forget, GUI-3c semantic panel acknowledgement/retrieval activity or GUI-5 relationships/graph. Acceptance status is recorded separately in the [verification report](../verification/GUI3_MEMORY_BROWSER_GPT-6.1-Sol_2026-10-04.md).
+
+## Storage, authority and privacy
+
+Reuse canonical `memories` SQL rows and global projection revision; no new database, migration, client JSON memory store, model invocation or capture distillation. Owner identity and current project come from Core configuration, never query/body input. Each query restricts to that owner and current project plus owner-global records. Canonical private/secret records are visible to the authenticated local owner; this does not change model-context sensitivity/retention eligibility or remote access. `active` is storage state, not proof of current prompt inclusion.
+
+All browser routes require existing API authentication and reject paired/remote scopes with403, including read scopes. The host uses its existing profile-verified session and `X-SORA-Core-Instance` binding; responses additionally carry that exact Core instance. No repeated permission request or new grant mechanism. Remote contracts must be deliberately designed later, not inferred from loopback availability.
+
+Neither projection reads private capture files, trace payloads, rationale or reasoning. Raw capture IDs and arbitrary evidence IDs/paths are withheld. Detail links only current Core-registered references in the exact owner/device/current-project scope; registered paths beneath the configured private memory-capture root are also excluded, regardless of reference name. Evidence registry TTL/scope still applies. Unknown/private/unregistered/duplicate/excess or malformed evidence produces a truthful `evidence_withheld` flag, not fabricated links or a guessed count. Owner text in canonical content remains the owner's text, not an assistant scratchpad.
+
+## Routes and query
+
+| Route | Input | Result |
+|---|---|---|
+| `GET /api/v1/memories` | Optional closed query below | `MemoryPage`, default50/max100 summaries |
+| `GET /api/v1/memories/{memory_id}` | Exact canonical Identifier, no query parameters | `MemoryDetail` for that record only |
+
+List accepts only one value per `q`, `state`, `project`, `scope`, `limit`, `cursor`. Unknown/duplicate fields are400. `q` is literal content substring, max256 characters, with SQLite LIKE's ASCII case-insensitive semantics; `%`, `_` and backslash are escaped. This is not semantic retrieval/ranking/stemming. `scope` is an optional exact match, max128 characters. Query/scope control characters are rejected. State: `active` (default), `expired`, `superseded`, `all`; all still excludes deleted records. Project: `all` (default, current plus global), `project` (current only), `global` (owner-global only). No arbitrary owner/project selection. Limits must be decimal integers1–100. Blank filters remain explicit; blank/invalid cursors are errors, not Refresh aliases.
+
+Exact unknown/deleted/foreign-owner/other-project ID returns404 without content or alternate selection. Invalid ID/filter/cursor is400 `INVALID_MEMORY_QUERY`; unsupported methods405; invalid stored record503 `MEMORY_UNAVAILABLE` without echoing private values. Core instance mismatch retains the existing409 `RUNTIME_CHANGED` behavior. No correction/delete command is disguised as a GET or direct repository write.
+
+## Pagination, versions and supported fields
+
+Rows sort by descending storage rowid, explicitly **not a created date**. First page establishes an admission ceiling; subsequent pages never include later admissions until Refresh. An opaque signed cursor binds owner, current project, Core instance, query/state/project/scope/limit and ceiling/before position. Its HMAC key is ephemeral to the route handler: restart/foreign scope/filter/limit/key/tamper is rejected. Clients retain the token unchanged. Soft deletion does not erase the admission ceiling. Existing state, counts and metadata are live on each read; pagination is not a frozen historical database snapshot.
+
+Each response uses an explicit SQLite read transaction for rows/count/revision consistency. SQL fetches at most limit+1, caps preview/metadata before transfer, and never loads the whole collection into a Python/GUI list. Count is scoped matching rows below the ceiling, not a global/private total. Shell uses50 per page and a256-entry bounded process-local page history; Refresh starts a new ceiling/history. No schema-derived or UI-generated date/score/relationship is invented.
+
+Common response fields: schema version1.0, `instance_id`, `owner_id`, current `project_id`, global `projection_revision`, timezone-aware `observed_at`, coverage note. List echoes filters/limit, `memories`, `total`, nullable `next_cursor`. Each summary carries exact ID/owner/project/entity version; active/expired/superseded state; scope, sensitivity, retention, provenance; bounded content preview and truncation flags; known `valid_until`. Metadata limits are128 for scope/sensitivity/retention and512 for provenance; long metadata is explicitly flagged. Preview max512 Unicode characters. Detail adds full canonical content up to16384 characters, permitted explicit successor ID, up to64 `{reference_id,label,kind}` evidence links and the withheld flag. Unknown creation time, importance, relevance and relationships stay absent, not migration time or dummy values.
+
+Supersession takes precedence over expiry; deletion takes precedence over both and is absent from browser/detail. Expiry uses actual timezone-aware instants, including the boundary. Successor links are checked for the same permitted owner/project and nondeleted state; they never redirect or silently select the successor. Exact version is for inspection now; version-checked correction/forget belongs to GUI-3b.
+
+## Shared-host interaction
+
+One floating Memory window per profile, accessible from tray/menu/Chat More/Settings, direct `--show memory`, and root/full `-Client Shell -ShellPanel memory`. Uses the existing authenticated client/session; no panel timer, extra connection/poller/provider or durable memory cache. Explicit initial user open/Refresh/search/page/Inspect reads work with Core connected and dialogue model down. Overview resets to active/current+global; Search focuses literal query. Graph is visibly unavailable until real relationships exist. Narrow windows stack list and inspector; native controls share theme/high-contrast/text/DPI/placement support. This source design is not native accessibility acceptance.
+
+Selection is an exact ID, not a row offset. The public parser copies only supported fields, rejects wrong/duplicate IDs/scopes/epochs/filters/oversized shapes, and displays plain inert text with URL detection off. New queries/selections/disconnect/epoch changes fence late responses. Disconnect retains marked stale process-local cache; reconnect alone does not make it current. Changed Core clears records/targets/cursors but preserves typed search. Failed/old-Core read shows unavailable/stale without substituting fixture data or another record. Reads have15-second bounds; lifetime cancellation covers shutdown.
+
+Registered evidence Open is an explicit user action using existing canonical navigation/static policy, not raw paths or an executable/URL launch. It first rereads the exact memory and verifies the captured evidence is still linked, then uses the shared guarded registered-reference route; that route revalidates the reference again. It is not an atomic memory-and-file transaction. Navigation outcome is labelled for the captured reference, including when filters change while acknowledgement is pending; unknown results are never automatically replayed. Pending navigation protects host Quit. Close only hides Memory and retains the process-local query/selection/page; accepted host Quit disposes/cancels reads. UI storev1 adds only a twelfth recognized placement key, not memory content/queries or canonical settings. Older stores remain readable; older hosts may reject the new placement key original-preservingly rather than reinterpret it.
+
+## Required remaining acceptance
+
+Tests/HTTP fixtures must prove scope/isolation, filter/cursor bounds, expiry/supersession/deletion, exact IDs, private capture exclusion, long/large data, malformed/old-Core/unavailable responses, selection/epoch races and model-down reads. Actual native Overview/Search/inspector/page/keyboard/hide/reopen/resize/placement/high-contrast/registered-evidence interaction and measured latency remain separate acceptance gates. GUI-3 as a whole cannot close until correction/forget and acknowledged conversation-to-memory presentation work too.

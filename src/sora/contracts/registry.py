@@ -4,6 +4,126 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from sora.attention import (
+    AttentionResolution,
+    AttentionResolveRequest,
+    CursorSample,
+    CursorSampleBatch,
+    SelectionSample,
+)
+from sora.contracts.automation import (
+    AutomationDefinition,
+    AutomationOccurrence,
+    AutomationSlot,
+    AutomationSpec,
+)
+from sora.contracts.automation_api import (
+    AutomationAck,
+    AutomationChange,
+    AutomationCreate,
+    AutomationDetail,
+    AutomationHistory,
+    AutomationPage,
+    AutomationRunNow,
+    AutomationSummary,
+)
+from sora.contracts.capture import (
+    DesktopCaptureFrame,
+    DesktopCaptureRequest,
+    DesktopCaptureResult,
+)
+from sora.contracts.companion_call import CompanionCall
+from sora.contracts.companion_read import CompanionReadCall, CompanionReadResult
+from sora.contracts.content import (
+    ContentHandlerConfig,
+    ContentNavigateRequest,
+    ContentNavigationResult,
+    ContentReference,
+    ReferenceCandidate,
+    ReferencePinRequest,
+    ReferenceResolution,
+    ReferenceResolveRequest,
+)
+from sora.contracts.desktop import (
+    DesktopActionResult,
+    DesktopObservation,
+    DesktopObservationRequest,
+    DesktopPresentationRequest,
+    DesktopPressRequest,
+    DesktopTarget,
+    DesktopTargetRequest,
+    DesktopTargetRevalidationRequest,
+    DesktopTypeRequest,
+)
+from sora.contracts.desktop_events import (
+    DesktopEvent,
+    DesktopEventBatch,
+    DesktopEventBatchResult,
+    DesktopEventSubscriptionRequest,
+)
+from sora.contracts.desktop_objects import (
+    DesktopObjectAffordanceRequest,
+    DesktopObjectProjection,
+)
+from sora.contracts.editor import (
+    EditorContextRequest,
+    EditorContextSnapshot,
+    EditorFinding,
+    EditorFindingPresentationRequest,
+    EditorTaskRequest,
+)
+from sora.contracts.memory_browser import (
+    MemoryCorrection,
+    MemoryDetail,
+    MemoryForget,
+    MemoryMutationAck,
+    MemoryPage,
+)
+from sora.contracts.motion import MotionChoice
+from sora.contracts.runtime_identity import RuntimeIdentity
+from sora.contracts.runtime_lifecycle import RuntimeLifecycle, RuntimeShutdownRequest
+from sora.contracts.screen import ScreenViewChoice
+from sora.contracts.task_history import TaskRunEvidence, TaskRunPage
+from sora.contracts.ui_presentation import (
+    UiHostCommand,
+    UiHostLease,
+    UiHostRegistration,
+    UiMemoryCommand,
+    UiMemoryPresentation,
+    UiPresentationAck,
+    UiPresentationPage,
+    UiPresentationResult,
+)
+from sora.contracts.vision import (
+    AttentionCropFallbackRequest,
+    AttentionCropFallbackResult,
+    VisionDetection,
+    VisionEvidence,
+    VisionEvidenceBatchRequest,
+    VisionEvidenceBatchResult,
+)
+from sora.contracts.voice import (
+    VoiceConversationAction,
+    VoiceDeviceEvent,
+    VoiceInterruptionRequest,
+    VoiceInterruptionResult,
+    VoicePlaybackCommand,
+    VoicePlaybackEvent,
+    VoiceReferenceResolution,
+    VoiceSessionSnapshot,
+    VoiceSessionStartRequest,
+    VoiceTranscriptEvent,
+    VoiceTurnResult,
+)
+from sora.runtime.app_settings import AppSettings, ReloadRequest, SettingsEdit
+
+from .embodiment import (
+    DisplayTopology,
+    EmbodimentCommand,
+    EmbodimentFeedbackEvent,
+    EmbodimentState,
+    MonitorDescriptor,
+)
 from .models import (
     ActiveCapabilitySet,
     AgentRunRecord,
@@ -29,6 +149,82 @@ from .models import (
 )
 
 PUBLIC_CONTRACTS: dict[str, type[BaseModel]] = {
+    "automation-ack": AutomationAck,
+    "automation-change": AutomationChange,
+    "automation-create": AutomationCreate,
+    "automation-detail": AutomationDetail,
+    "automation-history": AutomationHistory,
+    "automation-page": AutomationPage,
+    "automation-run-now": AutomationRunNow,
+    "automation-summary": AutomationSummary,
+    "automation-definition": AutomationDefinition,
+    "automation-occurrence": AutomationOccurrence,
+    "automation-slot": AutomationSlot,
+    "automation-spec": AutomationSpec,
+    "ui-host-command": UiHostCommand,
+    "ui-host-lease": UiHostLease,
+    "ui-host-registration": UiHostRegistration,
+    "ui-memory-command": UiMemoryCommand,
+    "ui-memory-presentation": UiMemoryPresentation,
+    "ui-presentation-ack": UiPresentationAck,
+    "ui-presentation-page": UiPresentationPage,
+    "ui-presentation-result": UiPresentationResult,
+    "memory-page": MemoryPage,
+    "memory-detail": MemoryDetail,
+    "memory-correction": MemoryCorrection,
+    "memory-forget": MemoryForget,
+    "memory-mutation-ack": MemoryMutationAck,
+    "task-run-page": TaskRunPage,
+    "task-run-evidence": TaskRunEvidence,
+    "runtime-identity": RuntimeIdentity,
+    "runtime-lifecycle": RuntimeLifecycle,
+    "runtime-shutdown-request": RuntimeShutdownRequest,
+    "companion-read-call": CompanionReadCall,
+    "companion-call": CompanionCall,
+    "companion-read-result": CompanionReadResult,
+    "app-settings": AppSettings,
+    "motion-choice": MotionChoice,
+    "screen-view-choice": ScreenViewChoice,
+    "settings-edit": SettingsEdit,
+    "model-reload-request": ReloadRequest,
+    "attention-crop-fallback-request": AttentionCropFallbackRequest,
+    "attention-crop-fallback-result": AttentionCropFallbackResult,
+    "attention-resolution": AttentionResolution,
+    "attention-resolve-request": AttentionResolveRequest,
+    "cursor-sample": CursorSample,
+    "cursor-sample-batch": CursorSampleBatch,
+    "content-handler-config": ContentHandlerConfig,
+    "content-navigate-request": ContentNavigateRequest,
+    "content-navigation-result": ContentNavigationResult,
+    "content-reference": ContentReference,
+    "desktop-capture-frame": DesktopCaptureFrame,
+    "desktop-capture-request": DesktopCaptureRequest,
+    "desktop-capture-result": DesktopCaptureResult,
+    "desktop-observation-request": DesktopObservationRequest,
+    "desktop-observation": DesktopObservation,
+    "desktop-event": DesktopEvent,
+    "desktop-event-batch": DesktopEventBatch,
+    "desktop-event-batch-result": DesktopEventBatchResult,
+    "desktop-event-subscription-request": DesktopEventSubscriptionRequest,
+    "desktop-object-affordance-request": DesktopObjectAffordanceRequest,
+    "desktop-object-projection": DesktopObjectProjection,
+    "desktop-action-result": DesktopActionResult,
+    "desktop-presentation-request": DesktopPresentationRequest,
+    "desktop-press-request": DesktopPressRequest,
+    "desktop-target": DesktopTarget,
+    "desktop-target-request": DesktopTargetRequest,
+    "desktop-target-revalidation-request": DesktopTargetRevalidationRequest,
+    "desktop-type-request": DesktopTypeRequest,
+    "display-topology": DisplayTopology,
+    "embodiment-command": EmbodimentCommand,
+    "embodiment-feedback-event": EmbodimentFeedbackEvent,
+    "embodiment-state": EmbodimentState,
+    "editor-context-request": EditorContextRequest,
+    "editor-context-snapshot": EditorContextSnapshot,
+    "editor-finding-presentation-request": EditorFindingPresentationRequest,
+    "editor-finding": EditorFinding,
+    "editor-task-request": EditorTaskRequest,
+    "monitor-descriptor": MonitorDescriptor,
     "active-capability-set": ActiveCapabilitySet,
     "agent-run-record": AgentRunRecord,
     "agent-session-record": AgentSessionRecord,
@@ -47,8 +243,27 @@ PUBLIC_CONTRACTS: dict[str, type[BaseModel]] = {
     "patch-envelope": PatchEnvelope,
     "provider-capabilities": ProviderCapabilities,
     "provider-request": ProviderRequest,
+    "reference-candidate": ReferenceCandidate,
+    "reference-pin-request": ReferencePinRequest,
+    "reference-resolution": ReferenceResolution,
+    "reference-resolve-request": ReferenceResolveRequest,
     "result-presentation": ResultPresentation,
     "social-event-record": SocialEventRecord,
+    "selection-sample": SelectionSample,
     "task-record": TaskRecord,
+    "vision-detection": VisionDetection,
+    "vision-evidence": VisionEvidence,
+    "vision-evidence-batch-request": VisionEvidenceBatchRequest,
+    "vision-evidence-batch-result": VisionEvidenceBatchResult,
+    "voice-device-event": VoiceDeviceEvent,
+    "voice-conversation-action": VoiceConversationAction,
+    "voice-interruption-request": VoiceInterruptionRequest,
+    "voice-interruption-result": VoiceInterruptionResult,
+    "voice-playback-command": VoicePlaybackCommand,
+    "voice-playback-event": VoicePlaybackEvent,
+    "voice-reference-resolution": VoiceReferenceResolution,
+    "voice-session-snapshot": VoiceSessionSnapshot,
+    "voice-session-start-request": VoiceSessionStartRequest,
+    "voice-transcript-event": VoiceTranscriptEvent,
+    "voice-turn-result": VoiceTurnResult,
 }
-

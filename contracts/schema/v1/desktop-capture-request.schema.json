@@ -1,0 +1,108 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "DesktopCaptureSource": {
+      "enum": [
+        "window",
+        "region"
+      ],
+      "title": "DesktopCaptureSource",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "ScreenRect": {
+      "additionalProperties": false,
+      "description": "Rectangle in physical screen pixels.",
+      "properties": {
+        "height": {
+          "minimum": 1,
+          "title": "Height",
+          "type": "integer"
+        },
+        "width": {
+          "minimum": 1,
+          "title": "Width",
+          "type": "integer"
+        },
+        "x": {
+          "title": "X",
+          "type": "integer"
+        },
+        "y": {
+          "title": "Y",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "title": "ScreenRect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "capture_id": {
+      "$ref": "#/$defs/Identifier"
+    },
+    "desktop_target_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Identifier"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "region": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScreenRect"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "source": {
+      "$ref": "#/$defs/DesktopCaptureSource"
+    },
+    "topology_revision": {
+      "minimum": 1,
+      "title": "Topology Revision",
+      "type": "integer"
+    },
+    "ttl_seconds": {
+      "default": 10.0,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Ttl Seconds",
+      "type": "number"
+    }
+  },
+  "required": [
+    "capture_id",
+    "source",
+    "topology_revision"
+  ],
+  "title": "DesktopCaptureRequest",
+  "type": "object"
+}

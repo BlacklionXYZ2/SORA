@@ -48,6 +48,15 @@ _CODING_WRITE_PATTERNS = re.compile(
     r"implement feature|modify code|change (?:the )?(?:code|file))\b",
     re.IGNORECASE,
 )
+# Natural phrasing for producing or changing a file. Without this, "create a file named X"
+# fell through to the general-reasoning rule and never reached the coding specialist.
+_FILE_ACTION_PATTERNS = re.compile(
+    r"\b(?:create|make|write|add|save|generate|delete|remove|rename|move|edit)\s+"
+    r"(?:a\s+|an\s+|the\s+|new\s+|some\s+|another\s+|that\s+)*"
+    r"(?:(?:python|javascript|typescript|rust|bash|powershell|csharp|c#)\s+)?"
+    r"(?:file|files|folder|folders|directory|directories|script|scripts|module|modules)\b",
+    re.IGNORECASE,
+)
 _CODING_READ_PATTERNS = re.compile(
     r"\b(?:read file|inspect code|review diff|check syntax|explain code|"
     r"find usage|codebase|repository)\b",
@@ -87,9 +96,7 @@ class RoutingEngine:
             if registered_providers is not None
             else {"deterministic", "hermes", "codex", "antigravity"}
         )
-        self.cloud_providers = (
-            set(cloud_providers) if cloud_providers is not None else {"codex"}
-        )
+        self.cloud_providers = set(cloud_providers) if cloud_providers is not None else {"codex"}
         self.local_providers = (
             set(local_providers)
             if local_providers is not None
@@ -100,14 +107,16 @@ class RoutingEngine:
     def classify_intent(self, intent: str) -> TaskIntentCategory:
         """Classify user intent deterministically without external calls."""
         stripped = intent.strip()
+        # A greeting or 'offline' marker must not bypass the selected-project
+        # boundary for an actual file-authoring request.
+        if _CODING_WRITE_PATTERNS.search(stripped) or _FILE_ACTION_PATTERNS.search(stripped):
+            return TaskIntentCategory.CODING_WRITE
         if _DIALOGUE_PATTERNS.search(stripped):
             return TaskIntentCategory.DIALOGUE_FAST_PATH
         if _STATUS_PATTERNS.search(stripped):
             return TaskIntentCategory.STATUS_LOOKUP
         if _OFFLINE_PATTERNS.search(stripped):
             return TaskIntentCategory.DETERMINISTIC_OFFLINE
-        if _CODING_WRITE_PATTERNS.search(stripped):
-            return TaskIntentCategory.CODING_WRITE
         if _CODING_READ_PATTERNS.search(stripped):
             return TaskIntentCategory.CODING_READ
         if _RESEARCH_PATTERNS.search(stripped):
@@ -121,9 +130,10 @@ class RoutingEngine:
         explicit_provider: str | None = None,
         context_scope: str | None = None,
         is_local_only: bool = False,
+        has_write_workspace: bool | None = None,
     ) -> RoutingDecision:
         """Route a task to the appropriate reasoning provider.
-        
+
         Enforces:
         - Manual overrides: explicit requests are honored without silent substitution.
         - Privacy scope containment: local-only context never routes or falls back to cloud.
@@ -132,6 +142,8 @@ class RoutingEngine:
         - Bounded fallbacks: auto-routing generates an ordered fallback list.
         """
         category = self.classify_intent(intent)
+        has_workspace = (self.has_worktree_isolation if has_write_workspace is None
+                         else has_write_workspace)
         effective_local_only = is_local_only or (
             context_scope is not None
             and any(marker in context_scope.lower() for marker in ("local", "private"))
@@ -152,7 +164,7 @@ class RoutingEngine:
                     "local-only privacy scope",
                 )
             manual_metadata: dict[str, JsonValue] = {}
-            if category is TaskIntentCategory.CODING_WRITE and not self.has_worktree_isolation:
+            if category is TaskIntentCategory.CODING_WRITE and not has_workspace:
                 manual_metadata["p05_deferred"] = True
                 manual_metadata["warning"] = "Coding writes require an owned P05 workspace"
             return RoutingDecision(
@@ -208,7 +220,7 @@ class RoutingEngine:
         # 4. Coding write
         if category is TaskIntentCategory.CODING_WRITE:
             metadata: dict[str, JsonValue] = {}
-            if not self.has_worktree_isolation:
+            if not has_workspace:
                 metadata["p05_deferred"] = True
                 metadata["warning"] = "Coding writes require configured P05 workspace isolation"
 
@@ -216,17 +228,21 @@ class RoutingEngine:
             # Without that boundary, another harness may plan but must not mutate.
             selected = (
                 "codex"
-                if self.has_worktree_isolation and "codex" in candidates
+                if has_workspace and "codex" in candidates
                 else (
                     "antigravity"
                     if "antigravity" in candidates
                     else ("codex" if "codex" in candidates else "deterministic")
                 )
             )
-            fallbacks = () if self.has_worktree_isolation else tuple(
-                p
-                for p in ("antigravity", "hermes", "deterministic")
-                if p in candidates and p != selected
+            fallbacks = (
+                ()
+                if has_workspace
+                else tuple(
+                    p
+                    for p in ("antigravity", "hermes", "deterministic")
+                    if p in candidates and p != selected
+                )
             )
             return RoutingDecision(
                 selected_provider=selected,
@@ -234,7 +250,7 @@ class RoutingEngine:
                 reason=(
                     "Coding write task routed for planning/analysis; "
                     "execution held until P05 workspace isolation is configured"
-                    if not self.has_worktree_isolation
+                    if not has_workspace
                     else "Coding write task routed to Codex in an owned worktree"
                 ),
                 category=category,
@@ -244,8 +260,10 @@ class RoutingEngine:
 
         # 5. Coding read / review
         if category is TaskIntentCategory.CODING_READ:
-            selected = "codex" if "codex" in candidates else (
-                "antigravity" if "antigravity" in candidates else "deterministic"
+            selected = (
+                "codex"
+                if "codex" in candidates
+                else ("antigravity" if "antigravity" in candidates else "deterministic")
             )
             fallbacks = tuple(
                 p
@@ -261,8 +279,10 @@ class RoutingEngine:
             )
 
         # 6. Research / Deep reasoning / General
-        selected = "antigravity" if "antigravity" in candidates else (
-            "hermes" if "hermes" in candidates else "deterministic"
+        selected = (
+            "antigravity"
+            if "antigravity" in candidates
+            else ("hermes" if "hermes" in candidates else "deterministic")
         )
         fallbacks = tuple(
             p
@@ -283,7 +303,7 @@ class RoutingEngine:
         active_tasks: Sequence[TaskRecord | Any],
     ) -> str | None:
         """Resolve conversational steering instruction to a target task_id.
-        
+
         Matches specialist aliases (Cody -> codex, Hermes -> hermes, AG -> antigravity)
         or pronouns ("him", "her", "them") if exactly one candidate is running.
         Returns None for ambiguous references to prevent affecting arbitrary work.
@@ -303,31 +323,26 @@ class RoutingEngine:
         if not running:
             return None
 
-        # 1. Direct name references
-        if _CODY_TARGET.search(instruction):
+        # 1. Direct name references. Naming more than one specialist ("cancel Hermes, not
+        # Codex") is ambiguous: acting on whichever name is checked first could steer or
+        # cancel exactly the task the owner excluded, so ask for clarification instead.
+        named = [
+            backend
+            for backend, pattern in (
+                ("codex", _CODY_TARGET),
+                ("hermes", _HERMES_TARGET),
+                ("antigravity", _ANTIGRAVITY_TARGET),
+            )
+            if pattern.search(instruction)
+        ]
+        if len(named) > 1:
+            return None
+        if named:
             matches = [
                 t
                 for t in running
-                if getattr(t, "effective_backend", None) == "codex"
-                or getattr(t, "requested_backend", None) == "codex"
-            ]
-            return matches[0].task_id if len(matches) == 1 else None
-
-        if _HERMES_TARGET.search(instruction):
-            matches = [
-                t
-                for t in running
-                if getattr(t, "effective_backend", None) == "hermes"
-                or getattr(t, "requested_backend", None) == "hermes"
-            ]
-            return matches[0].task_id if len(matches) == 1 else None
-
-        if _ANTIGRAVITY_TARGET.search(instruction):
-            matches = [
-                t
-                for t in running
-                if getattr(t, "effective_backend", None) == "antigravity"
-                or getattr(t, "requested_backend", None) == "antigravity"
+                if getattr(t, "effective_backend", None) == named[0]
+                or getattr(t, "requested_backend", None) == named[0]
             ]
             return matches[0].task_id if len(matches) == 1 else None
 

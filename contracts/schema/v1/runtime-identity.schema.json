@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "instance_id": {
+      "title": "Instance Id",
+      "type": "string"
+    },
+    "owner_id": {
+      "title": "Owner Id",
+      "type": "string"
+    },
+    "project_id": {
+      "title": "Project Id",
+      "type": "string"
+    },
+    "state_root": {
+      "title": "State Root",
+      "type": "string"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "instance_id",
+    "state_root",
+    "owner_id",
+    "project_id"
+  ],
+  "title": "RuntimeIdentity",
+  "type": "object"
+}
