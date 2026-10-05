@@ -84,7 +84,7 @@ def _strings(data: dict[str, Any], field_name: str) -> tuple[str, ...]:
     if not isinstance(value, list) or any(
         not isinstance(item, str) or not item.strip() for item in value
     ):
-        raise MalformedProviderResult(f"invalid Claude field: {field_name}")
+        raise MalformedProviderResult(f"invalid agent field: {field_name}")
     return tuple(value)
 
 
@@ -100,41 +100,54 @@ def parse_claude_result(stdout: str, request: ProviderRequest) -> NormalizedResu
     if not isinstance(text, str) or not text.strip():
         raise MalformedProviderResult("empty Claude response")
     usage = wrapper.get("usage") if isinstance(wrapper.get("usage"), dict) else None
+    return normalize_agent_text(
+        text, request, prefix="claude", provenance="Claude Code normalized result", usage=usage,
+    )
 
+
+def normalize_agent_text(
+    text: str,
+    request: ProviderRequest,
+    *,
+    prefix: str,
+    provenance: str,
+    usage: dict[str, Any] | None = None,
+) -> NormalizedResult:
+    """An agent's prose answer, optionally ending in a structured JSON block, as a result."""
     inner = _last_json_object(text)
     structured = inner is not None and isinstance(inner.get("conclusion"), str)
     data: dict[str, Any] = inner if structured and inner is not None else {}
     conclusion = str(data["conclusion"]).strip() if structured else text.strip()
     if not conclusion:
-        raise MalformedProviderResult("empty Claude conclusion")
+        raise MalformedProviderResult("empty agent conclusion")
     fields = {name: _strings(data, name) for name in _LIST_FIELDS}
 
     operations: list[ProposeFactOperation | ProposeMemoryOperation] = []
     for index, content in enumerate(fields["facts"]):
         operations.append(ProposeFactOperation(
             operation="propose_fact",
-            operation_id=f"claude-fact-{request.run_id}-{index}",
+            operation_id=f"{prefix}-fact-{request.run_id}-{index}",
             fact=ProposedFact(content=content, epistemic_status="inference", confidence=0.5),
         ))
     for index, content in enumerate(fields["memory_updates"]):
         operations.append(ProposeMemoryOperation(
             operation="propose_memory",
-            operation_id=f"claude-memory-{request.run_id}-{index}",
+            operation_id=f"{prefix}-memory-{request.run_id}-{index}",
             memory=ProposedMemory(content=content, scope=request.project_id or request.owner_id),
         ))
     patch = PatchEnvelope(
-        patch_id=f"claude-patch-{request.run_id}",
+        patch_id=f"{prefix}-patch-{request.run_id}",
         source_run_id=request.run_id,
         base_revision=0,
         scope=(request.owner_id if request.project_id is None
                else f"{request.owner_id}/{request.project_id}"),
-        provenance="Claude Code normalized result",
-        idempotency_key=f"claude-patch-once-{request.run_id}",
+        provenance=provenance,
+        idempotency_key=f"{prefix}-patch-once-{request.run_id}",
         operations=tuple(operations),
     ) if operations else None
 
     return NormalizedResult(
-        result_id=f"claude-result-{request.run_id}",
+        result_id=f"{prefix}-result-{request.run_id}",
         task_id=request.task_id,
         run_id=request.run_id,
         base_revision=0,

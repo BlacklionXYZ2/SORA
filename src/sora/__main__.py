@@ -22,9 +22,11 @@ from sora.providers.antigravity import AntigravityProvider
 from sora.providers.base import ReasoningProvider
 from sora.providers.claude_code import ClaudeCodeProvider
 from sora.providers.codex import CodexAppServerProvider
+from sora.providers.custom_endpoint import CustomEndpointProvider
 from sora.providers.hermes import HermesACPProvider
 from sora.providers.llama_server import LlamaOptions
 from sora.providers.mock import DeterministicProvider, FaultMode
+from sora.runtime.agent_preferences import AgentPreferences
 from sora.runtime.app_settings import AppSettings, AppSettingsController
 from sora.runtime.service import RuntimeConfig, SoraRuntime
 from sora.runtime.settings import RuntimeSettingsStore
@@ -361,7 +363,9 @@ class ProviderPlan(NamedTuple):
     codex_cwd: Path | None
 
 
-def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
+def build_provider_registry(
+    arguments: argparse.Namespace, agents: AgentPreferences | None = None,
+) -> ProviderPlan:
     """Register the reasoning backends SORA may route work to.
 
     ``--provider auto`` registers every backend that is actually usable on this
@@ -490,6 +494,18 @@ def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
                 timeout_seconds=arguments.task_timeout,
             )
 
+    if auto and agents is not None:
+        # Owner-added agents from Settings; each is reached by its nickname or description.
+        for key, endpoint in agents.custom_endpoints().items():
+            if endpoint.enabled:
+                registry[key] = CustomEndpointProvider(
+                    key,
+                    nickname=endpoint.nickname.strip(),
+                    port=endpoint.port,
+                    model=endpoint.default_model or None,
+                    timeout_seconds=arguments.task_timeout,
+                )
+
     registry["deterministic"] = deterministic
     return ProviderPlan(registry, tuple(skipped), codex_cwd)
 
@@ -568,7 +584,7 @@ async def _run(
         print("Direct dialogue requires --dialogue-model and --dialogue-base-url.")
         return 2
     try:
-        plan = build_provider_registry(arguments)
+        plan = build_provider_registry(arguments, app_settings.boot.agents)
     except ProviderSetupError as error:
         print(str(error))
         return 2
