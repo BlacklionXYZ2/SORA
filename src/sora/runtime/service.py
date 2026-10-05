@@ -511,6 +511,12 @@ class SoraRuntime:
                 if self.app_settings
                 else True
             ),
+            # Custom agents are registered at startup, so their names come from boot settings.
+            agent_names=lambda: (
+                self.app_settings.boot.agents.directory()
+                if self.app_settings
+                else self.routing_engine.agent_names
+            ),
         )
 
         if dialogue_provider is not None:
@@ -546,6 +552,8 @@ class SoraRuntime:
             has_worktree_isolation=self.workspace_manager is not None,
         )
         self.routing_engine.has_worktree_isolation = self.workspace_manager is not None
+        if app_settings is not None:
+            self.routing_engine.agent_names = app_settings.boot.agents.directory()
         database = SQLiteDatabase(config.root / "data" / "sora.db")
 
         self.repository = SoraRepository(database)

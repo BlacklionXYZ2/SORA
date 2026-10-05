@@ -5,6 +5,8 @@ namespace Sora.DesktopApp;
 // Only ephemeral edit state. Values and persistence remain owned by canonical Core.
 public sealed class SettingsDraftState
 {
+    /// <summary>The AppSettings schema version this editor writes (Core v10 adds Claude and custom agents).</summary>
+    public const int CanonicalVersion = 10;
     public static IReadOnlyDictionary<string, JsonElement> ReconciledValues(
         IReadOnlyDictionary<string, JsonElement> previous,
         IReadOnlyDictionary<string, JsonElement> current,
@@ -24,10 +26,10 @@ public sealed class SettingsDraftState
     public bool Conflict { get; private set; }
     public bool OutcomeUnknown { get; private set; }
     private long generation;
-    public bool CanSave => Dirty && !Busy && !Conflict && !OutcomeUnknown && Version == 9;
+    public bool CanSave => Dirty && !Busy && !Conflict && !OutcomeUnknown && Version == CanonicalVersion;
     public bool Observe(int version, int revision, string? epoch)
     {
-        if (version != 9 || revision < 0) { Conflict = true; return false; }
+        if (version != CanonicalVersion || revision < 0) { Conflict = true; return false; }
         if (Dirty || Busy) {
             Conflict = Version != version || Revision != revision || Epoch != epoch;
             return false;
@@ -51,7 +53,7 @@ public sealed class SettingsDraftState
         int version, int revision, string? epoch)
     {
         Busy = false;
-        if (submission.Generation != generation || submission.Epoch != epoch || version != 9
+        if (submission.Generation != generation || submission.Epoch != epoch || version != CanonicalVersion
             || revision < submission.Revision || revision > submission.Revision + 1) {
             OutcomeUnknown = true; return false;
         }
@@ -65,7 +67,7 @@ public sealed class SettingsDraftState
     }
     public void Reconcile(int version, int revision, string? epoch, bool hasEdits)
     {
-        if (Busy || version != 9 || revision < 0) throw new InvalidOperationException("A settled current canonical projection is required.");
+        if (Busy || version != CanonicalVersion || revision < 0) throw new InvalidOperationException("A settled current canonical projection is required.");
         Version = version; Revision = hasEdits ? revision : -1; Epoch = epoch;
         Dirty = hasEdits; Conflict = OutcomeUnknown = false; generation++;
     }

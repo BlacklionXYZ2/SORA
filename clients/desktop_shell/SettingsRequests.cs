@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Sora.DesktopApp;
 using Sora.DesktopWidget;
 
 namespace Sora.DesktopShell;
@@ -8,10 +9,10 @@ public static class SettingsRequests
     public static (int Version, int Revision) Projection(JsonElement projection)
     {
         if (projection.ValueKind != JsonValueKind.Object
-            || !projection.TryGetProperty("settings_version", out var version) || !version.TryGetInt32(out int v) || v != 9
+            || !projection.TryGetProperty("settings_version", out var version) || !version.TryGetInt32(out int v) || v != SettingsDraftState.CanonicalVersion
             || !projection.TryGetProperty("settings_revision", out var revision) || !revision.TryGetInt32(out int r) || r < 0
             || !projection.TryGetProperty("fields", out var fields) || fields.ValueKind != JsonValueKind.Array || fields.GetArrayLength() > 256)
-            throw new InvalidDataException("Canonical v9 settings projection unavailable; edits are not supported by this Core.");
+            throw new InvalidDataException("Canonical v10 settings projection unavailable; edits are not supported by this Core.");
         var keys = new HashSet<string>(StringComparer.Ordinal);
         foreach (var field in fields.EnumerateArray()) {
             if (field.ValueKind != JsonValueKind.Object || !field.TryGetProperty("key", out var key)

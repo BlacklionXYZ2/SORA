@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "revision": 0,
   "local_companion": {
     "desktop_observe": true,
@@ -42,8 +42,15 @@
       "draft_model_path": null
     }
   },
-  "external": { "model": "", "base_url": "", "model_folder": "" },
-  "runtime": { "worker_count": 2, "task_timeout_seconds": 300 },
+  "external": {
+    "model": "",
+    "base_url": "",
+    "model_folder": ""
+  },
+  "runtime": {
+    "worker_count": 2,
+    "task_timeout_seconds": 300
+  },
   "agents": {
     "codex": {
       "enabled": true,
@@ -77,6 +84,49 @@
       "project_root": "",
       "workspace_mode": "direct",
       "base_ref": "HEAD"
+    },
+    "claude": {
+      "enabled": true,
+      "purpose": "Careful coding, code review, debugging, long documents and in-depth research through Claude Code.",
+      "preferred_model": "",
+      "preferred_effort": "configured",
+      "model_purpose": "",
+      "model_choices": [],
+      "project_root": "",
+      "workspace_mode": "direct",
+      "base_ref": "HEAD"
+    },
+    "custom_1": {
+      "enabled": false,
+      "nickname": "",
+      "spoken_aliases": "",
+      "port": 0,
+      "default_model": "",
+      "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
+    },
+    "custom_2": {
+      "enabled": false,
+      "nickname": "",
+      "spoken_aliases": "",
+      "port": 0,
+      "default_model": "",
+      "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
+    },
+    "custom_3": {
+      "enabled": false,
+      "nickname": "",
+      "spoken_aliases": "",
+      "port": 0,
+      "default_model": "",
+      "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
+    },
+    "custom_4": {
+      "enabled": false,
+      "nickname": "",
+      "spoken_aliases": "",
+      "port": 0,
+      "default_model": "",
+      "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
     }
   },
   "voice": {

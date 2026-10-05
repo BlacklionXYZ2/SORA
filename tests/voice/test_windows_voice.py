@@ -161,7 +161,7 @@ def test_v5_migration_backs_up_original_and_voice_is_live(tmp_path: Path) -> Non
     original.pop("voice")
     path.write_text(json.dumps(original), encoding="utf-8")
     settings = AppSettingsController(tmp_path, AppSettings(), path=path)
-    assert settings.saved.version == 9
+    assert settings.saved.version == 10
     assert json.loads(next(tmp_path.glob("settings.v5-*.json")).read_text()) == original
     changes = []
     settings.on_policy_change = lambda: changes.append(True)

@@ -112,6 +112,8 @@ def test_project_validation_and_v7_migration(tmp_path: Path) -> None:
             project_directory(invalid)
     old = AppSettings().model_dump(mode="json")
     old["version"] = 7
+    for name in ("claude", "custom_1", "custom_2", "custom_3", "custom_4"):
+        del old["agents"][name]  # Added in v10.
     for value in old["agents"].values():
         for key in ("project_root", "workspace_mode", "base_ref", "model_choices"):
             del value[key]
@@ -119,7 +121,7 @@ def test_project_validation_and_v7_migration(tmp_path: Path) -> None:
     original = json.dumps(old)
     path.write_text(original)
     restored = AppSettingsStore(path).load()
-    assert restored.version == 9 and restored.agents.codex.project_root == ""
+    assert restored.version == 10 and restored.agents.codex.project_root == ""
     assert next(tmp_path.glob("settings.v7-*.json")).read_text() == original
 
 

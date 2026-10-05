@@ -48,7 +48,7 @@ public sealed class SettingsLaunchTests
     [Fact]
     public void SaveChecksRetainedDraftEpochBeforeAdmissionNotOnlyAfterAcknowledgement()
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "old"); draft.Edit();
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "old"); draft.Edit();
         // A modal editor could otherwise defer observation of an equal-revision replacement Core.
         Assert.Throws<InvalidOperationException>(() => draft.BeginSave("new"));
         Assert.True(draft.Dirty); Assert.False(draft.Busy); Assert.Equal("old", draft.Epoch);

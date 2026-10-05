@@ -21,7 +21,7 @@ public sealed class ShellPrototypeTests
                     dialogue_ready = !ModelDown, model_state = ModelDown ? "down" : "ready",
                     state = "idle", dialogue_model = "Deterministic fixture" }, background_workers_active = 0 },
                 "/api/v1/status" => new { providers = new Dictionary<string, object>() },
-                "/api/v1/projections/settings" => new { settings_version = 9, fields = Array.Empty<object>() },
+                "/api/v1/projections/settings" => new { settings_version = 10, fields = Array.Empty<object>() },
                 _ => throw new InvalidOperationException(path)
             }));
         }

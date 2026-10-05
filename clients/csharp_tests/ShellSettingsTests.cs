@@ -8,7 +8,7 @@ public sealed class ShellSettingsTests
     {
         public string Epoch = Guid.NewGuid().ToString();
         public string Root = Path.Combine(Path.GetTempPath(), "sora-settings-fixture");
-        public int Revision = 3, Version = 9;
+        public int Revision = 3, Version = 10;
         public bool Offline, DiskChanged, CanReload = true;
         public TaskCompletionSource<JsonElement>? PendingPost, PendingSettingsRead;
         public Exception? PostError;
@@ -37,7 +37,7 @@ public sealed class ShellSettingsTests
             return PendingPost?.Task ?? Task.FromResult(Projection());
         }
     }
-    private static object Edit(int revision = 3, int version = 9, string key = "llama.context_size") =>
+    private static object Edit(int revision = 3, int version = 10, string key = "llama.context_size") =>
         new { version, expected_revision = revision, changes = new Dictionary<string, object> { [key] = 4096 } };
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class ShellSettingsTests
         if (reason == "version") api.Version = 8;
         if (reason == "field") body = Edit(key: "authority.override");
         if (reason == "route") path = "/api/v1/desktop/act";
-        if (reason == "extra") body = new { version = 9, expected_revision = 3, changes = new { }, authorized_by = "caller" };
+        if (reason == "extra") body = new { version = 10, expected_revision = 3, changes = new { }, authorized_by = "caller" };
         if (reason == "reload-disabled") { path = "/api/v1/model/reload"; api.CanReload = false; body = new { expected_revision = 3 }; }
         await Assert.ThrowsAnyAsync<Exception>(() => session.SettingsApi.PostAsync(path, body, default));
         Assert.Empty(api.Posts); Assert.False(session.MutationBusy);

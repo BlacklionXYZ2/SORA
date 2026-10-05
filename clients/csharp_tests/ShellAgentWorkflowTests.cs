@@ -27,7 +27,7 @@ public sealed class ShellAgentWorkflowTests
                 "/api/v1/tasks" => new { tasks = Array.Empty<object>() },
                 "/api/v1/projections/companion" => new { companion = new { dialogue_ready = false, model_state = "down", state = "idle" }, background_workers_active = 0 },
                 "/api/v1/status" => new { providers = new Dictionary<string, object>() },
-                "/api/v1/projections/settings" => new { settings_version = 9, settings_revision = 3, fields = Array.Empty<object>() },
+                "/api/v1/projections/settings" => new { settings_version = 10, settings_revision = 3, fields = Array.Empty<object>() },
                 "/api/v1/tasks/task-a" => new { task_id = "task-a", status = "working" },
                 _ => throw new InvalidOperationException(path)
             }));

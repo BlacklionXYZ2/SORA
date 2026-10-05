@@ -42,7 +42,7 @@ def test_v6_migration_preserves_original_and_voice(tmp_path: Path) -> None:
     original = json.dumps(old)
     path.write_text(original, encoding="utf-8")
     settings = AppSettingsStore(path).load()
-    assert settings.version == 9 and settings.voice.speech_speed == 1.1
+    assert settings.version == 10 and settings.voice.speech_speed == 1.1
     assert next(tmp_path.glob("settings.v6-*.json")).read_text() == original
     assert json.loads(path.read_text())["agents"]["hermes"]["enabled"] is True
 

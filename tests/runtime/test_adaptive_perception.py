@@ -59,7 +59,7 @@ def test_v4_migration_retains_complete_original(tmp_path: Path) -> None:
     old["perception"].update(mode="image-on-prompt", paused=True)
     path.write_text(json.dumps(old))
     settings = AppSettingsController(tmp_path, AppSettings(), path=path)
-    assert settings.saved.version == 9 and settings.saved.revision == 3
+    assert settings.saved.version == 10 and settings.saved.revision == 3
     assert settings.active.perception.paused
     assert settings.active.perception.mode == "image-on-prompt"
     assert settings.active.perception.interval_seconds == 30

@@ -44,7 +44,7 @@ internal sealed class SettingsForm : Form
     public void UpdateProjection()
     {
         if (IsDisposed) return;
-        connection.Text = session.SettingsCurrent ? "Canonical AppSettings v9 · one shared host · closing Settings retains unsaved edits."
+        connection.Text = session.SettingsCurrent ? "Canonical AppSettings v10 · one shared host · closing Settings retains unsaved edits."
             : session.HostStatus + " · " + session.SettingsError + " Effects unavailable; retained draft and saved details remain inspectable.";
         try {
             if (session.Settings is { } settings) editor.Render(settings);

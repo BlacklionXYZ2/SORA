@@ -7,9 +7,13 @@ from typing import Any
 
 from sora.contracts.companion_call import Delegate, ListAgents
 from sora.providers.base import ProviderLaunchError
+from sora.routing.agent_names import CUSTOM_SLOTS
 from sora.runtime.agent_catalogue import AgentCatalogue
 
-_HARNESS = {"codex-app-server": "codex", "hermes-acp": "hermes", "antigravity": "antigravity"}
+_HARNESS = {
+    "codex-app-server": "codex", "hermes-acp": "hermes", "antigravity": "antigravity",
+    "claude-code": "claude", **{slot: slot for slot in CUSTOM_SLOTS},
+}
 
 
 @dataclass(frozen=True)
@@ -54,7 +58,7 @@ class DelegationCatalogue:
                     "default": model_id == default,
                 })
             self.rows[provider] = {
-                "provider": provider, "purpose": entry["purpose"],
+                "provider": provider, "name": entry["display_name"], "purpose": entry["purpose"],
                 "project": project, "project_path": entry["project_root"],
                 "mode": entry["workspace_mode"], "project_boundary": entry["project_boundary"],
                 "models": models, "state": entry["state"],
