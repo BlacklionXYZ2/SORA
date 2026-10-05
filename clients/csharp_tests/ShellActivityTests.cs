@@ -24,7 +24,7 @@ public sealed class ShellActivityTests
                 "/api/v1/tasks" => new { tasks = new[] { new { task_id = "task-a", status = State, effective_backend = "fixture" } } },
                 "/api/v1/projections/companion" => new { companion = new { dialogue_ready = false, model_state = "down", state = "idle" }, background_workers_active = 0 },
                 "/api/v1/status" => new { providers = new Dictionary<string, object>() },
-                "/api/v1/projections/settings" => new { settings_version = 9, fields = Array.Empty<object>() },
+                "/api/v1/projections/settings" => new { settings_version = 10, fields = Array.Empty<object>() },
                 "/api/v1/tasks/task-a/evidence" => new { task = new { task_id = ReturnedId }, result = (object?)null, owner_request = "Owner request", evidence_note = "Provider report" },
                 _ => throw new InvalidOperationException(path)
             }));

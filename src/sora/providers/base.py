@@ -83,3 +83,17 @@ class OwnedWorkspaceProvider(Protocol):
         *,
         lease_owner: str,
     ) -> ReasoningProvider: ...
+
+
+@runtime_checkable
+class ProjectRootProvider(Protocol):
+    """Optional surface for an agent that works directly in an owner-selected project folder.
+
+    Hosted agents are trusted with file writes (owner decision 2026-10-05), so binding only moves
+    the agent's working directory. Core still holds the project writer lease and records the
+    before/after diff; ``writer_stopped`` tells Core when the agent's process has exited.
+    """
+
+    def for_project_root(self, root: str) -> ReasoningProvider: ...
+
+    def writer_stopped(self, run_id: str) -> bool: ...

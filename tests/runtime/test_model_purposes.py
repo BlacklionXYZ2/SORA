@@ -39,6 +39,8 @@ def save(settings: AppSettingsController, **changes: Any) -> dict[str, Any]:
 def test_v8_migration_preserves_bytes_disables_paths_and_legacy_purpose(tmp_path: Path) -> None:
     original = AppSettings().model_dump(mode="json")
     original["version"] = 8
+    for name in ("claude", "custom_1", "custom_2", "custom_3", "custom_4"):
+        del original["agents"][name]  # Added in v10.
     for entry in original["agents"].values():
         del entry["model_choices"]
     original["agents"]["codex"].update(
@@ -55,7 +57,7 @@ def test_v8_migration_preserves_bytes_disables_paths_and_legacy_purpose(tmp_path
     raw = json.dumps(original)
     path.write_text(raw)
     migrated = AppSettingsStore(path).load()
-    assert migrated.version == 9 and not migrated.agents.codex.enabled
+    assert migrated.version == 10 and not migrated.agents.codex.enabled
     assert not migrated.local_companion.desktop_capture
     assert migrated.agents.codex.project_root == str(tmp_path)
     assert migrated.agents.codex.workspace_mode == "isolated"
@@ -64,7 +66,7 @@ def test_v8_migration_preserves_bytes_disables_paths_and_legacy_purpose(tmp_path
     assert migrated.agents.codex.model_choices[0].purpose == "Small coding tasks"
     assert migrated.agents.hermes.model_purpose == "Fallback with no selected model"
     assert next(tmp_path.glob("settings.v8-*.json")).read_text() == raw
-    assert json.loads(path.read_text())["version"] == 9
+    assert json.loads(path.read_text())["version"] == 10
 
 
 @pytest.mark.parametrize(
@@ -267,7 +269,7 @@ async def test_actual_owner_http_save_catalogue_and_companion_selection(tmp_path
             "POST",
             "/api/v1/settings",
             body={
-                "version": 9,
+                "version": 10,
                 "expected_revision": 0,
                 "changes": {
                     "agents.codex.model_choices": [
@@ -278,7 +280,7 @@ async def test_actual_owner_http_save_catalogue_and_companion_selection(tmp_path
                 },
             },
         )
-        assert status == 200 and view["settings_version"] == 9 and view["settings_revision"] == 1
+        assert status == 200 and view["settings_version"] == 10 and view["settings_revision"] == 1
         status, catalogue = await client._request_dict("GET", "/api/v1/agents/catalogue")
         assert (
             status == 200

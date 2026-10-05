@@ -122,7 +122,7 @@ public static class FullAppProjection
                 DialogueModelFolder = GetOptional(settings, "dialogue_model_folder"),
                 DialogueManaged = settings.TryGetProperty("dialogue_managed", out var managed) && managed.GetBoolean(),
                 UnifiedSettings = settings.TryGetProperty("settings_version", out var settingsVersion) &&
-                    settingsVersion.GetInt32() is 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 ? settings.Clone() : default,
+                    settingsVersion.GetInt32() is 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 ? settings.Clone() : default,
             };
         var cards = ParseBoard(board);
         return new(companion, parsedTasks, parsedExtensions, parsedContent, parsedPermissions,

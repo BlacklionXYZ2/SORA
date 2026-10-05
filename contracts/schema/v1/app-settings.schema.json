@@ -115,14 +115,95 @@
         "antigravity": {
           "$ref": "#/$defs/AgentPreference"
         },
+        "claude": {
+          "$ref": "#/$defs/AgentPreference"
+        },
         "codex": {
           "$ref": "#/$defs/AgentPreference"
+        },
+        "custom_1": {
+          "$ref": "#/$defs/CustomEndpoint"
+        },
+        "custom_2": {
+          "$ref": "#/$defs/CustomEndpoint"
+        },
+        "custom_3": {
+          "$ref": "#/$defs/CustomEndpoint"
+        },
+        "custom_4": {
+          "$ref": "#/$defs/CustomEndpoint"
         },
         "hermes": {
           "$ref": "#/$defs/AgentPreference"
         }
       },
       "title": "AgentPreferences",
+      "type": "object"
+    },
+    "CustomEndpoint": {
+      "additionalProperties": false,
+      "description": "An owner-added agent: an OpenAI-compatible API on this machine, or an ACP command.",
+      "properties": {
+        "arguments": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Arguments",
+          "type": "string"
+        },
+        "command": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Command",
+          "type": "string"
+        },
+        "default_model": {
+          "default": "",
+          "maxLength": 256,
+          "pattern": "^(?:[^\\s\\x00-\\x1f\\x7f]+)?$",
+          "title": "Default Model",
+          "type": "string"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "nickname": {
+          "default": "",
+          "maxLength": 40,
+          "title": "Nickname",
+          "type": "string"
+        },
+        "port": {
+          "default": 0,
+          "maximum": 65535,
+          "minimum": 0,
+          "title": "Port",
+          "type": "integer"
+        },
+        "protocol": {
+          "default": "openai-compatible",
+          "enum": [
+            "openai-compatible",
+            "acp"
+          ],
+          "title": "Protocol",
+          "type": "string"
+        },
+        "purpose": {
+          "default": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents.",
+          "maxLength": 500,
+          "title": "Purpose",
+          "type": "string"
+        },
+        "spoken_aliases": {
+          "default": "",
+          "maxLength": 400,
+          "title": "Spoken Aliases",
+          "type": "string"
+        }
+      },
+      "title": "CustomEndpoint",
       "type": "object"
     },
     "DialogueSettings": {
@@ -441,7 +522,7 @@
           "type": "number"
         },
         "mode": {
-          "default": "native-only",
+          "default": "image-on-prompt",
           "enum": [
             "native-only",
             "image-on-prompt",
@@ -684,8 +765,8 @@
       "$ref": "#/$defs/WorkerSettings"
     },
     "version": {
-      "const": 9,
-      "default": 9,
+      "const": 10,
+      "default": 10,
       "title": "Version",
       "type": "integer"
     },

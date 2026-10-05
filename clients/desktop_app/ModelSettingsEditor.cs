@@ -173,8 +173,8 @@ public sealed class ModelSettingsEditor : UserControl
     {
         if (IsDisposed) return;
         if (settings.ValueKind != JsonValueKind.Object || !settings.TryGetProperty("fields", out var fields)) return;
-        if (!settings.TryGetProperty("settings_version", out var version) || version.GetInt32() != 9) {
-            status.Text = "This editor requires canonical AppSettings v9. Legacy projection is read-only.";
+        if (!settings.TryGetProperty("settings_version", out var version) || version.GetInt32() != SettingsDraftState.CanonicalVersion) {
+            status.Text = "This editor requires canonical AppSettings v10. Legacy projection is read-only.";
             save.Enabled = reload.Enabled = rows.Enabled = false; return;
         }
         // Validate render prerequisites before replacing a last-good projection/draft.
@@ -326,8 +326,8 @@ public sealed class ModelSettingsEditor : UserControl
         launchPanel.Visible = category == "Advanced";
         categoryInfo.Text = category switch {
             "Appearance" => "Panel theme, text size, shortcut and placement are in Appearance (UI-only store). Avatar styling beyond supported controls is not yet implemented.",
-            "Memory" => "No editable memory preferences exist in AppSettings v9. The opt-in profile host has a separate canonical Memory browser when the matching Core supports it. Correction/forget, conversational presentation and the relationship graph remain later stages.",
-            "Automation" => "No scheduler defaults exist in AppSettings v9. Automation controls will be added with the real scheduler; specialist task limits are in Tools.",
+            "Memory" => "No editable memory preferences exist in AppSettings v10. The opt-in profile host has a separate canonical Memory browser when the matching Core supports it. Correction/forget, conversational presentation and the relationship graph remain later stages.",
+            "Automation" => "No scheduler defaults exist in AppSettings v10. Automation controls will be added with the real scheduler; specialist task limits are in Tools.",
             "Models" => "SORA's dialogue model and specialist agents are separate. Model IDs/purposes are exact saved preferences, not verified provider access.",
             "Audio" => "Saving voice changes stops active audio. Start audio explicitly in Voice. Device keys can be typed or selected from current actual inventory; blank uses Windows default.",
             "Vision" => "Static local access and automatic context preferences. Native desktop information and optional captures are distinct; no repeated per-file permission requests.",
@@ -526,7 +526,7 @@ public sealed class ModelSettingsEditor : UserControl
         var current = await api.GetAsync("/api/v1/projections/settings", lifetime.Token);
         if (IsDisposed || epoch != coreEpoch()) throw new InvalidOperationException("Core changed while reading; draft retained.");
         int version = current.GetProperty("settings_version").GetInt32(), next = current.GetProperty("settings_revision").GetInt32();
-        if (version != 9 || next < 0) throw new InvalidDataException("Current canonical v9 settings unavailable.");
+        if (version != SettingsDraftState.CanonicalVersion || next < 0) throw new InvalidDataException("Current canonical v10 settings unavailable.");
         var fields = current.GetProperty("fields").EnumerateArray().ToDictionary(f => f.GetProperty("key").GetString()!);
         if (editors.Any(e => !fields.TryGetValue(e.Key, out var field) || field.GetProperty("type").GetString() != e.Value.Type
             || !field.GetProperty("editable").GetBoolean()))

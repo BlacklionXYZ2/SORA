@@ -28,7 +28,7 @@ from sora.providers.llama_server import (
     llama_arguments,
     public_llama_arguments,
 )
-from sora.runtime.agent_preferences import AgentPreference, AgentPreferences
+from sora.runtime.agent_preferences import AgentPreference, AgentPreferences, CustomEndpoint
 from sora.runtime.perception import PerceptionSettings
 from sora.runtime.project_paths import project_directory
 from sora.security.local_policy import LocalCompanionPolicy
@@ -52,11 +52,11 @@ class WorkerSettings(StrictModel):
     task_timeout_seconds: float = Field(default=300, ge=5, le=3600)
 
 
-MAX_SETTINGS_BYTES = 262_144  # Bounded canonical store, including three 64-row purpose lists.
+MAX_SETTINGS_BYTES = 262_144  # Bounded canonical store, including four 64-row purpose lists.
 
 
 class AppSettings(StrictModel):
-    version: Literal[9] = 9
+    version: Literal[10] = 10
     revision: int = Field(default=0, ge=0)
     delegation_epoch: int = Field(default=0, ge=0)
     dialogue: DialogueSettings = Field(default_factory=DialogueSettings)
@@ -78,7 +78,7 @@ class AppSettings(StrictModel):
 
 
 class SettingsEdit(StrictModel):
-    version: Literal[2, 3, 4, 5, 6, 7, 8, 9]
+    version: Literal[2, 3, 4, 5, 6, 7, 8, 9, 10]
     expected_revision: int = Field(ge=0)
     changes: dict[str, Any]
 
@@ -136,6 +136,24 @@ LABELS = {
     "llama.speculative.type": "Speculative mode (MTP / DFlash)",
     "llama.speculative.draft_model_path": "Compatible draft model GGUF",
 }
+CUSTOM_LABELS = {
+    "enabled": "Enable this custom agent",
+    "nickname": "Nickname (what SORA calls it)",
+    "spoken_aliases": "Spoken aliases (comma-separated)",
+    "protocol": "Protocol (OpenAI-compatible API or Agent Client Protocol)",
+    "port": "Local port (OpenAI-compatible only; API at 127.0.0.1)",
+    "command": "Command to launch (ACP only, e.g. an executable on PATH)",
+    "arguments": "Command arguments (ACP only; quote values with spaces)",
+    "default_model": "Default model",
+    "purpose": "Usage description (SORA reads this to choose an agent)",
+}
+CUSTOM_HELP = (
+    "Choose the protocol. OpenAI-compatible: any harness serving /v1/chat/completions on this "
+    "machine, at the port given. ACP: SORA launches the command with its arguments for each task "
+    "and talks Agent Client Protocol over stdio, like Hermes. "
+    "SORA asks it when you use its nickname or an alias, or when its usage description fits "
+    "the task. Changes apply after SORA restarts, except the description, which is live."
+)
 POLICY_HELP = {
     "desktop_observe": "Read window metadata and accessible text. No per-window approval.",
     "desktop_capture": "Allow requested images and the selected automatic perception mode.",
@@ -198,6 +216,8 @@ def update_values(settings: AppSettings, changes: dict[str, Any]) -> AppSettings
     return AppSettings.model_validate(payload)
 
 
+BUILTIN_AGENT_KEYS = ("codex", "hermes", "antigravity", "claude")
+CUSTOM_AGENT_KEYS = ("custom_1", "custom_2", "custom_3", "custom_4")
 SETTINGS_CATEGORIES = (
     "General", "Appearance", "Models", "Audio", "Vision", "Memory", "Tools",
     "Automation", "Performance", "Advanced",
@@ -214,9 +234,11 @@ SETTINGS_CATEGORY_KEYS = {
             "type", "draft_model_path", "draft_gpu_layers", "draft_cache_type_k",
             "draft_cache_type_v", "draft_tokens_min", "draft_tokens_max",
         )},
-        *{f"agents.{agent}.{name}" for agent in ("codex", "hermes", "antigravity")
+        *{f"agents.{agent}.{name}" for agent in BUILTIN_AGENT_KEYS
           for name in ("enabled", "purpose", "preferred_model", "preferred_effort",
                        "model_purpose", "model_choices")},
+        *{f"agents.{slot}.{name}" for slot in CUSTOM_AGENT_KEYS
+          for name in CustomEndpoint.model_fields},
     },
     "Audio": {"local_companion.voice", *{f"voice.{name}" for name in (
         "python_executable", "stt_model_path", "tts_model_path", "voices_path",
@@ -232,7 +254,7 @@ SETTINGS_CATEGORY_KEYS = {
             "file_read", "desktop_interact", "avatar_control", "agent_delegation",
             "direct_file_write",
         )},
-        *{f"agents.{agent}.{name}" for agent in ("codex", "hermes", "antigravity")
+        *{f"agents.{agent}.{name}" for agent in BUILTIN_AGENT_KEYS
           for name in ("project_root", "workspace_mode", "base_ref")},
         "runtime.task_timeout_seconds",
     },
@@ -276,7 +298,7 @@ def field_definitions() -> list[dict[str, Any]]:
                     "configured", "none", "minimal", "low", "medium", "high",
                     "xhigh", "max", "ultra",
                 ]
-                if ".hermes." in key:
+                if ".hermes." in key or ".claude." in key:
                     choices = ["configured"]
                 elif ".antigravity." in key:
                     choices = ["configured", "low", "medium", "high", "max"]
@@ -310,15 +332,20 @@ def field_definitions() -> list[dict[str, Any]]:
                 kind = "path-dir"
             elif key.startswith("agents.") and name == "model_choices":
                 kind = "agent-model-purposes"
+            custom_agent = key.startswith("agents.custom_")
             tier = (
                 "next_boot"
                 if key in BOOT_FIELDS or key.startswith("external.")
+                # Custom agents are registered when Core starts; only the description is live.
+                or (custom_agent and name != "purpose")
                 else "model_reload"
                 if key.startswith("llama.")
                 else "live"
             )
             group = (
-                "Agents · " + key.split(".")[1].title()
+                "Agents · Custom agent " + key.split(".")[1].removeprefix("custom_")
+                if custom_agent
+                else "Agents · " + key.split(".")[1].title()
                 if key.startswith("agents.")
                 else
                 "Companion access"
@@ -331,7 +358,10 @@ def field_definitions() -> list[dict[str, Any]]:
             )
             item: dict[str, Any] = {
                 "key": key,
-                "label": ("Model shortlist and purposes" if name == "model_choices" else
+                "label": (CUSTOM_LABELS[name] if custom_agent else
+                          "Usage description (SORA reads this to choose an agent)"
+                          if key.startswith("agents.") and name == "purpose" else
+                          "Model shortlist and purposes" if name == "model_choices" else
                           "Default model purpose (fallback)" if key.startswith("agents.")
                           and name == "model_purpose" else
                           LABELS.get(key, name.replace("_", " ").capitalize())),
@@ -349,6 +379,8 @@ def field_definitions() -> list[dict[str, Any]]:
                     "discoverable. This is descriptive metadata, not permission or verified "
                     "access. Does not change the preferred model or existing tasks."
                     if kind == "agent-model-purposes" else
+                    CUSTOM_HELP
+                    if custom_agent else
                     "Saved locally. Blank model and configured effort retain the harness default. "
                     "Model IDs must exactly match the catalogue; listing is not verified access. "
                     "Preferences apply to new tasks. Disabling an agent revokes local runs."
@@ -409,7 +441,7 @@ class AppSettingsStore:
         if not isinstance(payload, dict):
             raise ValueError("Settings must be an object")
         old_version = payload.get("version")
-        migrating = old_version in {2, 3, 4, 5, 6, 7, 8}
+        migrating = old_version in {2, 3, 4, 5, 6, 7, 8, 9}
         if old_version != 2 and (not isinstance(payload.get("local_companion"), dict) or (
             set(payload["local_companion"]) != set(LocalCompanionPolicy.model_fields)
         )):
@@ -417,19 +449,28 @@ class AppSettingsStore:
         perception_fields = set(PerceptionSettings.model_fields)
         if old_version == 4:
             perception_fields -= {"interval_seconds", "context_max_age_seconds"}
-        if old_version in {4, 5, 6, 7, 8, 9} and (
+        if old_version in {4, 5, 6, 7, 8, 9, 10} and (
             not isinstance(payload.get("perception"), dict)
             or set(payload["perception"]) != perception_fields
         ):
             raise ValueError("Settings require complete automatic perception settings")
         if migrating:
-            payload["version"] = 9
-        if old_version in {6, 7, 8, 9} and (not isinstance(payload.get("voice"), dict) or (
+            payload["version"] = 10
+            if old_version in {2, 3}:
+                # Never switch automatic images on by upgrading: pre-perception settings keep the
+                # mode they effectively had. Only new settings start with image-on-prompt.
+                payload.setdefault(
+                    "perception", PerceptionSettings(mode="native-only").model_dump(),
+                )
+        if old_version in {6, 7, 8, 9, 10} and (not isinstance(payload.get("voice"), dict) or (
             set(payload["voice"]) != set(VoiceSettings.model_fields)
         )):
             raise ValueError("Settings require complete local voice settings")
-        if old_version in {7, 8, 9} and (not isinstance(payload.get("agents"), dict) or (
-            set(payload["agents"]) != set(AgentPreferences.model_fields)
+        agent_keys = set(AgentPreferences.model_fields)
+        if old_version in {7, 8, 9}:
+            agent_keys = {"codex", "hermes", "antigravity"}
+        if old_version in {7, 8, 9, 10} and (not isinstance(payload.get("agents"), dict) or (
+            set(payload["agents"]) != agent_keys
         )):
             raise ValueError("Settings require complete agent preferences")
         required_agent_fields = set(AgentPreference.model_fields)
@@ -437,9 +478,12 @@ class AppSettingsStore:
             required_agent_fields -= {"model_choices"}
         if old_version == 7:
             required_agent_fields -= {"project_root", "workspace_mode", "base_ref"}
-        if old_version in {7, 8, 9} and any(
-            not isinstance(value, dict) or set(value) != required_agent_fields
-            for value in payload["agents"].values()
+        if old_version in {7, 8, 9, 10} and any(
+            not isinstance(value, dict) or set(value) != (
+                set(CustomEndpoint.model_fields) if name.startswith("custom_")
+                else required_agent_fields
+            )
+            for name, value in payload["agents"].items()
         ):
             raise ValueError("Settings require complete preferences for each agent")
         if old_version in {7, 8}:
@@ -448,6 +492,11 @@ class AppSettingsStore:
                 entry["model_choices"] = ([{
                     "id": entry["preferred_model"], "purpose": entry["model_purpose"],
                 }] if entry["preferred_model"] and entry["model_purpose"] else [])
+        if old_version in {7, 8, 9}:
+            # v10 adds Claude and four custom-agent slots, all with default descriptions.
+            defaults = AgentPreferences().model_dump(mode="json")
+            for name in set(defaults) - set(payload["agents"]):
+                payload["agents"][name] = defaults[name]
         settings = AppSettings.model_validate(payload)
         self.digest = self.disk_digest()
         if migrating:
@@ -578,7 +627,7 @@ class AppSettingsController:
                     field.update(active_value=None, pending=True)
         model_pending = any(f["pending"] and f["tier"] == "model_reload" for f in fields)
         return {
-            "settings_version": 9,
+            "settings_version": 10,
             "settings_revision": self.saved.revision,
             "active_settings_revision": self.boot.revision,
             "boot_revision": self.boot.revision,

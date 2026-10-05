@@ -195,6 +195,7 @@ from sora.persistence.repository import SoraRepository
 from sora.providers.base import (
     MalformedProviderResult,
     OwnedWorkspaceProvider,
+    ProjectRootProvider,
     ProviderLaunchError,
     ReasoningProvider,
     SessionProvider,
@@ -510,6 +511,12 @@ class SoraRuntime:
                 if self.app_settings
                 else True
             ),
+            # Custom agents are registered at startup, so their names come from boot settings.
+            agent_names=lambda: (
+                self.app_settings.boot.agents.directory()
+                if self.app_settings
+                else self.routing_engine.agent_names
+            ),
         )
 
         if dialogue_provider is not None:
@@ -545,6 +552,8 @@ class SoraRuntime:
             has_worktree_isolation=self.workspace_manager is not None,
         )
         self.routing_engine.has_worktree_isolation = self.workspace_manager is not None
+        if app_settings is not None:
+            self.routing_engine.agent_names = app_settings.boot.agents.directory()
         database = SQLiteDatabase(config.root / "data" / "sora.db")
 
         self.repository = SoraRepository(database)
@@ -1598,13 +1607,9 @@ class SoraRuntime:
 
         raw_prov = result.patch.provenance if result.patch else "SORA"
         actor = raw_prov
-        lower_prov = raw_prov.lower()
-        if "antigravity" in lower_prov:
-            actor = "Antigravity"
-        elif "hermes" in lower_prov:
-            actor = "Hermes"
-        elif "codex" in lower_prov or "cody" in lower_prov:
-            actor = "Cody"
+        mentioned = self.routing_engine.agent_names.mentioned(raw_prov)
+        if mentioned:
+            actor = self.routing_engine.agent_names.name_for(mentioned[0], raw_prov) or raw_prov
 
         return ResultPresentation(
             presentation_id=f"presentation-{result.result_id}",
@@ -2262,14 +2267,13 @@ class SoraRuntime:
                     try:
                         selected = catalogue.select(choice)
                         # Retain explicit owner harness choice, even if a model suggests another.
-                        named = re.search(
-                            r"\b(?:ask|have|get|use|delegate(?:\s+to)?)\s+"
-                            r"(codex|hermes|antigravity)\b",
-                            text,
-                            re.IGNORECASE,
-                        )
-                        if named is not None:
-                            requested = named.group(1).lower()
+                        named = self.routing_engine.agent_names.requested(text)
+                        if len(named) > 1:
+                            raise ValueError(
+                                "You named more than one specialist; which one should I ask?",
+                            )
+                        if named:
+                            requested = named[0]
                             if selected.provider not in {None, requested}:
                                 raise ValueError(
                                     "The proposed specialist differs from your request",
@@ -4019,9 +4023,28 @@ class SoraRuntime:
             if str(root) != task.working_directory:
                 raise ValueError("Project directory identity changed; select it again")
             if not isinstance(provider, CodexAppServerProvider):
-                raise ProviderLaunchError(
-                    ProviderErrorCode.UNSUPPORTED,
-                    "No project boundary adapter",
+                # Trusted hosted agents work in the folder itself (owner decision 2026-10-05).
+                # Core still serialises writers and records the diff, as for Codex direct mode.
+                if not isinstance(provider, ProjectRootProvider) or task.workspace_mode not in {
+                    "read-only", "direct",
+                }:
+                    raise ProviderLaunchError(
+                        ProviderErrorCode.UNSUPPORTED,
+                        "No project boundary adapter",
+                    )
+                if task.workspace_mode == "read-only":
+                    return provider.for_project_root(str(root)), request, None, None
+                if not await self.project_paths.acquire(run_id, task.task_id, root):
+                    raise ProviderLaunchError(
+                        ProviderErrorCode.UNAVAILABLE,
+                        "Project root overlaps another active or uncertain writer. "
+                        "Inspect Paths and retry after it stops.",
+                    )
+                return (
+                    provider.for_project_root(str(root)),
+                    request.model_copy(update={"write_lease_ref": run_id}),
+                    None,
+                    None,
                 )
             if task.workspace_mode == "read-only":
                 return provider.for_read_root(str(root)), request, None, None
@@ -4446,11 +4469,13 @@ class SoraRuntime:
         )
         if write and selected == "read-only":
             raise ValueError("This task changes files but the project mode is read-only")
-        if not isinstance(provider, CodexAppServerProvider):
+        if not isinstance(provider, (CodexAppServerProvider, ProjectRootProvider)):
             raise ProviderLaunchError(
                 ProviderErrorCode.UNSUPPORTED,
-                "This harness has no enforced project boundary yet. Choose Codex for project work.",
+                "This agent cannot work in a project folder. Choose Cody, Aggie or Claude.",
             )
+        if selected == "isolated" and not isinstance(provider, CodexAppServerProvider):
+            raise ValueError("Isolated worktrees are Codex-only; use direct mode for this agent")
         source = Path(__file__).resolve().parents[3]
         source_task = root == source or (
             source in root.parents and not root.is_relative_to(source / ".local")

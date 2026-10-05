@@ -33,12 +33,12 @@ def test_v2_migration_preserves_original_and_explicit_disables(tmp_path: Path) -
     original = json.dumps(payload)
     path.write_text(original, encoding="utf-8")
     controller = AppSettingsController(tmp_path, AppSettings(), path=path)
-    assert controller.saved.version == 9 and controller.saved.revision == 7
+    assert controller.saved.version == 10 and controller.saved.revision == 7
     assert not controller.active.local_companion.file_read
     assert not controller.active.local_companion.direct_file_write
     assert controller.active.local_companion.desktop_observe
     assert next(tmp_path.glob("settings.v2-*.json")).read_text() == original
-    assert json.loads(path.read_text())["version"] == 9
+    assert json.loads(path.read_text())["version"] == 10
 
 
 def test_corrupt_startup_recovers_disables_or_fails_closed(tmp_path: Path) -> None:

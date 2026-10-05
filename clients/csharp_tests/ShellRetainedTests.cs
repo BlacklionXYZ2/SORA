@@ -27,7 +27,7 @@ public sealed class ShellRetainedTests
                 "/api/v1/messages" => Array.Empty<object>(), "/api/v1/tasks" => new { tasks = Array.Empty<object>() },
                 "/api/v1/projections/companion" => new { companion = new { dialogue_ready = false, state = "idle", model_state = "down" }, background_workers_active = 0 },
                 "/api/v1/status" => new { providers = new Dictionary<string, object>() },
-                "/api/v1/projections/settings" => new { settings_version = 9, settings_revision = 0, fields = Array.Empty<object>() },
+                "/api/v1/projections/settings" => new { settings_version = 10, settings_revision = 0, fields = Array.Empty<object>() },
                 "/api/v1/projections/objects" => new { cards = HasCard ? new[] { new { task_id = "task-a", column = "DONE", status = CardStatus,
                     intent = "Synthetic note", assigned_agent = "codex", board_version = Version, run_count = Runs,
                     column_source = "manual", needs_attention = false, updated_at = "2026-10-04T01:00:00Z" } } : [] },

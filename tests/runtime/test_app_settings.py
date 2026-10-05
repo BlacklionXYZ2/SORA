@@ -79,9 +79,9 @@ def test_all_preferences_have_controls_and_tiers() -> None:
     assert {field["type"] for field in FIELDS} >= {"gpu", "enum", "int", "bool", "path-gguf"}
 
 
-def test_gui_categories_cover_every_v9_preference_once_without_new_authority() -> None:
+def test_gui_categories_cover_every_v10_preference_once_without_new_authority() -> None:
     keys = [key for group in SETTINGS_CATEGORY_KEYS.values() for key in group]
-    assert len(keys) == len(set(keys)) == len(FIELDS) == 84
+    assert len(keys) == len(set(keys)) == len(FIELDS) == 129
     assert set(keys) == set(TIERS)
     assert SETTINGS_ADVANCED_KEYS <= set(keys)
     assert len(SETTINGS_CATEGORIES) == 10
@@ -318,7 +318,7 @@ async def test_owner_settings_api_and_live_dialogue(tmp_path: Path) -> None:
     )
     try:
         status, settings = await client._request_dict("GET", "/api/v1/projections/settings")
-        assert status == 200 and settings["settings_version"] == 9
+        assert status == 200 and settings["settings_version"] == 10
         status, saved = await client._request_dict(
             "POST",
             "/api/v1/settings",

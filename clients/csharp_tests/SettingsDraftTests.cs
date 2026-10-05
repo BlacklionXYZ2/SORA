@@ -20,43 +20,43 @@ public sealed class SettingsDraftTests
     [Fact]
     public void ConflictingProjectionDoesNotReplaceDirtyBaseline()
     {
-        var draft = new SettingsDraftState(); Assert.True(draft.Observe(9, 3, "core-a")); draft.Edit();
-        Assert.False(draft.Observe(9, 4, "core-a")); Assert.True(draft.Dirty); Assert.True(draft.Conflict);
+        var draft = new SettingsDraftState(); Assert.True(draft.Observe(10, 3, "core-a")); draft.Edit();
+        Assert.False(draft.Observe(10, 4, "core-a")); Assert.True(draft.Dirty); Assert.True(draft.Conflict);
         Assert.Equal(3, draft.Revision); Assert.False(draft.CanSave);
         Assert.Throws<InvalidOperationException>(() => draft.BeginSave());
-        draft.Discard(); Assert.True(draft.Observe(9, 4, "core-a")); draft.Edit(); Assert.True(draft.CanSave);
+        draft.Discard(); Assert.True(draft.Observe(10, 4, "core-a")); draft.Edit(); Assert.True(draft.CanSave);
     }
     [Fact]
     public void CoreChangeWithSameRevisionIsStillConflict()
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "core-a"); draft.Edit();
-        draft.Observe(9, 3, "core-b"); Assert.True(draft.Conflict); Assert.Equal("core-a", draft.Epoch);
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "core-a"); draft.Edit();
+        draft.Observe(10, 3, "core-b"); Assert.True(draft.Conflict); Assert.Equal("core-a", draft.Epoch);
     }
     [Fact]
     public void LateSaveCannotEraseEditsMadeDuringItsAwait()
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "core-a"); draft.Edit();
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "core-a"); draft.Edit();
         var submission = draft.BeginSave(); Assert.True(draft.Busy); Assert.False(draft.CanSave);
         Assert.Throws<InvalidOperationException>(() => draft.Discard());
-        draft.Edit(); Assert.False(draft.Acknowledge(submission, 9, 4, "core-a"));
+        draft.Edit(); Assert.False(draft.Acknowledge(submission, 10, 4, "core-a"));
         Assert.True(draft.Dirty); Assert.True(draft.OutcomeUnknown); Assert.False(draft.Busy);
     }
     [Theory]
-    [InlineData(9, 3, "core-a", true)] [InlineData(9, 4, "core-a", true)]
-    [InlineData(9, 2, "core-a", false)] [InlineData(9, 5, "core-a", false)]
-    [InlineData(9, 4, "core-b", false)] [InlineData(8, 4, "core-a", false)]
+    [InlineData(10, 3, "core-a", true)] [InlineData(10, 4, "core-a", true)]
+    [InlineData(10, 2, "core-a", false)] [InlineData(10, 5, "core-a", false)]
+    [InlineData(10, 4, "core-b", false)] [InlineData(9, 4, "core-a", false)]
     public void AcknowledgementIsBoundToExactSubmission(int version, int revision, string epoch, bool success)
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "core-a"); draft.Edit();
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "core-a"); draft.Edit();
         Assert.Equal(success, draft.Acknowledge(draft.BeginSave(), version, revision, epoch));
         Assert.Equal(!success, draft.Dirty); Assert.Equal(!success, draft.OutcomeUnknown);
     }
     [Fact]
     public void FailedSaveRetainsDraftAndDoesNotAutomaticallyPermitRetry()
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "core-a"); draft.Edit(); draft.BeginSave(); draft.SaveFailed();
-        draft.Observe(9, 3, "core-a"); Assert.True(draft.OutcomeUnknown); Assert.False(draft.CanSave);
-        draft.Discard(); draft.Observe(9, 3, "core-a"); draft.Edit(); Assert.True(draft.CanSave);
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "core-a"); draft.Edit(); draft.BeginSave(); draft.SaveFailed();
+        draft.Observe(10, 3, "core-a"); Assert.True(draft.OutcomeUnknown); Assert.False(draft.CanSave);
+        draft.Discard(); draft.Observe(10, 3, "core-a"); draft.Edit(); Assert.True(draft.CanSave);
     }
     [Fact]
     public void LegacySettingsCannotBeEdited()
@@ -66,18 +66,18 @@ public sealed class SettingsDraftTests
     [Fact]
     public void ExplicitReconciliationKeepsDraftAndChangesBaselineWithoutSaving()
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "old"); draft.Edit(); draft.BeginSave(); draft.SaveFailed();
-        draft.Reconcile(9, 4, "new", true); Assert.True(draft.Dirty); Assert.True(draft.CanSave);
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "old"); draft.Edit(); draft.BeginSave(); draft.SaveFailed();
+        draft.Reconcile(10, 4, "new", true); Assert.True(draft.Dirty); Assert.True(draft.CanSave);
         Assert.Equal(4, draft.Revision); Assert.Equal("new", draft.Epoch); Assert.False(draft.OutcomeUnknown);
-        Assert.False(draft.Observe(9, 4, "new")); Assert.False(draft.Conflict);
+        Assert.False(draft.Observe(10, 4, "new")); Assert.False(draft.Conflict);
     }
     [Fact]
     public void ReconciliationCannotRunWhileSaveIsPendingOrAgainstLegacyState()
     {
-        var draft = new SettingsDraftState(); draft.Observe(9, 3, "core"); draft.Edit(); draft.BeginSave();
-        Assert.Throws<InvalidOperationException>(() => draft.Reconcile(9, 4, "core", true));
+        var draft = new SettingsDraftState(); draft.Observe(10, 3, "core"); draft.Edit(); draft.BeginSave();
+        Assert.Throws<InvalidOperationException>(() => draft.Reconcile(10, 4, "core", true));
         draft.SaveFailed(); Assert.Throws<InvalidOperationException>(() => draft.Reconcile(8, 4, "core", true));
-        draft.Reconcile(9, 4, "core", false); Assert.False(draft.Dirty); Assert.False(draft.CanSave);
+        draft.Reconcile(10, 4, "core", false); Assert.False(draft.Dirty); Assert.False(draft.CanSave);
     }
     [Fact]
     public void ReconciliationPreservesOnlyActualEditsAndAdoptsUntouchedConcurrentChanges()

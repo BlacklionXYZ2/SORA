@@ -199,6 +199,9 @@ try {
     $command += " --antigravity-effort $(ConvertTo-PowerShellLiteral $AntigravityEffort)"
     if (-not $NoAntigravitySkipPermissions) {
         $command += " --antigravity-arg=--dangerously-skip-permissions"
+    } else {
+        # Core now skips Antigravity's permission prompts by default; this keeps the opt-out.
+        $command += " --antigravity-ask-permissions"
     }
     if (-not $NoAvatar) {
         $command += " --embodiment-player $(ConvertTo-PowerShellLiteral $player)"

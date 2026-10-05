@@ -12,6 +12,7 @@ from pydantic import Field, JsonValue
 from sora.contracts.base import Identifier, NonEmptyText, StrictModel
 from sora.contracts.models import ProviderErrorCode, TaskRecord, TaskStatus
 from sora.providers.base import ProviderLaunchError
+from sora.routing.agent_names import DEFAULT_DIRECTORY, AgentDirectory
 
 
 class TaskIntentCategory(StrEnum):
@@ -71,10 +72,8 @@ _OFFLINE_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
-# Regex patterns for steering disambiguation
-_HERMES_TARGET = re.compile(r"\bhermes\b", re.IGNORECASE)
-_CODY_TARGET = re.compile(r"\b(?:cody|codex)\b", re.IGNORECASE)
-_ANTIGRAVITY_TARGET = re.compile(r"\b(?:antigravity|ag)\b", re.IGNORECASE)
+# Agent names for steering come from the shared AgentDirectory (Cody, Hermes, Aggie, Claude
+# and the owner's custom nicknames, with their spoken variants).
 _PRONOUN_TARGET = re.compile(r"\b(?:him|her|them|it)\b", re.IGNORECASE)
 
 
@@ -89,18 +88,25 @@ class RoutingEngine:
         cloud_providers: set[str] | None = None,
         local_providers: set[str] | None = None,
         has_worktree_isolation: bool = False,
+        agent_names: AgentDirectory = DEFAULT_DIRECTORY,
     ) -> None:
         self.default_provider = default_provider
+        self.agent_names = agent_names
         self.registered_providers = (
             set(registered_providers)
             if registered_providers is not None
             else {"deterministic", "hermes", "codex", "antigravity"}
         )
-        self.cloud_providers = set(cloud_providers) if cloud_providers is not None else {"codex"}
+        # Classification only. The owner's agents are trusted colleagues who may receive private
+        # desktop and editor context (owner decision 2026-10-05, VISION.md "Her agent
+        # colleagues"), so being hosted never excludes an agent from routing.
+        self.cloud_providers = (
+            set(cloud_providers)
+            if cloud_providers is not None
+            else {"codex", "antigravity", "claude"}
+        )
         self.local_providers = (
-            set(local_providers)
-            if local_providers is not None
-            else {"deterministic", "hermes", "antigravity"}
+            set(local_providers) if local_providers is not None else {"deterministic"}
         )
         self.has_worktree_isolation = has_worktree_isolation
 
@@ -136,7 +142,8 @@ class RoutingEngine:
 
         Enforces:
         - Manual overrides: explicit requests are honored without silent substitution.
-        - Privacy scope containment: local-only context never routes or falls back to cloud.
+        - Private context: local-only/private scope is recorded in the decision metadata and
+          does not exclude hosted agents (owner decision 2026-10-05).
         - Dialogue fast-paths: conversational and status queries bypass heavy models.
         - P05 safety boundary: coding writes without configured worktree isolation are held.
         - Bounded fallbacks: auto-routing generates an ordered fallback list.
@@ -144,7 +151,7 @@ class RoutingEngine:
         category = self.classify_intent(intent)
         has_workspace = (self.has_worktree_isolation if has_write_workspace is None
                          else has_write_workspace)
-        effective_local_only = is_local_only or (
+        private_context = is_local_only or (
             context_scope is not None
             and any(marker in context_scope.lower() for marker in ("local", "private"))
         )
@@ -157,13 +164,9 @@ class RoutingEngine:
                     f"Requested provider '{explicit_provider}' is not available "
                     "(silent substitution prohibited)",
                 )
-            if effective_local_only and explicit_provider in self.cloud_providers:
-                raise ProviderLaunchError(
-                    ProviderErrorCode.UNAVAILABLE,
-                    f"Requested cloud provider '{explicit_provider}' violates "
-                    "local-only privacy scope",
-                )
             manual_metadata: dict[str, JsonValue] = {}
+            if private_context:
+                manual_metadata["private_context"] = True
             if category is TaskIntentCategory.CODING_WRITE and not has_workspace:
                 manual_metadata["p05_deferred"] = True
                 manual_metadata["warning"] = "Coding writes require an owned P05 workspace"
@@ -176,16 +179,12 @@ class RoutingEngine:
                 metadata=manual_metadata,
             )
 
-        # Candidates filtered by privacy scope
-        candidates = {
-            p
-            for p in self.registered_providers
-            if not effective_local_only or p not in self.cloud_providers
-        }
+        # Custom endpoints are reached by name or by the companion's choice, never by these rules.
+        candidates = {p for p in self.registered_providers if not p.startswith("custom-")}
         if not candidates:
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
-                "No provider satisfies the requested privacy scope",
+                "No automatically routable provider is registered",
             )
 
         # 2. Dialogue / Status fast-paths
@@ -304,7 +303,7 @@ class RoutingEngine:
     ) -> str | None:
         """Resolve conversational steering instruction to a target task_id.
 
-        Matches specialist aliases (Cody -> codex, Hermes -> hermes, AG -> antigravity)
+        Matches agent names and spoken aliases (Cody, Hermes, Aggie, Claude, custom nicknames)
         or pronouns ("him", "her", "them") if exactly one candidate is running.
         Returns None for ambiguous references to prevent affecting arbitrary work.
         """
@@ -326,23 +325,19 @@ class RoutingEngine:
         # 1. Direct name references. Naming more than one specialist ("cancel Hermes, not
         # Codex") is ambiguous: acting on whichever name is checked first could steer or
         # cancel exactly the task the owner excluded, so ask for clarification instead.
-        named = [
-            backend
-            for backend, pattern in (
-                ("codex", _CODY_TARGET),
-                ("hermes", _HERMES_TARGET),
-                ("antigravity", _ANTIGRAVITY_TARGET),
-            )
-            if pattern.search(instruction)
-        ]
+        named = self.agent_names.mentioned(instruction)
         if len(named) > 1:
             return None
         if named:
+            agent = self.agent_names.get(named[0])
+            assert agent is not None
+            # Records may carry the routing key ("codex") or the adapter's provider ID
+            # ("codex-app-server"), depending on whether the owner named it or Core routed it.
             matches = [
                 t
                 for t in running
-                if getattr(t, "effective_backend", None) == named[0]
-                or getattr(t, "requested_backend", None) == named[0]
+                if agent.owns(getattr(t, "effective_backend", None))
+                or agent.owns(getattr(t, "requested_backend", None))
             ]
             return matches[0].task_id if len(matches) == 1 else None
 

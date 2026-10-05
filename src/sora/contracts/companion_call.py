@@ -19,7 +19,10 @@ from sora.contracts.companion_read import (
     SearchFiles,
 )
 
-Harness = Literal["auto", "codex", "hermes", "antigravity"]
+Harness = Literal[
+    "auto", "codex", "hermes", "antigravity", "claude",
+    "custom-1", "custom-2", "custom-3", "custom-4",
+]
 
 
 class ListAgents(StrictModel):
@@ -131,6 +134,9 @@ COMPANION_TOOL_PROMPT = (
     + """
 Core lists the implemented enabled operations in AVAILABLE_OPERATIONS. Use only those.
 list_agents returns the configured specialists, purposes and paged model references.
+Each agent has a name (Cody, Hermes, Aggie, Claude or the owner's nickname for a custom agent)
+and an owner-written usage description. Choose the provider whose description best fits the
+task; use auto only when none clearly fits. An agent the owner names always wins.
 Its optional query is a literal name/ID/purpose substring, useful for finding a requested model
 without listing everything. Preserve the same provider and query when following a cursor.
 Provider-listed models are not proof of account entitlement; do not claim verified access.

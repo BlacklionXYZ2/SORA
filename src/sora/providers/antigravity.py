@@ -256,6 +256,22 @@ class AntigravityProvider:
             max_output_chars=self.max_output_chars,
         )
 
+    def for_project_root(self, root: str) -> AntigravityProvider:
+        """The same adapter, working directly in the owner's selected project folder."""
+        return AntigravityProvider(
+            command=self.command,
+            args=self.args,
+            cwd=root,
+            model=self.model,
+            effort=self.effort,
+            timeout_seconds=self.timeout_seconds,
+            max_output_chars=self.max_output_chars,
+        )
+
+    def writer_stopped(self, run_id: str) -> bool:
+        state = self._runs.get(run_id)
+        return state is None or state.process.returncode is not None
+
     async def capabilities(self) -> ProviderCapabilities:
         return ProviderCapabilities(
             provider="antigravity",

@@ -20,10 +20,17 @@ from sora.contracts.models import TaskStatus
 from sora.embodiment.local_player import LocalAvatarSession
 from sora.providers.antigravity import AntigravityProvider
 from sora.providers.base import ReasoningProvider
+from sora.providers.claude_code import ClaudeCodeProvider
 from sora.providers.codex import CodexAppServerProvider
+from sora.providers.custom_endpoint import (
+    CustomACPProvider,
+    CustomEndpointProvider,
+    split_command_arguments,
+)
 from sora.providers.hermes import HermesACPProvider
 from sora.providers.llama_server import LlamaOptions
 from sora.providers.mock import DeterministicProvider, FaultMode
+from sora.runtime.agent_preferences import AgentPreferences
 from sora.runtime.app_settings import AppSettings, AppSettingsController
 from sora.runtime.service import RuntimeConfig, SoraRuntime
 from sora.runtime.settings import RuntimeSettingsStore
@@ -56,12 +63,12 @@ def parser() -> argparse.ArgumentParser:
     )
     result.add_argument(
         "--provider",
-        choices=("auto", "deterministic", "hermes", "codex", "antigravity"),
+        choices=("auto", "deterministic", "hermes", "codex", "antigravity", "claude"),
         default=os.getenv("SORA_PROVIDER", "auto"),
         help=(
             "reasoning backend; auto registers every usable backend so the routing "
             "engine chooses per task at runtime, deterministic is offline, "
-            "Hermes/Codex/Antigravity are external"
+            "Hermes/Codex/Antigravity/Claude are external"
         ),
     )
     result.add_argument(
@@ -199,6 +206,14 @@ def parser() -> argparse.ArgumentParser:
         ),
     )
     result.add_argument(
+        "--antigravity-ask-permissions",
+        action="store_true",
+        help=(
+            "do not pass --dangerously-skip-permissions to Antigravity by default; headless "
+            "runs then auto-deny tools that need approval"
+        ),
+    )
+    result.add_argument(
         "--agent-write-root",
         action="append",
         default=None,
@@ -224,6 +239,39 @@ def parser() -> argparse.ArgumentParser:
         choices=("low", "medium", "high"),
         default=os.getenv("SORA_ANTIGRAVITY_EFFORT", "medium"),
         help="Antigravity reasoning effort level",
+    )
+    result.add_argument(
+        "--claude-command",
+        default=os.getenv("SORA_CLAUDE_COMMAND", "claude"),
+        help="Claude Code CLI executable (headless, on the owner's subscription)",
+    )
+    result.add_argument(
+        "--claude-arg",
+        action="append",
+        default=None,
+        help=(
+            "extra Claude Code argument, repeatable; replaces the default "
+            "--permission-mode bypassPermissions"
+        ),
+    )
+    result.add_argument(
+        "--claude-ask-permissions",
+        action="store_true",
+        help=(
+            "do not pass Claude Code --permission-mode bypassPermissions by default; print "
+            "mode then denies tools that need approval, so Claude can read but not edit"
+        ),
+    )
+    result.add_argument(
+        "--claude-cwd",
+        type=Path,
+        default=None,
+        help="explicit Claude Code working directory",
+    )
+    result.add_argument(
+        "--claude-model",
+        default=os.getenv("SORA_CLAUDE_MODEL", None),
+        help="Claude model alias or name; blank uses Claude Code's own default",
     )
     result.add_argument(
         "--serve",
@@ -295,6 +343,20 @@ def parser() -> argparse.ArgumentParser:
     return result
 
 
+# Owner decision 2026-10-05: hosted agents are trusted with file writes and run without
+# permission prompts unless the owner opts out or passes their own arguments.
+CLAUDE_FULL_ACCESS = ("--permission-mode", "bypassPermissions")
+ANTIGRAVITY_FULL_ACCESS = ("--dangerously-skip-permissions",)
+
+
+def hosted_agent_args(
+    explicit: list[str] | None, ask_permissions: bool, full_access: tuple[str, ...],
+) -> tuple[str, ...]:
+    if explicit:
+        return tuple(explicit)
+    return () if ask_permissions else full_access
+
+
 class ProviderSetupError(Exception):
     """An explicitly selected reasoning backend cannot be started."""
 
@@ -305,7 +367,9 @@ class ProviderPlan(NamedTuple):
     codex_cwd: Path | None
 
 
-def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
+def build_provider_registry(
+    arguments: argparse.Namespace, agents: AgentPreferences | None = None,
+) -> ProviderPlan:
     """Register the reasoning backends SORA may route work to.
 
     ``--provider auto`` registers every backend that is actually usable on this
@@ -401,12 +465,66 @@ def build_provider_registry(arguments: argparse.Namespace) -> ProviderPlan:
         else:
             registry["antigravity"] = AntigravityProvider(
                 command=arguments.antigravity_command,
-                args=tuple(arguments.antigravity_arg or ()),
+                args=hosted_agent_args(
+                    arguments.antigravity_arg, arguments.antigravity_ask_permissions,
+                    ANTIGRAVITY_FULL_ACCESS,
+                ),
                 cwd=str(antigravity_cwd) if antigravity_cwd else None,
                 model=arguments.antigravity_model,
                 effort=arguments.antigravity_effort,
                 timeout_seconds=arguments.task_timeout,
             )
+
+    if arguments.provider in ("auto", "claude"):
+        claude_cwd = arguments.claude_cwd
+        if claude_cwd is None and auto:
+            claude_cwd = workspace
+        if claude_cwd is not None and not claude_cwd.is_dir():
+            if not auto:
+                raise ProviderSetupError(
+                    f"Claude working directory does not exist: {claude_cwd}"
+                )
+            skipped.append(f"claude: working directory does not exist: {claude_cwd}")
+        elif auto and shutil.which(arguments.claude_command) is None:
+            skipped.append(f"claude: '{arguments.claude_command}' is not on PATH")
+        else:
+            registry["claude"] = ClaudeCodeProvider(
+                command=arguments.claude_command,
+                args=hosted_agent_args(
+                    arguments.claude_arg, arguments.claude_ask_permissions, CLAUDE_FULL_ACCESS,
+                ),
+                cwd=str(claude_cwd) if claude_cwd else None,
+                model=arguments.claude_model,
+                timeout_seconds=arguments.task_timeout,
+            )
+
+    if auto and agents is not None:
+        # Owner-added agents from Settings; each is reached by its nickname or description.
+        for key, endpoint in agents.custom_endpoints().items():
+            if not endpoint.enabled:
+                continue
+            if endpoint.protocol == "acp":
+                if shutil.which(endpoint.command.strip()) is None and not Path(
+                    endpoint.command.strip(),
+                ).is_file():
+                    skipped.append(f"{key}: '{endpoint.command.strip()}' was not found")
+                    continue
+                registry[key] = CustomACPProvider(
+                    key,
+                    nickname=endpoint.nickname.strip(),
+                    command=endpoint.command.strip(),
+                    args=split_command_arguments(endpoint.arguments),
+                    cwd=str(workspace),
+                    timeout_seconds=arguments.task_timeout,
+                )
+            else:
+                registry[key] = CustomEndpointProvider(
+                    key,
+                    nickname=endpoint.nickname.strip(),
+                    port=endpoint.port,
+                    model=endpoint.default_model or None,
+                    timeout_seconds=arguments.task_timeout,
+                )
 
     registry["deterministic"] = deterministic
     return ProviderPlan(registry, tuple(skipped), codex_cwd)
@@ -486,7 +604,7 @@ async def _run(
         print("Direct dialogue requires --dialogue-model and --dialogue-base-url.")
         return 2
     try:
-        plan = build_provider_registry(arguments)
+        plan = build_provider_registry(arguments, app_settings.boot.agents)
     except ProviderSetupError as error:
         print(str(error))
         return 2

@@ -12,15 +12,16 @@ from pydantic import TypeAdapter
 
 from sora.contracts.models import ModelId, ReasoningEffort
 from sora.providers.base import ReasoningProvider
-from sora.runtime.agent_preferences import AgentPreferences
+from sora.routing.agent_names import DEFAULT_DIRECTORY, AgentDirectory
+from sora.runtime.agent_preferences import DEFAULT_PURPOSES, AgentPreferences
 
 _MODEL = TypeAdapter(ModelId)
 _EFFORT: TypeAdapter[ReasoningEffort] = TypeAdapter(ReasoningEffort)
-_NAMES = {"codex-app-server": "Codex", "hermes-acp": "Hermes", "antigravity": "Antigravity"}
 _PURPOSES = {
-    "codex-app-server": "Coding, repository changes, tests and specialist reasoning through Codex.",
-    "hermes-acp": "General specialist tasks using Hermes' own native tools and integrations.",
-    "antigravity": "Research, planning and project work through Antigravity's native tools.",
+    "codex-app-server": DEFAULT_PURPOSES["codex"],
+    "hermes-acp": DEFAULT_PURPOSES["hermes"],
+    "antigravity": DEFAULT_PURPOSES["antigravity"],
+    "claude-code": DEFAULT_PURPOSES["claude"],
 }
 _OWNER_ROSTER = {
     "antigravity": ["Gemini 3.8 Flash"],
@@ -55,8 +56,10 @@ class AgentCatalogue:
         self, providers: Mapping[str, ReasoningProvider], *, timeout: float = 25,
         preferences: Callable[[], AgentPreferences | None] = lambda: None,
         delegation_enabled: Callable[[], bool] = lambda: True,
+        agent_names: Callable[[], AgentDirectory] = lambda: DEFAULT_DIRECTORY,
     ) -> None:
         self.providers = providers
+        self.agent_names = agent_names
         self.timeout = timeout
         self.preferences = preferences
         self.delegation_enabled = delegation_enabled
@@ -75,7 +78,7 @@ class AgentCatalogue:
             if entry is None:
                 entry = {
                     "provider": caps.provider,
-                    "display_name": caps.display_name or _NAMES.get(caps.provider, caps.provider),
+                    "display_name": caps.display_name or caps.provider,
                     "purpose": _PURPOSES.get(caps.provider, "Configured specialist adapter."),
                     "owner_roster": _OWNER_ROSTER.get(caps.provider, []),
                     "state": "not_checked",
@@ -84,6 +87,11 @@ class AgentCatalogue:
                     "error": None,
                 }
             entry = copy.deepcopy(entry)
+            agent = self.agent_names().for_backend(caps.provider)
+            # SORA's name for the colleague (Cody, Aggie…); the harness keeps its own label.
+            entry["display_name"] = agent.name if agent else entry["display_name"]
+            entry["harness_name"] = caps.display_name or caps.provider
+            entry["spoken_aliases"] = list(agent.aliases) if agent else []
             entry["capabilities"] = caps.model_dump(mode="json")
             entry["configured_model"] = getattr(adapter, "model", None)
             entry["configured_effort"] = getattr(
@@ -104,7 +112,10 @@ class AgentCatalogue:
             entry["base_ref"] = preference.base_ref if preference else "HEAD"
             entry["project_boundary"] = (
                 "native Codex sandbox; live boundary acceptance pending"
-                if caps.provider == "codex-app-server" else "not implemented for this harness"
+                if caps.provider == "codex-app-server"
+                else "works directly in the selected folder; Core records the diff"
+                if callable(getattr(adapter, "for_project_root", None))
+                else "no project folder access"
             )
             if preference:
                 entry["purpose"] = preference.purpose
@@ -171,7 +182,7 @@ class AgentCatalogue:
         caps = await adapter.capabilities()
         entry: dict[str, Any] = {
             "provider": caps.provider,
-            "display_name": caps.display_name or _NAMES.get(caps.provider, caps.provider),
+            "display_name": caps.display_name or caps.provider,
             "purpose": _PURPOSES.get(caps.provider, "Configured specialist adapter."),
             "owner_roster": _OWNER_ROSTER.get(caps.provider, []),
             "checked_at": datetime.now(UTC).isoformat(),
