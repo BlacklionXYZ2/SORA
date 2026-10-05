@@ -56,12 +56,15 @@ class AgentPreference(StrictModel):
         return self
 
 class CustomEndpoint(StrictModel):
-    """An owner-added agent reached over an OpenAI-compatible API on this machine."""
+    """An owner-added agent: an OpenAI-compatible API on this machine, or an ACP command."""
 
     enabled: StrictBool = False
     nickname: str = Field(default="", max_length=40)
     spoken_aliases: str = Field(default="", max_length=400)
+    protocol: Literal["openai-compatible", "acp"] = "openai-compatible"
     port: int = Field(default=0, ge=0, le=65535)
+    command: str = Field(default="", max_length=1024)
+    arguments: str = Field(default="", max_length=1024)
     default_model: str = Field(
         default="", max_length=256, pattern=r"^(?:[^\s\x00-\x1f\x7f]+)?$",
     )
@@ -70,8 +73,12 @@ class CustomEndpoint(StrictModel):
     @model_validator(mode="after")
     def usable_when_enabled(self) -> CustomEndpoint:
         self.aliases()  # Invalid aliases are rejected even while the slot is off.
-        if self.enabled and (not self.nickname.strip() or self.port == 0):
-            raise ValueError("An enabled custom agent needs a nickname and a port")
+        if self.enabled and not self.nickname.strip():
+            raise ValueError("An enabled custom agent needs a nickname")
+        if self.enabled and self.protocol == "openai-compatible" and self.port == 0:
+            raise ValueError("An OpenAI-compatible custom agent needs a port")
+        if self.enabled and self.protocol == "acp" and not self.command.strip():
+            raise ValueError("An ACP custom agent needs a command to launch")
         return self
 
     def aliases(self) -> tuple[str, ...]:

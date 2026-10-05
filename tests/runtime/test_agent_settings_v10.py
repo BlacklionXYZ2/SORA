@@ -51,7 +51,7 @@ def test_v9_settings_migrate_to_v10_keeping_owner_descriptions(tmp_path: Path) -
 
 
 def test_custom_agent_validation() -> None:
-    with pytest.raises(ValidationError, match="nickname and a port"):
+    with pytest.raises(ValidationError, match="needs a port"):
         CustomEndpoint(enabled=True, nickname="Pip")
     with pytest.raises(ValidationError, match="Spoken alias"):
         CustomEndpoint(spoken_aliases="ok, <bad>")

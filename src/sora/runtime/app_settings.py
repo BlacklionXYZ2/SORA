@@ -140,12 +140,17 @@ CUSTOM_LABELS = {
     "enabled": "Enable this custom agent",
     "nickname": "Nickname (what SORA calls it)",
     "spoken_aliases": "Spoken aliases (comma-separated)",
-    "port": "Local port (OpenAI-compatible API at 127.0.0.1)",
+    "protocol": "Protocol (OpenAI-compatible API or Agent Client Protocol)",
+    "port": "Local port (OpenAI-compatible only; API at 127.0.0.1)",
+    "command": "Command to launch (ACP only, e.g. an executable on PATH)",
+    "arguments": "Command arguments (ACP only; quote values with spaces)",
     "default_model": "Default model",
     "purpose": "Usage description (SORA reads this to choose an agent)",
 }
 CUSTOM_HELP = (
-    "Any harness serving an OpenAI-compatible /v1/chat/completions API on this machine. "
+    "Choose the protocol. OpenAI-compatible: any harness serving /v1/chat/completions on this "
+    "machine, at the port given. ACP: SORA launches the command with its arguments for each task "
+    "and talks Agent Client Protocol over stdio, like Hermes. "
     "SORA asks it when you use its nickname or an alias, or when its usage description fits "
     "the task. Changes apply after SORA restarts, except the description, which is live."
 )

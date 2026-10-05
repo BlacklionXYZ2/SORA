@@ -11,8 +11,11 @@ Settings fits the task. Hosted agents run without permission prompts by default 
 work directly in a project folder you select; Core records the diff. Pass
 `--claude-ask-permissions` or `--antigravity-ask-permissions` to Core to opt out, and
 `--claude-model` to pick a model. **Custom agents**: in Settings → Agents · Custom agent 1–4, give
-any harness that serves an OpenAI-compatible API on this machine a nickname, spoken aliases, a port
-and a usage description, enable it, and restart SORA.
+the agent a nickname, spoken aliases and a usage description, then choose its **protocol**:
+*openai-compatible* (a harness serving `/v1/chat/completions` on `127.0.0.1` at the port you give)
+or *acp* (SORA launches the command and arguments you give for each task and talks Agent Client
+Protocol over stdio, as with Hermes). Enable it and restart SORA. An ACP agent whose command is
+not found is skipped at startup and listed among the skipped specialists.
 
 ## One-command start
 

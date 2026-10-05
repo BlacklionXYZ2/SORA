@@ -22,7 +22,11 @@ from sora.providers.antigravity import AntigravityProvider
 from sora.providers.base import ReasoningProvider
 from sora.providers.claude_code import ClaudeCodeProvider
 from sora.providers.codex import CodexAppServerProvider
-from sora.providers.custom_endpoint import CustomEndpointProvider
+from sora.providers.custom_endpoint import (
+    CustomACPProvider,
+    CustomEndpointProvider,
+    split_command_arguments,
+)
 from sora.providers.hermes import HermesACPProvider
 from sora.providers.llama_server import LlamaOptions
 from sora.providers.mock import DeterministicProvider, FaultMode
@@ -497,7 +501,23 @@ def build_provider_registry(
     if auto and agents is not None:
         # Owner-added agents from Settings; each is reached by its nickname or description.
         for key, endpoint in agents.custom_endpoints().items():
-            if endpoint.enabled:
+            if not endpoint.enabled:
+                continue
+            if endpoint.protocol == "acp":
+                if shutil.which(endpoint.command.strip()) is None and not Path(
+                    endpoint.command.strip(),
+                ).is_file():
+                    skipped.append(f"{key}: '{endpoint.command.strip()}' was not found")
+                    continue
+                registry[key] = CustomACPProvider(
+                    key,
+                    nickname=endpoint.nickname.strip(),
+                    command=endpoint.command.strip(),
+                    args=split_command_arguments(endpoint.arguments),
+                    cwd=str(workspace),
+                    timeout_seconds=arguments.task_timeout,
+                )
+            else:
                 registry[key] = CustomEndpointProvider(
                     key,
                     nickname=endpoint.nickname.strip(),

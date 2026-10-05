@@ -100,7 +100,10 @@
       "enabled": false,
       "nickname": "",
       "spoken_aliases": "",
+      "protocol": "openai-compatible",
       "port": 0,
+      "command": "",
+      "arguments": "",
       "default_model": "",
       "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
     },
@@ -108,7 +111,10 @@
       "enabled": false,
       "nickname": "",
       "spoken_aliases": "",
+      "protocol": "openai-compatible",
       "port": 0,
+      "command": "",
+      "arguments": "",
       "default_model": "",
       "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
     },
@@ -116,7 +122,10 @@
       "enabled": false,
       "nickname": "",
       "spoken_aliases": "",
+      "protocol": "openai-compatible",
       "port": 0,
+      "command": "",
+      "arguments": "",
       "default_model": "",
       "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
     },
@@ -124,7 +133,10 @@
       "enabled": false,
       "nickname": "",
       "spoken_aliases": "",
+      "protocol": "openai-compatible",
       "port": 0,
+      "command": "",
+      "arguments": "",
       "default_model": "",
       "purpose": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents."
     }

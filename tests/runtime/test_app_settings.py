@@ -81,7 +81,7 @@ def test_all_preferences_have_controls_and_tiers() -> None:
 
 def test_gui_categories_cover_every_v10_preference_once_without_new_authority() -> None:
     keys = [key for group in SETTINGS_CATEGORY_KEYS.values() for key in group]
-    assert len(keys) == len(set(keys)) == len(FIELDS) == 117
+    assert len(keys) == len(set(keys)) == len(FIELDS) == 129
     assert set(keys) == set(TIERS)
     assert SETTINGS_ADVANCED_KEYS <= set(keys)
     assert len(SETTINGS_CATEGORIES) == 10

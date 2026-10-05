@@ -152,3 +152,107 @@ async def test_runtime_delegates_to_a_custom_agent_by_nickname(tmp_path: Path) -
         assert snapshot["providers"][0]["display_name"] == "Pip"
     finally:
         await runtime.close()
+
+
+# A stand-in ACP agent: prose answer, records the model it was switched to and its cwd.
+FAKE_ACP = """
+import json, os, sys
+model = None
+for line in sys.stdin:
+    m = json.loads(line); method = m.get('method'); rid = m.get('id'); params = m.get('params', {})
+    if method == 'initialize':
+        out = {'protocolVersion': 1}
+    elif method == 'session/new':
+        out = {'sessionId': 'acp-session-1'}
+    elif method == 'session/set_model':
+        model = params['modelId']; out = {}
+    elif method == 'session/prompt':
+        text = params['prompt'][0]['text']
+        open('touched.txt', 'w').write('acp was here')
+        answer = ('Summarised. ' + json.dumps({'conclusion': 'Summary by ' + str(model),
+                  'files_changed': ['touched.txt']}) if 'TASK:' in text else 'no task')
+        update = {'update': {'sessionUpdate': 'agent_message_chunk', 'content': {'text': answer}}}
+        print(json.dumps({'jsonrpc': '2.0', 'method': 'session/update', 'params': update}),
+              flush=True)
+        out = {'stopReason': 'end_turn'}
+    else:
+        out = {}
+    print(json.dumps({'jsonrpc': '2.0', 'id': rid, 'result': out}), flush=True)
+"""
+
+
+@pytest.mark.asyncio
+async def test_acp_custom_agent_runs_a_task_and_switches_model(tmp_path: Path) -> None:
+    from sora.providers.custom_endpoint import CustomACPProvider
+
+    script = tmp_path / "fake_acp.py"
+    script.write_text(FAKE_ACP, encoding="utf-8")
+    import sys
+
+    agent = CustomACPProvider("custom-2", nickname="Juniper", command=sys.executable,
+                              args=(str(script),), cwd=str(tmp_path), timeout_seconds=10)
+    caps = await agent.capabilities()
+    assert caps.provider == "custom-2" and caps.display_name == "Juniper" and caps.resume
+    run_id = await agent.start(make_request(model="june-large"))
+    result = await agent.result(run_id)
+    assert result.conclusion == "Summary by june-large"
+    assert result.files_changed == ("touched.txt",)
+    assert result.patch is None or result.patch.provenance == "Juniper normalized result"
+    assert await agent.session_id(run_id) == "acp-session-1"
+    assert (tmp_path / "touched.txt").exists()
+    project = tmp_path / "project"
+    project.mkdir()
+    bound = agent.for_project_root(str(project))
+    await bound.start(make_request(run_id="run-in-project"))
+    await bound.result("run-in-project")
+    assert (project / "touched.txt").exists() and bound.writer_stopped("run-in-project")
+
+
+@pytest.mark.asyncio
+async def test_acp_custom_agent_that_is_missing_reports_unavailable(tmp_path: Path) -> None:
+    from sora.providers.custom_endpoint import CustomACPProvider
+
+    agent = CustomACPProvider("custom-2", nickname="Juniper", command=str(tmp_path / "nope"))
+    with pytest.raises(ProviderLaunchError) as raised:
+        await agent.start(make_request())
+    assert raised.value.code is ProviderErrorCode.UNAVAILABLE
+    assert "Juniper (ACP) could not be started" in str(raised.value)
+
+
+def test_acp_settings_validation_and_argument_splitting() -> None:
+    from pydantic import ValidationError
+
+    from sora.providers.custom_endpoint import split_command_arguments
+
+    CustomEndpoint(enabled=True, nickname="Juniper", protocol="acp", command="juniper")
+    with pytest.raises(ValidationError, match="needs a command"):
+        CustomEndpoint(enabled=True, nickname="Juniper", protocol="acp")
+    with pytest.raises(ValidationError, match="needs a port"):
+        CustomEndpoint(enabled=True, nickname="Pip")
+    assert split_command_arguments('acp --root "C:\\My Projects" -v') == (
+        "acp", "--root", "C:\\My Projects", "-v",
+    )
+
+
+def test_startup_registers_acp_agents_and_skips_missing_commands(tmp_path: Path) -> None:
+    import sys
+
+    import sora.__main__ as cli
+    from sora.providers.custom_endpoint import CustomACPProvider
+
+    arguments = cli.parser().parse_args([
+        "--root", str(tmp_path), "--claude-command", "no-claude", "--hermes-command",
+        "no-hermes", "--codex-command", "no-codex", "--antigravity-command", "no-agy",
+    ])
+    agents = AgentPreferences(
+        custom_1=CustomEndpoint(enabled=True, nickname="Juniper", protocol="acp",
+                                command=sys.executable, arguments='agent.py --acp'),
+        custom_2=CustomEndpoint(enabled=True, nickname="Ghost", protocol="acp",
+                                command=str(tmp_path / "missing-agent")),
+    )
+    plan = cli.build_provider_registry(arguments, agents)
+    agent = plan.registry["custom-1"]
+    assert isinstance(agent, CustomACPProvider)
+    assert agent.args == ("agent.py", "--acp") and agent.nickname == "Juniper"
+    assert "custom-2" not in plan.registry
+    assert any(item.startswith("custom-2:") for item in plan.skipped)

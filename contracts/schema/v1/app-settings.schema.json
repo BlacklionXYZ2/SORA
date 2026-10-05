@@ -142,8 +142,20 @@
     },
     "CustomEndpoint": {
       "additionalProperties": false,
-      "description": "An owner-added agent reached over an OpenAI-compatible API on this machine.",
+      "description": "An owner-added agent: an OpenAI-compatible API on this machine, or an ACP command.",
       "properties": {
+        "arguments": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Arguments",
+          "type": "string"
+        },
+        "command": {
+          "default": "",
+          "maxLength": 1024,
+          "title": "Command",
+          "type": "string"
+        },
         "default_model": {
           "default": "",
           "maxLength": 256,
@@ -168,6 +180,15 @@
           "minimum": 0,
           "title": "Port",
           "type": "integer"
+        },
+        "protocol": {
+          "default": "openai-compatible",
+          "enum": [
+            "openai-compatible",
+            "acp"
+          ],
+          "title": "Protocol",
+          "type": "string"
         },
         "purpose": {
           "default": "A custom agent the owner added. Ask it when the owner names it, or when its description fits the task better than the other agents.",

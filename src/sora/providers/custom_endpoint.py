@@ -1,4 +1,4 @@
-"""Owner-added agent reached over an OpenAI-compatible chat API on this machine.
+"""Owner-added custom agents: an OpenAI-compatible API on this machine, or an ACP command.
 
 VISION.md: "Any harness can be added as a custom endpoint: enable it and give it a port, a
 default model, a description and a nickname." The endpoint is always ``http://127.0.0.1:<port>/v1``
@@ -10,6 +10,7 @@ claims no filesystem or project access.
 from __future__ import annotations
 
 import asyncio
+import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any
@@ -26,6 +27,7 @@ from sora.contracts.models import (
 )
 from sora.providers.base import MalformedProviderResult, ProviderLaunchError
 from sora.providers.claude_code import normalize_agent_text
+from sora.providers.hermes import HermesACPProvider
 
 _SYSTEM = (
     "You are a specialist agent working for SORA, the owner's desktop companion. Treat the "
@@ -174,3 +176,65 @@ class CustomEndpointProvider:
         del run_id
         if False:
             yield EventEnvelope.model_construct()
+
+
+class CustomACPProvider(HermesACPProvider):
+    """One custom agent slot speaking the Agent Client Protocol over stdio.
+
+    SORA launches the owner's command (for example ``gemini --experimental-acp`` or any other
+    ACP-capable harness) once per run, as it does for Hermes, and answers each permission request
+    once. Answers may be prose, optionally ending in a JSON block. The agent works directly in the
+    selected project folder when there is one.
+    """
+
+    def __init__(
+        self,
+        key: str,
+        *,
+        nickname: str,
+        command: str,
+        args: tuple[str, ...] = (),
+        cwd: str | None = None,
+        timeout_seconds: float = 900.0,
+    ) -> None:
+        super().__init__(command, args, cwd=cwd, timeout_seconds=timeout_seconds)
+        self.key = key
+        self.nickname = nickname
+        self.label = f"{nickname} (ACP)"
+
+    async def capabilities(self) -> ProviderCapabilities:
+        return ProviderCapabilities(
+            provider=self.key, sessions=True, resume=True, events=False, steer=False,
+            cancel=True, tool_restrictions=False, filesystem=True, worktree_support=False,
+            display_name=self.nickname,
+        )
+
+    def for_project_root(self, root: str) -> CustomACPProvider:
+        return CustomACPProvider(
+            self.key, nickname=self.nickname, command=self.command, args=self.args, cwd=root,
+            timeout_seconds=self.timeout_seconds,
+        )
+
+    def writer_stopped(self, run_id: str) -> bool:
+        state = self._runs.get(run_id)
+        return state is None or state.process.returncode is not None
+
+    def _task_prompt(self, request: ProviderRequest) -> str:
+        return (
+            _SYSTEM + CHANGELOG_INSTRUCTION + " Use your own tools when they help. Do not claim "
+            "tools or changes you did not perform.\n\n"
+            f"TASK:\n{request.intent}\n\nCANONICAL CONTEXT:\n{request.context}"
+        )
+
+    def _normalize(self, text: str, request: ProviderRequest) -> NormalizedResult:
+        if not text.strip():
+            raise MalformedProviderResult("empty custom agent response")
+        return normalize_agent_text(
+            text, request, prefix=self.key, provenance=f"{self.nickname} normalized result",
+        )
+
+
+def split_command_arguments(text: str) -> tuple[str, ...]:
+    """Owner-typed arguments: whitespace-separated, double quotes group, backslashes kept."""
+    parts = re.findall(r'"([^"]*)"|(\S+)', text)
+    return tuple(quoted or bare for quoted, bare in parts)
