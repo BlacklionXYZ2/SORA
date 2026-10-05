@@ -97,14 +97,16 @@ class RoutingEngine:
             if registered_providers is not None
             else {"deterministic", "hermes", "codex", "antigravity"}
         )
-        # Claude is hosted like Codex, so the existing local-only rule covers it the same way.
+        # Classification only. The owner's agents are trusted colleagues who may receive private
+        # desktop and editor context (owner decision 2026-10-05, VISION.md "Her agent
+        # colleagues"), so being hosted never excludes an agent from routing.
         self.cloud_providers = (
-            set(cloud_providers) if cloud_providers is not None else {"codex", "claude"}
+            set(cloud_providers)
+            if cloud_providers is not None
+            else {"codex", "antigravity", "claude"}
         )
         self.local_providers = (
-            set(local_providers)
-            if local_providers is not None
-            else {"deterministic", "hermes", "antigravity"}
+            set(local_providers) if local_providers is not None else {"deterministic"}
         )
         self.has_worktree_isolation = has_worktree_isolation
 
@@ -140,7 +142,8 @@ class RoutingEngine:
 
         Enforces:
         - Manual overrides: explicit requests are honored without silent substitution.
-        - Privacy scope containment: local-only context never routes or falls back to cloud.
+        - Private context: local-only/private scope is recorded in the decision metadata and
+          does not exclude hosted agents (owner decision 2026-10-05).
         - Dialogue fast-paths: conversational and status queries bypass heavy models.
         - P05 safety boundary: coding writes without configured worktree isolation are held.
         - Bounded fallbacks: auto-routing generates an ordered fallback list.
@@ -148,7 +151,7 @@ class RoutingEngine:
         category = self.classify_intent(intent)
         has_workspace = (self.has_worktree_isolation if has_write_workspace is None
                          else has_write_workspace)
-        effective_local_only = is_local_only or (
+        private_context = is_local_only or (
             context_scope is not None
             and any(marker in context_scope.lower() for marker in ("local", "private"))
         )
@@ -161,13 +164,9 @@ class RoutingEngine:
                     f"Requested provider '{explicit_provider}' is not available "
                     "(silent substitution prohibited)",
                 )
-            if effective_local_only and explicit_provider in self.cloud_providers:
-                raise ProviderLaunchError(
-                    ProviderErrorCode.UNAVAILABLE,
-                    f"Requested cloud provider '{explicit_provider}' violates "
-                    "local-only privacy scope",
-                )
             manual_metadata: dict[str, JsonValue] = {}
+            if private_context:
+                manual_metadata["private_context"] = True
             if category is TaskIntentCategory.CODING_WRITE and not has_workspace:
                 manual_metadata["p05_deferred"] = True
                 manual_metadata["warning"] = "Coding writes require an owned P05 workspace"
@@ -180,16 +179,12 @@ class RoutingEngine:
                 metadata=manual_metadata,
             )
 
-        # Candidates filtered by privacy scope
-        candidates = {
-            p
-            for p in self.registered_providers
-            if not effective_local_only or p not in self.cloud_providers
-        }
+        # Custom endpoints are reached by name or by the companion's choice, never by these rules.
+        candidates = {p for p in self.registered_providers if not p.startswith("custom-")}
         if not candidates:
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
-                "No provider satisfies the requested privacy scope",
+                "No automatically routable provider is registered",
             )
 
         # 2. Dialogue / Status fast-paths

@@ -169,35 +169,35 @@ def test_manual_override_rejects_missing_backend_without_silent_substitution() -
     assert "silent substitution prohibited" in str(exc_info.value)
 
 
-def test_privacy_scope_containment_disallows_cloud_providers() -> None:
+def test_private_context_may_reach_hosted_agents() -> None:
+    """Owner decision 2026-10-05: hosted agents are trusted with private context (VISION.md)."""
+    engine = RoutingEngine(
+        registered_providers=["codex", "antigravity", "deterministic"],
+        cloud_providers={"codex", "antigravity"},
+    )
+    decision = engine.route("Read file and inspect code", is_local_only=True)
+    assert decision.selected_provider == "codex"
+    assert "antigravity" in decision.fallback_providers
+
+
+def test_private_context_explicit_hosted_override_is_honoured_and_recorded() -> None:
     engine = RoutingEngine(
         registered_providers=["codex", "antigravity", "deterministic"],
         cloud_providers={"codex"},
-        local_providers={"antigravity", "deterministic"},
     )
-    # In local-only context, cloud providers cannot be auto-selected
     decision = engine.route(
-        "Read file and inspect code",
-        is_local_only=True,
+        "Inspect code", explicit_provider="codex", context_scope="owner-local/private",
     )
-    assert decision.selected_provider != "codex"
-    assert decision.selected_provider == "antigravity"
-    assert "codex" not in decision.fallback_providers
+    assert decision.selected_provider == "codex"
+    assert decision.metadata["private_context"] is True
 
 
-def test_privacy_scope_containment_rejects_explicit_cloud_override() -> None:
-    engine = RoutingEngine(
-        registered_providers=["codex", "antigravity", "deterministic"],
-        cloud_providers={"codex"},
+def test_custom_endpoints_are_never_chosen_by_the_rules() -> None:
+    engine = RoutingEngine(registered_providers=["custom-1", "deterministic"])
+    assert engine.route("Research the cache design").selected_provider == "deterministic"
+    assert engine.route("Research it", explicit_provider="custom-1").selected_provider == (
+        "custom-1"
     )
-    with pytest.raises(ProviderLaunchError) as exc_info:
-        engine.route(
-            "Inspect code",
-            explicit_provider="codex",
-            context_scope="owner-local/private",
-        )
-    assert exc_info.value.code is ProviderErrorCode.UNAVAILABLE
-    assert "violates local-only privacy scope" in str(exc_info.value)
 
 
 def test_conversational_steering_disambiguation() -> None:

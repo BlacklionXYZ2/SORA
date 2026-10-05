@@ -192,11 +192,11 @@ def test_auto_registry_adds_claude_only_when_installed(tmp_path: Path) -> None:
     assert provider.cwd == str((tmp_path / "workspace").resolve())
 
 
-def test_router_treats_claude_as_hosted_like_codex() -> None:
+def test_router_sends_private_context_to_claude_when_named() -> None:
     from sora.routing.router import RoutingEngine
 
     engine = RoutingEngine(registered_providers={"claude", "deterministic"})
     assert "claude" in engine.cloud_providers
-    assert engine.route("Explain this", explicit_provider="claude").selected_provider == "claude"
-    with pytest.raises(ProviderLaunchError):
-        engine.route("Explain this", explicit_provider="claude", is_local_only=True)
+    decision = engine.route("Explain this", explicit_provider="claude", is_local_only=True)
+    assert decision.selected_provider == "claude"
+    assert decision.metadata["private_context"] is True

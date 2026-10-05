@@ -224,11 +224,14 @@ def test_p03a6_public_profile_bio_is_not_a_private_file_line() -> None:
 # --- P06.2 / P06.3 privacy routing ---------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True, reason="P06.2 gap: Antigravity (Google-hosted) counts as a local provider"
-)
+# The original P06.2/P06.3 criterion ("no cloud fallback for local-only context") was retired by
+# owner decision on 2026-10-05: hosted agents are trusted colleagues and may receive private
+# context (VISION.md). The two strict expected failures that pinned the old gap are replaced by
+# these tests of the new criterion.
+
+
 @pytest.mark.asyncio
-async def test_p06_local_only_task_is_not_sent_to_a_hosted_specialist(tmp_path: Path) -> None:
+async def test_p06_local_only_task_may_reach_a_hosted_specialist(tmp_path: Path) -> None:
     antigravity = MockSpecialistProvider("antigravity")
     runtime = _runtime(
         tmp_path,
@@ -239,29 +242,20 @@ async def test_p06_local_only_task_is_not_sent_to_a_hosted_specialist(tmp_path: 
     try:
         receipt = await runtime.submit_task("Research the cache design", is_local_only=True)
         await runtime.wait_for_task(receipt.task.task_id)
-        assert antigravity.started_runs == []
+        assert len(antigravity.started_runs) == 1
     finally:
         await runtime.close()
 
 
-@pytest.mark.xfail(strict=True, reason="P06.3 gap: the fallback re-route drops the privacy flag")
 @pytest.mark.asyncio
-async def test_p06_fallback_keeps_local_only_privacy(tmp_path: Path) -> None:
-    """Latent today (no provider the router calls cloud is ever a fallback); live once fixed.
-
-    With hosted providers correctly classified, the local-only task starts on the local
-    provider. When that launch fails, the re-route ignores privacy, selects Antigravity and
-    falls back to Hermes, sending local-only context to a hosted model.
-    """
+async def test_p06_fallback_for_private_context_still_reaches_a_working_agent(
+    tmp_path: Path,
+) -> None:
     hermes = MockSpecialistProvider("hermes")
-    antigravity = MockSpecialistProvider("antigravity")
+    antigravity = MockSpecialistProvider("antigravity", fail_unavailable=True)
     runtime = _runtime(
         tmp_path,
-        {
-            "deterministic": MockSpecialistProvider("deterministic", fail_unavailable=True),
-            "hermes": hermes,
-            "antigravity": antigravity,
-        },
+        {"hermes": hermes, "antigravity": antigravity, "deterministic": DeterministicProvider()},
         RoutingEngine(
             registered_providers={"deterministic", "hermes", "antigravity"},
             cloud_providers={"hermes", "antigravity"},
@@ -271,7 +265,7 @@ async def test_p06_fallback_keeps_local_only_privacy(tmp_path: Path) -> None:
     try:
         receipt = await runtime.submit_task("Research the cache design", is_local_only=True)
         await runtime.wait_for_task(receipt.task.task_id)
-        assert hermes.started_runs == [] and antigravity.started_runs == []
+        assert len(hermes.started_runs) == 1
     finally:
         await runtime.close()
 
