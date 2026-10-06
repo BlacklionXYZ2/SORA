@@ -1,6 +1,6 @@
 # SORA
 
-SORA (Spatial Operator for Recursive Antics) is a digital person living on a Windows desktop:
+SORA is a digital person living on a Windows desktop:
 one continuous character with her own personality, presence and capabilities, a local brain,
 voice, screen awareness, a 3D body and trusted specialist agents (Cody, Hermes, Aggie and
 Claude) for heavy work. Her identity, memory and task state live in Core, not in any model.
