@@ -403,10 +403,13 @@ async def test_default_desktop_seed_is_metadata_only_and_loop_has_six_steps(
 def test_normal_launcher_wires_native_observation() -> None:
     script = (IDENTITY_ROOT.parent / "scripts/start-manual-test.ps1").read_text()
     assert '"--windows-bridge", $observationHelper' in script
-    assert "$observationProject," in script
-    # Root Start-SORA delegates here: all native helpers must be built and passed.
+    # Root Start-SORA delegates here: all native helpers must be built (a failed helper build
+    # stops the start) and passed to Core.
+    [helper_builds] = [line for line in script.splitlines()
+                       if "foreach ($project in @($captureProject" in line]
+    for name in ("observation", "action", "type"):
+        assert f"${name}Project" in helper_builds
     for name in ("action", "type"):
-        assert f"${name}Project," in script
         assert f'"--windows-{name}", ${name}Helper' in script
     root = (IDENTITY_ROOT.parent / "Start-SORA.ps1").read_text()
     assert '"scripts/start-manual-test.ps1"' in root

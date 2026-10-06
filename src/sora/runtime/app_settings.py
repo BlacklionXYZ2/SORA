@@ -126,8 +126,10 @@ LABELS = {
     "dialogue.backend": "Model source",
     "dialogue.context_max_chars": "Prompt budget (characters)",
     "dialogue.timeout_seconds": "Dialogue timeout (seconds)",
-    "llama.model_path": "Model GGUF",
-    "llama.mmproj_path": "Vision projector GGUF",
+    "llama.model_path": "Brain model file (GGUF)",
+    "llama.mmproj_path": "Vision projector file (GGUF, found automatically beside the model)",
+    "external.model": "External server model ID",
+    "external.base_url": "External server URL",
     "llama.context_size": "Context length (tokens)",
     "llama.gpu_layers": "GPU offload layers",
     "llama.cache_type_k": "K cache quantisation",
@@ -352,6 +354,11 @@ def field_definitions() -> list[dict[str, Any]]:
                 if key.startswith("local_companion.")
                 else "Speculative decoding"
                 if ".speculative." in key
+                # The brain's own files come first in Models, apart from tuning knobs.
+                else "Brain (local model)"
+                if key in {"llama.model_path", "llama.mmproj_path"}
+                else "External server (only when Model source is external)"
+                if key.startswith("external.")
                 else "Model & performance"
                 if key.startswith("llama.")
                 else key.split(".")[0].title()

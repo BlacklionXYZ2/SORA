@@ -110,16 +110,21 @@ else {
 $dialogueArguments += @("--settings", $settingsFile)
 Push-Location $projectRoot
 try {
+    # Core needs these helpers, so a failed build stops the start.
+    foreach ($project in @($captureProject, $observationProject, $actionProject, $typeProject)) {
+        & dotnet build $project --verbosity quiet
+        if ($LASTEXITCODE -ne 0) { throw "Build failed: $project" }
+    }
+    # The frozen full app and widget are not needed to run Core. An open copy locks its .exe,
+    # so a failed rebuild must not stop SORA from starting; warn and keep the previous build.
     foreach ($project in @(
-        $captureProject,
-        $observationProject,
-        $actionProject,
-        $typeProject,
         (Join-Path $projectRoot "clients/desktop_widget/desktop_widget.csproj"),
         (Join-Path $projectRoot "clients/desktop_app/desktop_app.csproj")
     )) {
         & dotnet build $project --verbosity quiet
-        if ($LASTEXITCODE -ne 0) { throw "Build failed: $project" }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Could not rebuild $project (is it open?). Continuing with its previous build."
+        }
     }
     if (-not (Test-Path -LiteralPath $captureHelper -PathType Leaf)) {
         throw "Windows capture helper was not built: $captureHelper"

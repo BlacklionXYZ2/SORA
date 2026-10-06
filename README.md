@@ -5,7 +5,8 @@ one continuous character with her own personality, presence and capabilities, a 
 voice, screen awareness, a 3D body and trusted specialist agents (Cody, Hermes, Aggie and
 Claude) for heavy work. Her identity, memory and task state live in Core, not in any model.
 
-**Read [VISION.md](VISION.md) first. It is the top authority.** The current milestone is
+**Using SORA? Read [HOW_TO_USE.md](HOW_TO_USE.md)** (kept current with every change).
+**Working on SORA? Read [VISION.md](VISION.md) first. It is the top authority.** The current milestone is
 [V1](V1.md): a usable product you can talk to, and who talks, moves and indicates back.
 
 ## Current state (2026-10-05)
@@ -31,11 +32,10 @@ Claude) for heavy work. Her identity, memory and task state live in Core, not in
 ```powershell
 .\scripts\bootstrap.ps1          # create the locked Python environment
 .\scripts\verify.ps1             # Python tests, lint, strict typing, schema and PWA checks
-.\Start-SORA.ps1 -Client Shell   # build, start Core, open the native app (windowless SORA)
+.\Start-SORA.ps1                 # build, start Core, open the native app (windowless SORA)
 ```
 
-Plain `.\Start-SORA.ps1` still opens the older, frozen full app; V1 makes the native app the
-default.
+The native app is the default. `-Client Desktop` still opens the older, frozen full app.
 
 `Start-SORA.ps1` keeps state in `.local/manual-test`, binds Core to `127.0.0.1` and registers
 the specialists installed on this machine. See [local try-out](docs/runbooks/SORA_LOCAL_TRYOUT.md)
@@ -60,7 +60,7 @@ Headless Core, CLI and per-provider commands (`python -m sora --once …`, `--pr
 | `src/sora/` | Python Core: runtime, API, persistence, providers, routing, workspaces, desktop, voice, vision, embodiment |
 | `tests/` | Python test suite. Hardware, native and live-model tests are opt-in skips |
 | `contracts/` | Versioned JSON Schemas (`schema/v1`) exported from the Pydantic contracts |
-| `clients/desktop_shell/` | **The native app**, SORA's only active client (opt-in launch until V1 makes it the default) |
+| `clients/desktop_shell/` | **The native app**, SORA's only active client and the default launch |
 | `clients/desktop_app/`, `clients/desktop_widget/` | Older full app and compact widget. **Frozen**: kept, not developed |
 | `clients/unity/` | Unity 6 avatar/overlay project |
 | `clients/windows_*` | Out-of-process Windows helpers: UIA observation, capture, press, type |
@@ -79,6 +79,7 @@ committed.
 
 | Read | For |
 |---|---|
+| [HOW_TO_USE.md](HOW_TO_USE.md) | **How to use SORA as it is today**, kept current with every change |
 | [VISION.md](VISION.md) | **Top authority:** who SORA is, how she works, where she is going |
 | [V1.md](V1.md) | The current milestone: scope, acceptance test, what is left |
 | [SORA_GUI_IMPLEMENTATION_ROADMAP.md](SORA_GUI_IMPLEMENTATION_ROADMAP.md) | GUI stage status (§4.0), stages and acceptance gates |

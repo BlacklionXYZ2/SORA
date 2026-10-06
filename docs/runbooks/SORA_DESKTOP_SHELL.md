@@ -1,6 +1,6 @@
 # Opt-in SORA desktop host and UI preferences
 
-The new desktop host is an opt-in developer/QA entry point during the GUI roadmap. It supports managed Core launch through root `Start-SORA.ps1 -Client Shell` and `scripts/start-full-sora.ps1 -Client Shell`, but is **not the ordinary default or the finished reference-style GUI**. Existing Desktop/Widget/Browser modes remain available; Desktop remains the default.
+The new desktop host is an opt-in developer/QA entry point during the GUI roadmap. It supports managed Core launch through root `Start-SORA.ps1 -Client Shell` and `scripts/start-full-sora.ps1 -Client Shell`, and is **the ordinary default since 2026-10-06** (V1; owner decision that only the native app is developed). It is not yet the finished reference-style GUI. The frozen Desktop/Widget/Browser modes remain available with `-Client`.
 
 ## Open the host
 

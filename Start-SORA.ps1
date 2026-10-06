@@ -3,7 +3,7 @@ param(
     [ValidateRange(1024, 65535)]
     [int]$Port = 8765,
     [ValidateSet("Desktop", "Widget", "Browser", "Shell")]
-    [string]$Client = "Desktop",
+    [string]$Client = "Shell",
     [string]$DialogueModel,
     [string]$DialogueBaseUrl = "http://127.0.0.1:1234/v1",
     [string]$LlamaConfig,
@@ -44,6 +44,19 @@ if (-not (Test-Path -LiteralPath $coreScript -PathType Leaf) -or
     -not (Test-Path -LiteralPath $openScript -PathType Leaf)) {
     throw "SORA's startup scripts are missing from $projectRoot."
 }
+function ConvertTo-NativeArgument([string]$Value) {
+    # Windows command-line quoting (CommandLineToArgvW rules). ProcessStartInfo.ArgumentList
+    # does not exist in Windows PowerShell 5.1, so the native app's arguments are joined here.
+    if ($Value -eq "") { return '""' }
+    if ($Value -notmatch '[\s"]') { return $Value }
+    $escaped = [regex]::Replace($Value, '(\\*)"', { param($m) ($m.Groups[1].Value * 2) + '\"' })
+    $escaped = [regex]::Replace($escaped, '(\\+)$', { param($m) $m.Groups[1].Value * 2 })
+    return '"' + $escaped + '"'
+}
+
+# The native app is the ordinary client (V1). It owns SORA's lifetime, so a headless
+# -NoClient start without an explicit client keeps the plain Core path.
+if ($NoClient -and -not $PSBoundParameters.ContainsKey('Client')) { $Client = "Desktop" }
 if ($Client -eq "Shell") {
     if ($NoClient) { throw "-Client Shell owns presence and service lifetime; do not combine it with -NoClient." }
     $shellProject = Join-Path $projectRoot "clients/desktop_shell/desktop_shell.csproj"
@@ -54,6 +67,7 @@ if ($Client -eq "Shell") {
     $hostStart.UseShellExecute = $false
     $hostStart.CreateNoWindow = $true
     $hostStart.WorkingDirectory = $projectRoot
+    $shellArgs = [Collections.Generic.List[string]]::new()
     foreach ($argument in @("--core-url", $coreUrl, "--token-file", $tokenFile,
         "--state-root", $StateRoot, "--show", $ShellPanel,
         "--managed-project-root", $projectRoot,
@@ -64,7 +78,7 @@ if ($Client -eq "Shell") {
         "--managed-antigravity-skip-permissions", "$($AntigravitySkipPermissions.IsPresent)".ToLowerInvariant(),
         "--managed-unified-settings-only", "$($UnifiedSettingsOnly.IsPresent)".ToLowerInvariant(),
         "--managed-discovery", $(if ($PSBoundParameters.ContainsKey("Port")) { "explicit" } else { "default" }))) {
-        $hostStart.ArgumentList.Add($argument)
+        $shellArgs.Add($argument)
     }
     foreach ($selection in @(
         @("--managed-settings", $Settings), @("--managed-llama-config", $LlamaConfig),
@@ -72,18 +86,19 @@ if ($Client -eq "Shell") {
         @("--managed-write-repo", $WriteRepo)
     )) {
         if ($selection[1]) {
-            $hostStart.ArgumentList.Add($selection[0])
-            $hostStart.ArgumentList.Add([IO.Path]::GetFullPath($selection[1]))
+            $shellArgs.Add($selection[0])
+            $shellArgs.Add([IO.Path]::GetFullPath($selection[1]))
         }
     }
     if ($DialogueModel) {
-        $hostStart.ArgumentList.Add("--managed-model"); $hostStart.ArgumentList.Add($DialogueModel)
-        $hostStart.ArgumentList.Add("--managed-model-url"); $hostStart.ArgumentList.Add($DialogueBaseUrl)
+        $shellArgs.Add("--managed-model"); $shellArgs.Add($DialogueModel)
+        $shellArgs.Add("--managed-model-url"); $shellArgs.Add($DialogueBaseUrl)
     }
     foreach ($selection in @(@("--managed-codex-model", $CodexModel),
         @("--managed-antigravity-model", $AntigravityModel), @("--managed-antigravity-effort", $AntigravityEffort))) {
-        if ($selection[1]) { $hostStart.ArgumentList.Add($selection[0]); $hostStart.ArgumentList.Add($selection[1]) }
+        if ($selection[1]) { $shellArgs.Add($selection[0]); $shellArgs.Add($selection[1]) }
     }
+    $hostStart.Arguments = ($shellArgs | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' '
     $hostProcess = [Diagnostics.Process]::Start($hostStart)
     Write-Host "SORA desktop host requested for $StateRoot (host/forwarder PID $($hostProcess.Id))."
     Write-Host "The host verifies profile ownership before startup. Use tray/menu for recovery and owned Quit."

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -29,6 +30,7 @@ from sora.contracts.companion_read import (
     FinishRead,
     InspectWindow,
 )
+from sora.contracts.desktop import DesktopNode
 from sora.desktop.targets import DesktopTargetError
 from sora.providers.dialogue import (
     CompanionCallProvider,
@@ -84,6 +86,7 @@ class ReadTurn:
     action_error: str | None = None
     memory_target: MemoryTarget | None = None
     memory_supplied: tuple[str, ...] = ()
+    move_window: DesktopNode | None = None
 
 
 async def collect_reads(
@@ -113,6 +116,7 @@ async def collect_reads(
     memory_target: MemoryTarget | None = None
     presentation_target: str | None = None
     action_error: str | None = None
+    move_window: DesktopNode | None = None
     operations = {"finish"}
     if file_read:
         operations.update({"list_files", "search_files", "read_file"})
@@ -250,6 +254,16 @@ async def collect_reads(
                             presentation_target = tools.presentation_targets.resolve(action.target)
                         except DesktopTargetError as exc:
                             action_error = str(exc)
+                    if isinstance(action, Move) and action.window is not None:
+                        stored = tools.windows.get(action.window)
+                        if stored is None or time.monotonic() - stored[1] > 60:
+                            action_error = (
+                                "That window reference is not current; list windows again"
+                            )
+                        elif stored[0].rect is None or stored[0].offscreen:
+                            action_error = "That window is minimized or has no position on screen"
+                        else:
+                            move_window = stored[0]
                     if isinstance(action, PresentMemory):
                         assert memory is not None
                         try:
@@ -360,4 +374,5 @@ async def collect_reads(
         action_error,
         memory_target,
         supplied,
+        move_window,
     )

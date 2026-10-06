@@ -42,7 +42,7 @@ param(
     [switch]$NoAvatar,
     [switch]$NoClient,
     [ValidateSet("Desktop", "Widget", "Browser", "Shell")]
-    [string]$Client = "Desktop",
+    [string]$Client = "Shell",
     [switch]$SetupVoice,
     [ValidateSet("none", "chat", "voice", "memory", "activity", "agents", "paths", "board", "content", "integrations", "settings", "appearance", "menu", "quit")]
     [string]$ShellPanel = "none",
@@ -52,6 +52,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+# The native app is the ordinary client (V1). It owns SORA's lifetime, so a headless
+# -NoClient start without an explicit client keeps the plain Core path.
+if ($NoClient -and -not $PSBoundParameters.ContainsKey('Client')) { $Client = "Desktop" }
 if ($Client -eq "Shell") {
     # Delegate before helper builds, setup or default-port selection. Only the
     # singleton primary may start services, using the fixed typed manual script.

@@ -26,7 +26,8 @@ from sora.contracts.models import (
     ProviderRequest,
 )
 from sora.providers.base import MalformedProviderResult, ProviderLaunchError, optional_text
-from sora.providers.windows_job import WindowsWriterJob, job_name
+from sora.providers.process_tree import OwnedProcess
+from sora.providers.windows_job import WindowsWriterJob
 from sora.workspaces import GitWorkspaceManager, WorkspaceError, WorkspaceRecord
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL | re.IGNORECASE)
@@ -312,56 +313,32 @@ class CodexAppServerProvider:
             return request.run_id
         self._assert_write_authority(request)
         executable = shutil.which(self.command) or self.command
-        writer_job = None
         try:
-            command = [executable, *self.args]
-            if request.write_lease_ref is not None:
-                import sys
-
-                writer_job = WindowsWriterJob(job_name(request.run_id))
-                # A Windows venv python.exe is itself a launcher and can spawn the real
-                # interpreter before assignment. Use the real base interpreter here.
-                command = [str(Path(sys.base_prefix) / "python.exe"),
-                           str(Path(__file__).with_name("writer_bootstrap.py")),
-                           *command]
-            process = await asyncio.create_subprocess_exec(
-                *command,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
+            # Every run gets its own Windows job, created suspended and assigned before it
+            # runs, so stopping a run also stops the App Server behind codex.CMD. The earlier
+            # bootstrap handshake could not contain non-packaged children under Store Python.
+            owned = await OwnedProcess.start(
+                [executable, *self.args],
+                run_id=request.run_id,
                 cwd=self.cwd,
+                stderr=asyncio.subprocess.DEVNULL,
                 limit=_APP_SERVER_STREAM_LIMIT,
             )
         except (FileNotFoundError, OSError) as exc:
-            if writer_job is not None:
-                writer_job.close()
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
                 f"Codex App Server could not be started: {self.command}",
             ) from exc
+        process = owned.process
         if process.stdin is None or process.stdout is None:
-            process.kill()
-            await process.wait()
-            if writer_job is not None:
-                writer_job.close()
+            await owned.stop()
+            owned.close()
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
                 "Codex App Server has no stdio transport",
             )
         state = _Run(process=process, request=request, resume_thread_id=resume_thread_id,
-                     writer_job=writer_job)
-        if writer_job is not None:
-            try:
-                writer_job.attach(process.pid)
-                process.stdin.write(b"\n")
-                await process.stdin.drain()
-            except BaseException:
-                if process.returncode is None:
-                    process.kill()
-                await process.wait()
-                if state.writer_job:
-                    state.writer_job.close()
-                raise
+                     writer_job=owned.job)
         state.task = asyncio.create_task(
             self._execute(state),
             name=f"codex-app-server-{request.run_id}",

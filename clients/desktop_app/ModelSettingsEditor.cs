@@ -219,7 +219,7 @@ public sealed class ModelSettingsEditor : UserControl
                 if (group != nextGroup)
                 {
                     group = nextGroup;
-                    var title = new Label { Text = group, Dock = DockStyle.Fill,
+                    var title = new Label { Text = group, UseMnemonic = false, Dock = DockStyle.Fill,
                         Font = new Font(Font, FontStyle.Bold), TextAlign = ContentAlignment.MiddleLeft };
                     int heading = rows.RowCount++;
                     rows.RowStyles.Add(new RowStyle(SizeType.Absolute, 34));
@@ -233,7 +233,7 @@ public sealed class ModelSettingsEditor : UserControl
                 string kind = field.GetProperty("type").GetString()!;
                 var value = field.GetProperty("value").Clone();
                 original[key] = value;
-                var label = new Label { Text = field.GetProperty("label").GetString(), Dock = DockStyle.Fill,
+                var label = new Label { Text = field.GetProperty("label").GetString(), UseMnemonic = false, Dock = DockStyle.Fill,
                     TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
                 rows.Controls.Add(label, 0, row);
                 Control editor;

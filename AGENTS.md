@@ -24,6 +24,9 @@ trustworthy and the documents maintainable.
 
 - **Never delete files.** That includes plans, snapshots, evidence and changelogs. Superseded
   material moves to a history location with every link updated (see [docs/README.md](docs/README.md)).
+- **Keep [HOW_TO_USE.md](HOW_TO_USE.md) true.** Any change that alters how SORA is started, set up,
+  configured or used updates that page in the same change, including its "Last updated" line.
+  It is the owner's day-to-day manual; a stale step there is a bug.
 - **Write a changelog in your own model name for every change**, following
   [changelog/README.md](changelog/README.md). Never edit or rename another contributor's
   changelog or verification record.

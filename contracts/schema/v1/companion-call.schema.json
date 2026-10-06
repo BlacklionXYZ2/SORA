@@ -276,21 +276,88 @@
     },
     "Move": {
       "additionalProperties": false,
+      "description": "Walk or run SORA's avatar to a semantic destination that Core resolves to a point.\n\nThe model never supplies coordinates: Core knows the monitor layout and window positions,\nwhich a small model would guess badly.",
       "properties": {
+        "monitor": {
+          "default": "pointer",
+          "enum": [
+            "primary",
+            "pointer",
+            "other"
+          ],
+          "title": "Monitor",
+          "type": "string"
+        },
         "op": {
           "const": "move",
           "title": "Op",
           "type": "string"
         },
+        "pace": {
+          "default": "walk",
+          "enum": [
+            "walk",
+            "run"
+          ],
+          "title": "Pace",
+          "type": "string"
+        },
+        "place": {
+          "default": "centre",
+          "enum": [
+            "left",
+            "centre",
+            "right"
+          ],
+          "title": "Place",
+          "type": "string"
+        },
         "target": {
-          "const": "pointer",
+          "default": "pointer",
+          "enum": [
+            "pointer",
+            "window",
+            "screen"
+          ],
           "title": "Target",
           "type": "string"
+        },
+        "then": {
+          "anyOf": [
+            {
+              "enum": [
+                "wave",
+                "sit",
+                "lean",
+                "climb",
+                "stand"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Then"
+        },
+        "window": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Window"
         }
       },
       "required": [
-        "op",
-        "target"
+        "op"
       ],
       "title": "Move",
       "type": "object"

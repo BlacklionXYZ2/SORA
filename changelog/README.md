@@ -36,6 +36,8 @@ in progress / documentation only>**, not stage completion unless the gate actual
 
 ## Limits and next
 - What is not proven, what remains open and the next task.
+
+HOW_TO_USE.md: updated / no change to usage.
 ```
 
 State what you did *not* run as plainly as what passed. Link the living document you updated

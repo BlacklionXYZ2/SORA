@@ -110,6 +110,23 @@ def process_may_be_alive(pid: int) -> bool:
         kernel.CloseHandle(handle)
 
 
+def job_active_processes(name: str) -> int | None:
+    """Number of live processes in the named job, 0 if it is gone, None if it cannot be read."""
+    kernel = _kernel()
+    handle = kernel.OpenJobObjectW(4, False, name)  # JOB_OBJECT_QUERY
+    if not handle:
+        return 0 if ctypes.get_last_error() == 2 else None
+    try:
+        accounting = _Accounting()
+        if not kernel.QueryInformationJobObject(
+            handle, 1, ctypes.byref(accounting), ctypes.sizeof(accounting), None
+        ):
+            return None
+        return int(accounting.active)
+    finally:
+        kernel.CloseHandle(handle)
+
+
 def writer_job_empty(name: str) -> bool:
     """True only for a missing/empty kernel job; access/query failure stays uncertain."""
     kernel = _kernel()

@@ -217,7 +217,10 @@ class CustomACPProvider(HermesACPProvider):
 
     def writer_stopped(self, run_id: str) -> bool:
         state = self._runs.get(run_id)
-        return state is None or state.process.returncode is not None
+        if state is None:
+            return True
+        return state.owned.stopped() if state.owned is not None else (
+            state.process.returncode is not None)
 
     def _task_prompt(self, request: ProviderRequest) -> str:
         return (

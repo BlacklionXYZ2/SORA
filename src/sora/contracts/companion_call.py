@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 from typing import Annotated, Any, Literal
 
-from pydantic import Field, RootModel
+from pydantic import Field, RootModel, model_validator
 
 from sora.contracts.base import StrictModel
 from sora.contracts.companion_read import (
@@ -40,14 +40,34 @@ class Delegate(StrictModel):
     model: Reference | None = None
 
 
+PoseName = Literal["wave", "sit", "lean", "climb", "stand"]
+
+
 class Pose(StrictModel):
     op: Literal["pose"]
-    name: Literal["wave", "sit", "lean", "climb", "stand"]
+    name: PoseName
 
 
 class Move(StrictModel):
+    """Walk or run SORA's avatar to a semantic destination that Core resolves to a point.
+
+    The model never supplies coordinates: Core knows the monitor layout and window positions,
+    which a small model would guess badly.
+    """
+
     op: Literal["move"]
-    target: Literal["pointer"]
+    target: Literal["pointer", "window", "screen"] = "pointer"
+    window: Reference | None = None  # an issued list_windows target, for target="window"
+    monitor: Literal["primary", "pointer", "other"] = "pointer"  # for target="screen"
+    place: Literal["left", "centre", "right"] = "centre"  # for target="screen"
+    pace: Literal["walk", "run"] = "walk"
+    then: PoseName | None = None  # a pose to take on arrival
+
+    @model_validator(mode="after")
+    def check_destination(self) -> Move:
+        if (self.target == "window") != (self.window is not None):
+            raise ValueError("window is required for, and only for, target='window'")
+        return self
 
 
 class Look(StrictModel):
@@ -150,8 +170,14 @@ task is your bounded suggested brief; Core retains the original owner's request 
 Research/inspection does not authorize file creation. File-writing work belongs to a specialist,
 never a shell or typing workaround. A queued receipt proves admission, not success or file changes.
 For normal read-only questions do the reading yourself, rather than paying a specialist by default.
-pose names are wave, sit, lean, climb (pose only), stand (reset). move targets pointer only;
-Core samples the owner's pointer. No coordinates, other destinations, physical effects or commands.
+pose names are wave, sit, lean, climb (pose only), stand (reset).
+move walks SORA's avatar to a destination Core resolves; never give coordinates. target is:
+pointer (the owner's mouse pointer: "come here"); window (stand beneath a window, with window
+set to a target issued by list_windows in this turn, so list_windows first); or screen (the
+left, centre or right of the primary monitor, the pointer's monitor, or the other monitor).
+pace is walk, or run when the owner asks for speed. then is an optional pose on arrival
+("go over to Spotify and wave": list_windows, then move to that window with then=wave).
+Moving is presentation only: it does not focus, click or change any window.
 Do not pose/move for negation, quoted requests, hypotheticals or questions about capabilities.
 look turns the avatar's gaze toward a native control; point uses its arm-gesture lifecycle.
 Neither reads pixels, clicks a control, types, or verifies a desktop effect. Use inspect_window

@@ -642,6 +642,7 @@ async def _run(
             windows_type_executable=arguments.windows_type,
             windows_capture_executable=arguments.windows_capture,
             editor_repository_roots=tuple(arguments.editor_root or ()),
+            report_task_outcomes=True,
         ),
         providers=plan.registry,
         app_settings=app_settings,

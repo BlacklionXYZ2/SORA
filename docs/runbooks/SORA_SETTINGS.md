@@ -6,9 +6,9 @@ Implemented 2026-09-28; change attribution: GPT-6 Astra (owner-requested label).
 
 1. Close old clients/Core, then run `.\Start-SORA.ps1` to build and start the current version.
 2. Open **Settings** in the full desktop application.
-   Use **Go to section** to jump directly to Voice, Perception or Model & performance.
+   Use **Go to section** to jump directly to Voice, Perception or Models. (In the native app, the section list is on the left.)
    Hover over a truncated label to read its full name and JSON key.
-3. Under **Model & performance**, use the **…** button beside **Model GGUF** to select your model.
+3. Under **Models → Brain (local model)**, use the **…** button beside **Brain model file (GGUF)** to select your model.
    SORA searches that folder for `mmproj*.gguf`. One candidate is filled automatically; multiple
    candidates open a chooser; none requires you to use the projector's **…** picker. The model
    and projector must match; filenames and GGUF headers cannot prove compatibility.

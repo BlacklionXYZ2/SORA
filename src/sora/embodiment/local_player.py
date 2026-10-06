@@ -30,7 +30,9 @@ if TYPE_CHECKING:
     from sora.runtime.service import SoraRuntime
 
 
-WALK_SPEED_PX_PER_SEC = 800.0
+# The renderer switches to its running gait at 450 px/s and above.
+WALK_SPEED_PX_PER_SEC = 300.0
+RUN_SPEED_PX_PER_SEC = 800.0
 WALK_ARRIVAL_RADIUS_PX = 60
 WALK_TIMEOUT_SECONDS = 20.0
 
@@ -180,8 +182,12 @@ class LocalAvatarSession:
         self._resting_state = state
         self._last_activity = state
 
-    async def walk_to(self, x: int, y: int) -> None:
-        """Dispatch one authorized MOVE_TO toward a pointer location; this is not a pose."""
+    async def walk_to(
+        self, x: int, y: int, *, pace: str = "walk", then: str | None = None,
+    ) -> None:
+        """Dispatch one MOVE_TO; ``then`` is a pose the avatar takes once it arrives."""
+        if then is not None and then not in self.STATES:
+            raise ValueError("Unknown companion pose.")
         if self.process is None or self.process.returncode is not None:
             raise ValueError("The 3D companion is not running.")
         if not self.runtime.topology_manager.is_point_on_display(x, y):
@@ -191,12 +197,16 @@ class LocalAvatarSession:
                 command_id=f"local-walk-{uuid.uuid4().hex}",
                 verb=EmbodimentVerb.MOVE_TO,
                 target_point=VirtualDesktopPoint(x=x, y=y),
-                speed_px_per_sec=WALK_SPEED_PX_PER_SEC,
+                speed_px_per_sec=RUN_SPEED_PX_PER_SEC if pace == "run" else WALK_SPEED_PX_PER_SEC,
                 topology_revision=self.runtime.topology_manager.revision,
                 created_at=datetime.now(UTC),
             ),
         )
         self._walk_target = VirtualDesktopPoint(x=x, y=y)
+        if then is not None:
+            # The watch loop restores the resting state when the walk ends, so the pose is
+            # taken on arrival without interrupting the walk in flight.
+            self._resting_state = then
         self._presentation_deadline = None
         self._walk_deadline = datetime.now(UTC) + timedelta(seconds=WALK_TIMEOUT_SECONDS)
         self._last_activity = "moving"

@@ -317,7 +317,9 @@ async def test_voice_motion_shares_dispatch_and_walk_uses_spoken_time(
             )
             assert "confirms dispatch" in (result.assistant_text or "")
             if mode == "walk":
-                instance.local_avatar.walk_to.assert_awaited_once_with(100, 120)
+                instance.local_avatar.walk_to.assert_awaited_once_with(
+                    100, 120, pace="walk", then=None
+                )
             else:
                 instance.local_avatar.present.assert_awaited_once()
             assert (

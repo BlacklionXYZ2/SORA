@@ -233,6 +233,7 @@ from sora.runtime.perception import (
 from sora.runtime.project_paths import PathSnapshot, ProjectPaths, project_directory, snapshot
 from sora.runtime.read_tools import CompanionReadTools
 from sora.runtime.read_turn import ReadTurn, collect_reads
+from sora.runtime.task_reports import TaskReporter
 from sora.runtime.ui_presentation import MemoryPresentationHub
 from sora.security.local_policy import (
     LocalPolicyContext,
@@ -305,6 +306,9 @@ class RuntimeConfig(StrictModel):
     memory_captures_dir: Path | None = None
     memory_capture_retention_days: int = Field(default=30, ge=0, le=3_650)
     memory_context_limit: int = Field(default=10, ge=0, le=50)
+    # SORA posts a message when delegated work finishes. The launcher enables it; the
+    # default stays off so embedded and test runtimes keep exact conversation contents.
+    report_task_outcomes: bool = False
     agent_changelog_root: Path | None = None
     dialogue_backend: Literal["deterministic", "openai-compatible"] = "deterministic"
     dialogue_model: str | None = None
@@ -567,6 +571,7 @@ class SoraRuntime:
         self._run_providers: dict[str, ReasoningProvider] = {}
         self._started = False
         self.automation_worker = AutomationWorker(self)
+        self.task_reporter = TaskReporter(self)
 
         self.topology_manager = DisplayTopologyManager()
         self._topology_reported = False
@@ -1147,6 +1152,7 @@ class SoraRuntime:
             worker.cancel()
         await asyncio.gather(*self._workers, return_exceptions=True)
         self._workers.clear()
+        await self.task_reporter.close()
         self.attention_tracker.clear()
         self.desktop_event_policy.clear()
         self.reference_resolver.clear()
@@ -2568,11 +2574,29 @@ class SoraRuntime:
                         raise OperationAuthorizationError(
                             "Companion settings changed before avatar dispatch; retry",
                         )
+                    move = (
+                        requested_action if isinstance(requested_action, Move)
+                        else Move(op="move")
+                    )
+                    where = "your pointer"
                     try:
                         if motion.motion == "walk":
-                            destination = await self._walk_destination(pointer_reference_time)
+                            if isinstance(requested_action, Move) and read_turn is not None and (
+                                read_turn.action_error
+                            ):
+                                raise ValueError(read_turn.action_error)
+                            destination, where = await self._move_destination(
+                                move,
+                                read_turn.move_window if read_turn is not None else None,
+                                pointer_reference_time,
+                            )
                             turn.check()
-                            await self.local_avatar.walk_to(destination.x, destination.y)
+                            await self.local_avatar.walk_to(
+                                destination.x,
+                                destination.y,
+                                pace=move.pace,
+                                then=MOTION_STATES[move.then] if move.then else None,
+                            )
                         else:
                             await self.local_avatar.present(MOTION_STATES[motion.motion])
                     except (ValueError, PermissionError) as exc:
@@ -2581,9 +2605,10 @@ class SoraRuntime:
                         )
                     else:
                         if motion.motion == "walk":
+                            arrival = f", then {move.then} on arrival" if move.then else ""
                             response = (
-                                "I sent a walk request to my 3D avatar toward your pointer. "
-                                "This confirms dispatch, not arrival."
+                                f"I sent a {move.pace} request to my 3D avatar toward "
+                                f"{where}{arrival}. This confirms dispatch, not arrival."
                             )
                         else:
                             response = (
@@ -2942,6 +2967,61 @@ class SoraRuntime:
             x=primary.rect.x + primary.rect.width // 2,
             y=primary.rect.y + primary.rect.height // 2,
         )
+
+    async def _move_destination(
+        self,
+        action: Move,
+        window: DesktopNode | None,
+        reference_time: datetime | None = None,
+    ) -> tuple[VirtualDesktopPoint, str]:
+        """Resolve a semantic move target to a desktop point; the model never gives one."""
+        if action.target == "pointer":
+            return await self._walk_destination(reference_time), "your pointer"
+        if self.app_settings is not None:
+            self.app_settings.active.local_companion.require(("desktop_observe", "avatar_control"))
+        monitors = self.topology_manager.topology.monitors
+        if not monitors:
+            raise ValueError("no active display is available for the walk")
+        if action.target == "window":
+            if window is None or window.rect is None:
+                raise ValueError("that window has no position on screen")
+            rect = window.rect
+            centre_x, centre_y = rect.x + rect.width // 2, rect.y + rect.height // 2
+            monitor = next((m for m in monitors if m.rect.contains(centre_x, centre_y)), None)
+            if monitor is None:
+                raise ValueError("that window is not on an active display")
+            area = monitor.work_area or monitor.rect
+            # Stand on the ground (the work area's bottom, above the taskbar) beneath the
+            # window's centre. The avatar has physics, so a mid-air target would only fall here.
+            x = min(max(centre_x, area.x), area.x + area.width - 1)
+            y = area.y + area.height - 1
+            title = " ".join((window.name or "").split())[:60]
+            return VirtualDesktopPoint(x=x, y=y), f"the {title} window" if title else "that window"
+        primary = next((m for m in monitors if m.primary), monitors[0])
+        monitor = primary
+        if action.monitor != "primary":
+            try:
+                pointer = await self._walk_destination(reference_time)
+            except ValueError:
+                pointer = None
+            pointer_monitor = next(
+                (m for m in monitors
+                 if pointer is not None and m.rect.contains(pointer.x, pointer.y)),
+                primary,
+            )
+            monitor = pointer_monitor
+            if action.monitor == "other":
+                others = [m for m in monitors if m.id != pointer_monitor.id]
+                if not others:
+                    raise ValueError("there is only one monitor")
+                monitor = others[0]
+        area = monitor.work_area or monitor.rect
+        fraction = {"left": 0.15, "centre": 0.5, "right": 0.85}[action.place]
+        destination = VirtualDesktopPoint(
+            x=area.x + int(area.width * fraction), y=area.y + area.height - 1
+        )
+        which = {"primary": "main", "pointer": "pointer's", "other": "other"}[action.monitor]
+        return destination, f"the {action.place} of the {which} monitor"
 
     async def _board_dialogue_command(self, text: str) -> str | None:
         """Dispatch only explicit owner-local note commands, not model output."""
@@ -3875,6 +3955,32 @@ class SoraRuntime:
                     )
             await self._accept_result(task.task_id, run_id, result)
         except ProviderLaunchError as exc:
+            current_run = await self.runtime_repository.get_run(run_id)
+            if (
+                exc.code is ProviderErrorCode.CANCELLED
+                and current_run is not None
+                and current_run.status is RunStatus.CANCEL_REQUESTED
+            ):
+                # Some adapters report a requested cancellation by raising. It is still the
+                # owner's cancellation, not a failure; an unrequested one stays a failure.
+                result = NormalizedResult(
+                    result_id=f"result-{run_id}",
+                    task_id=task.task_id,
+                    run_id=run_id,
+                    base_revision=0,
+                    outcome=ProviderOutcome.CANCELLED,
+                    summary="The run was cancelled at the owner's request.",
+                )
+                await self.repository.record_result(result, self.config.owner_id)
+                await self.runtime_repository.finish(
+                    run_id,
+                    run_status=RunStatus.CANCELLED,
+                    task_status=TaskStatus.CANCELLED,
+                    outcome=ProviderOutcome.CANCELLED,
+                    result_ref=result.result_id,
+                    now=datetime.now(UTC),
+                )
+                return
             result = self._failure_result(
                 task.task_id,
                 run_id,
@@ -3943,6 +4049,8 @@ class SoraRuntime:
                     finished_task.status,
                     occurred_at=finished_task.updated_at,
                 )
+                if self.config.report_task_outcomes:
+                    self.task_reporter.schedule(finished_task.task_id)
             if workspace_record is not None and workspace_lease_owner is not None:
                 if not workspace_artifact_captured:
                     try:

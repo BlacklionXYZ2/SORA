@@ -28,6 +28,7 @@ from sora.contracts.models import (
     ProviderRequest,
 )
 from sora.providers.base import MalformedProviderResult, ProviderLaunchError, optional_text
+from sora.providers.process_tree import OwnedProcess
 from sora.workspaces.git import GitWorkspaceManager, WorkspaceRecord
 
 log = logging.getLogger(__name__)
@@ -39,13 +40,17 @@ _TIERED_MODEL = re.compile(r"-(?:low|medium|high|max)$", re.IGNORECASE)
 
 @dataclass(slots=True)
 class _Run:
-    process: asyncio.subprocess.Process
+    owned: OwnedProcess
     request: ProviderRequest
     task: asyncio.Task[NormalizedResult] | None = None
     session_id: str | None = None
     cancelled: bool = False
     output_text: str = ""
     resume_session_id: str | None = None
+
+    @property
+    def process(self) -> asyncio.subprocess.Process:
+        return self.owned.process
 
 
 def _json_object(text: str) -> dict[str, Any] | None:
@@ -270,7 +275,7 @@ class AntigravityProvider:
 
     def writer_stopped(self, run_id: str) -> bool:
         state = self._runs.get(run_id)
-        return state is None or state.process.returncode is not None
+        return state is None or state.owned.stopped()
 
     async def capabilities(self) -> ProviderCapabilities:
         return ProviderCapabilities(
@@ -347,12 +352,8 @@ class AntigravityProvider:
         cmd_args.append(f"--print={prompt_text}")
 
         try:
-            process = await asyncio.create_subprocess_exec(
-                *cmd_args,
-                stdin=asyncio.subprocess.DEVNULL,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=self.cwd,
+            owned = await OwnedProcess.start(
+                cmd_args, run_id=request.run_id, cwd=self.cwd, stdin=asyncio.subprocess.DEVNULL,
             )
         except (FileNotFoundError, OSError) as exc:
             raise ProviderLaunchError(
@@ -360,7 +361,7 @@ class AntigravityProvider:
                 f"Antigravity CLI could not be started: {self.command}",
             ) from exc
 
-        state = _Run(process=process, request=request, resume_session_id=resume_session_id)
+        state = _Run(owned=owned, request=request, resume_session_id=resume_session_id)
         state.task = asyncio.create_task(
             self._execute(state),
             name=f"antigravity-run-{request.run_id}",
@@ -428,21 +429,14 @@ class AntigravityProvider:
         if state is None:
             return
         state.cancelled = True
-        if state.process.returncode is None:
-            try:
-                state.process.terminate()
-            except ProcessLookupError:
-                pass
+        # Stop the whole tree: the agy launcher's children would otherwise keep running.
+        await state.owned.stop()
         if state.task is not None and not state.task.done():
             try:
                 async with asyncio.timeout(1.0):
                     await asyncio.shield(state.task)
             except TimeoutError:
-                if state.process.returncode is None:
-                    try:
-                        state.process.kill()
-                    except ProcessLookupError:
-                        pass
+                await state.owned.stop()
                 try:
                     await state.task
                 except (asyncio.CancelledError, Exception):
@@ -465,15 +459,19 @@ class AntigravityProvider:
 
     async def _execute(self, state: _Run) -> NormalizedResult:
         try:
+            return await self._execute_owned(state)
+        finally:
+            # The tree has exited or been stopped; closing the job ends any straggler.
+            state.owned.close()
+
+    async def _execute_owned(self, state: _Run) -> NormalizedResult:
+        try:
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
                 state.process.communicate(),
                 timeout=self.timeout_seconds,
             )
         except TimeoutError as exc:
-            try:
-                state.process.kill()
-            except ProcessLookupError:
-                pass
+            await state.owned.stop()
             await state.process.communicate()
             raise ProviderLaunchError(
                 ProviderErrorCode.TIMED_OUT,
@@ -481,10 +479,7 @@ class AntigravityProvider:
             ) from exc
         except asyncio.CancelledError as cancel_exc:
             state.cancelled = True
-            try:
-                state.process.kill()
-            except ProcessLookupError:
-                pass
+            await state.owned.stop()
             await state.process.communicate()
             raise ProviderLaunchError(
                 ProviderErrorCode.CANCELLED,

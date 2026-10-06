@@ -37,6 +37,7 @@ from sora.contracts.models import (
     ProviderRequest,
 )
 from sora.providers.base import MalformedProviderResult, ProviderLaunchError, optional_text
+from sora.providers.process_tree import OwnedProcess
 
 PROVIDER_ID = "claude-code"
 _LIST_FIELDS = (
@@ -52,12 +53,16 @@ _PROMPT_SUFFIX = (
 
 @dataclass(slots=True)
 class _Run:
-    process: asyncio.subprocess.Process
+    owned: OwnedProcess
     request: ProviderRequest
     prompt: bytes
     task: asyncio.Task[NormalizedResult] | None = None
     session_id: str | None = None
     cancelled: bool = False
+
+    @property
+    def process(self) -> asyncio.subprocess.Process:
+        return self.owned.process
 
 
 def _last_json_object(text: str) -> dict[str, Any] | None:
@@ -211,7 +216,7 @@ class ClaudeCodeProvider:
 
     def writer_stopped(self, run_id: str) -> bool:
         state = self._runs.get(run_id)
-        return state is None or state.process.returncode is not None
+        return state is None or state.owned.stopped()
 
     async def capabilities(self) -> ProviderCapabilities:
         return ProviderCapabilities(
@@ -261,23 +266,24 @@ class ClaudeCodeProvider:
         prompt = (f"{request.context}\n\n[TASK_INTENT]\n{request.intent}{_PROMPT_SUFFIX}"
                   f"{CHANGELOG_INSTRUCTION}")
         try:
-            process = await asyncio.create_subprocess_exec(
-                *line,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=self.cwd,
-            )
+            owned = await OwnedProcess.start(line, run_id=request.run_id, cwd=self.cwd)
         except OSError as exc:
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE, f"Claude Code could not be started: {self.command}",
             ) from exc
-        state = _Run(process=process, request=request, prompt=prompt.encode("utf-8"))
+        state = _Run(owned=owned, request=request, prompt=prompt.encode("utf-8"))
         state.task = asyncio.create_task(self._execute(state), name=f"claude-run-{request.run_id}")
         self._runs[request.run_id] = state
         return request.run_id
 
     async def _execute(self, state: _Run) -> NormalizedResult:
+        try:
+            return await self._execute_owned(state)
+        finally:
+            # The tree has exited or been stopped; closing the job ends any straggler.
+            state.owned.close()
+
+    async def _execute_owned(self, state: _Run) -> NormalizedResult:
         try:
             stdout, stderr = await asyncio.wait_for(
                 state.process.communicate(state.prompt), timeout=self.timeout_seconds,
@@ -324,12 +330,7 @@ class ClaudeCodeProvider:
 
     @staticmethod
     async def _kill(state: _Run) -> None:
-        if state.process.returncode is None:
-            try:
-                state.process.kill()
-            except ProcessLookupError:
-                pass
-        await state.process.wait()
+        await state.owned.stop()
 
     async def result(self, run_id: str) -> NormalizedResult:
         state = self._runs.get(run_id)
@@ -359,11 +360,9 @@ class ClaudeCodeProvider:
         if state is None:
             return
         state.cancelled = True
-        if state.process.returncode is None:
-            try:
-                state.process.terminate()
-            except ProcessLookupError:
-                pass
+        # Headless print mode has nothing to save, so stop the whole tree at once; stopping only
+        # the npm shim would leave the real claude.exe running.
+        await self._kill(state)
         if state.task is not None and not state.task.done():
             try:
                 async with asyncio.timeout(1.0):

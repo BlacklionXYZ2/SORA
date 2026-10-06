@@ -32,6 +32,7 @@ from sora.contracts.models import (
     ProviderRequest,
 )
 from sora.providers.base import MalformedProviderResult, ProviderLaunchError, optional_text
+from sora.providers.process_tree import OwnedProcess
 from sora.workspaces.git import GitWorkspaceManager, WorkspaceRecord
 
 log = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL | re.IGNOR
 class _Run:
     process: asyncio.subprocess.Process
     request: ProviderRequest
+    owned: OwnedProcess | None = None
     task: asyncio.Task[NormalizedResult] | None = None
     session_id: str | None = None
     cancelled: bool = False
@@ -246,13 +248,11 @@ class HermesACPProvider:
         if self.skip_configured_mcp:
             environment["HERMES_ACP_SKIP_CONFIGURED_MCP"] = "1"
         try:
-            process = await asyncio.create_subprocess_exec(
-                executable,
-                *self.args,
-                stdin=asyncio.subprocess.PIPE,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.DEVNULL,
+            owned = await OwnedProcess.start(
+                [executable, *self.args],
+                run_id=request.run_id,
                 cwd=self.cwd,
+                stderr=asyncio.subprocess.DEVNULL,
                 env=environment,
             )
         except (FileNotFoundError, OSError) as exc:
@@ -260,14 +260,17 @@ class HermesACPProvider:
                 ProviderErrorCode.UNAVAILABLE,
                 f"{self.label} could not be started: {self.command}",
             ) from exc
+        process = owned.process
         if process.stdin is None or process.stdout is None:
-            process.kill()
+            await owned.stop()
+            owned.close()
             raise ProviderLaunchError(
                 ProviderErrorCode.UNAVAILABLE,
                 f"{self.label} has no stdio transport",
             )
         state = _Run(
             process=process,
+            owned=owned,
             request=request,
             resume_session_id=resume_session_id,
         )
@@ -357,10 +360,11 @@ class HermesACPProvider:
                 )
                 async with asyncio.timeout(self.cancellation_grace_seconds):
                     await state.process.wait()
-                return
             except (TimeoutError, BrokenPipeError, ConnectionError, OSError):
                 pass
-        await self._stop_process(state.process)
+        # Even after a polite exit, stop the tree: on Windows the launcher's own children
+        # would otherwise outlive it.
+        await self._stop_run(state)
 
     async def status(self, run_id: str) -> str:
         state = self._runs.get(run_id)
@@ -484,7 +488,9 @@ class HermesACPProvider:
                 return self._cancelled_result(state.request)
             raise RuntimeError(f"{self.label} request failed: {type(exc).__name__}") from exc
         finally:
-            await self._stop_process(state.process)
+            await self._stop_run(state)
+            if state.owned is not None:
+                state.owned.close()
 
     async def _rpc(self, state: _Run, method: str, params: dict[str, Any]) -> dict[str, Any]:
         if state.process.stdin is None or state.process.stdout is None:
@@ -572,6 +578,12 @@ class HermesACPProvider:
         async with state.write_lock:
             state.process.stdin.write(json.dumps(message).encode() + b"\n")
             await state.process.stdin.drain()
+
+    async def _stop_run(self, state: _Run) -> None:
+        if state.owned is not None:
+            await state.owned.stop()
+        else:
+            await self._stop_process(state.process)
 
     async def _stop_process(self, process: asyncio.subprocess.Process) -> None:
         if process.returncode is None:
