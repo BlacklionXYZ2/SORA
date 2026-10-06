@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Component gallery</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <style>
+    .gallery { position: absolute; inset: 0; overflow: auto; padding: var(--space-5) var(--space-6); }
+    .gallery h2 { font: 600 var(--text-lg) var(--font-display); margin: var(--space-6) 0 var(--space-3); }
+    .gallery h2:first-child { margin-top: var(--space-2); }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+    .split { display: grid; grid-template-columns: 200px 1fr; gap: var(--space-4); }
+    .tile .icon { width: 20px; height: 20px; color: var(--accent-ink); margin-top: 2px; }
+    .note { color: var(--ink-muted); font-size: var(--text-sm); }
+  </style>
+</head>
+<body>
+  <main class="window" aria-label="Component gallery">
+    <header class="titlebar"><span class="title">Gallery</span><nav class="window-controls"></nav></header>
+    <div class="window-body">
+      <div class="gallery" id="gallery">
+        <p class="note">Every shared component, in the design tokens from the concepts. Sample text only; no
+          Core data is shown here.</p>
+
+        <h2>Buttons</h2>
+        <div class="row">
+          <button class="btn primary">Save</button>
+          <button class="btn">Reload model</button>
+          <button class="btn" disabled>Disabled</button>
+          <button class="icon-btn" data-icon="mic" title="Voice"></button>
+          <button class="icon-btn send" data-icon="send" title="Send"></button>
+          <button class="icon-btn stop" data-icon="stop" title="Stop"></button>
+        </div>
+
+        <h2>Inputs and toggles</h2>
+        <div class="row">
+          <input class="input" placeholder="Text input" style="width: 220px">
+          <label class="toggle"><input type="checkbox" checked aria-label="On"><span></span></label>
+          <label class="toggle"><input type="checkbox" aria-label="Off"><span></span></label>
+        </div>
+
+        <h2>Chips and status</h2>
+        <div class="row">
+          <button class="chip"><span data-icon="search"></span>Searched memory · 3 results<span data-icon="chevron"></span></button>
+          <button class="chip"><span data-icon="panel"></span>Opened Memory panel<span data-icon="chevron"></span></button>
+          <span class="status ok">Loaded</span>
+          <span class="status warn">Starting</span>
+          <span class="status down">Unavailable</span>
+          <span class="badge">● Loaded</span>
+        </div>
+
+        <h2>Rail and tiles</h2>
+        <div class="split">
+          <nav class="rail card" style="padding: var(--space-2)">
+            <button class="rail-item"><span data-icon="general"></span>General</button>
+            <button class="rail-item" aria-current="page"><span data-icon="models"></span>Models</button>
+            <button class="rail-item"><span data-icon="audio"></span>Audio</button>
+            <button class="rail-item"><span data-icon="vision"></span>Vision</button>
+            <button class="rail-item"><span data-icon="memory"></span>Memory</button>
+            <button class="rail-item"><span data-icon="tools"></span>Tools</button>
+          </nav>
+          <div>
+            <div class="card highlight" style="margin-bottom: var(--space-3)">
+              <div class="row" style="justify-content: space-between">
+                <div><strong>Sample model card</strong> <span class="badge">● Loaded</span>
+                  <div class="note">A summary card, as in the Models concept.</div></div>
+                <button class="btn">Change model</button>
+              </div>
+            </div>
+            <div class="tile-grid">
+              <div class="tile"><span data-icon="models"></span><div><div class="tile-label">Tile label</div>
+                <div class="tile-value">Value</div><div class="tile-note">Supporting note</div></div></div>
+              <div class="tile selected"><span data-icon="memory"></span><div><div class="tile-label">Selected tile</div>
+                <div class="tile-value">Value</div><div class="tile-note">SORA is pointing here</div></div></div>
+              <div class="tile"><span data-icon="vision"></span><div><div class="tile-label">Tile label</div>
+                <div class="tile-value">Value</div><div class="tile-note">Supporting note</div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Banner and avatars</h2>
+        <div class="banner"><span data-icon="alert"></span>SORA's Core is not reachable. Retrying…</div>
+        <div class="row" style="margin-top: var(--space-3)">
+          <span class="avatar">U</span><span class="avatar sora">S</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module">
+    import { setUpWindow } from "../shared/window.js";
+    import { icon } from "../shared/icons.js";
+    for (const slot of document.querySelectorAll("[data-icon]")) {
+      slot.insertAdjacentHTML("afterbegin", icon(slot.dataset.icon));
+    }
+    setUpWindow();
+  </script>
+</body>
+</html>

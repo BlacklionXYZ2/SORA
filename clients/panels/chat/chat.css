@@ -1,0 +1,68 @@
+.chat-body { display: flex; flex-direction: column; border-top: 0; }
+
+.transcript {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-4) var(--space-5) var(--space-3);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.message { display: flex; gap: var(--space-3); align-items: flex-start; }
+.message .meta { display: flex; align-items: baseline; gap: var(--space-2); margin-bottom: 2px; }
+.message .name { font-weight: 600; font-size: var(--text-sm); color: var(--ink); }
+.message.sora .name { color: var(--accent-ink); }
+.message .time { font-size: var(--text-xs); color: var(--ink-muted); }
+.message .text { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.message.pending .text { color: var(--ink-soft); }
+.message.core { margin-left: 44px; }
+.message.core .text {
+  font-size: var(--text-sm); color: var(--ink-muted);
+  border-left: 2px solid var(--hairline-strong); padding-left: var(--space-3);
+}
+.thinking { display: inline-flex; gap: 5px; padding: 8px 0 4px; }
+.thinking i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent-ink);
+  animation: pulse 1.2s var(--ease) infinite; opacity: 0.35;
+}
+.thinking i:nth-child(2) { animation-delay: 0.15s; }
+.thinking i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pulse { 40% { opacity: 1; transform: translateY(-2px); } }
+.empty {
+  margin: auto; text-align: center; color: var(--ink-muted); font-size: var(--text-sm);
+  max-width: 320px;
+}
+
+.jump { position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%); }
+.jump[hidden] { display: none; }
+
+.composer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin: var(--space-2) var(--space-3) var(--space-3);
+  padding: 7px 7px 7px var(--space-4);
+  border-radius: 18px;
+  background: var(--glass-raised);
+  border: 1px solid var(--hairline);
+  transition: border-color var(--fast) var(--ease);
+}
+.composer:focus-within { border-color: var(--hairline-strong); }
+.composer textarea {
+  flex: 1;
+  min-height: 34px;
+  max-height: 160px;
+  resize: none;
+  border: 0;
+  background: transparent;
+  padding: 7px 0;
+  line-height: 20px;
+  outline: none;
+  user-select: text;
+}
+.composer textarea::placeholder { color: var(--ink-muted); }
+.composer-divider { width: 1px; height: 22px; margin: 6px 2px; background: var(--hairline-strong); }

@@ -22,4 +22,17 @@
     <Compile Include="..\desktop_widget\ModelPurposeForm.cs" Link="Panels\ModelPurposeForm.cs" />
     <Compile Include="..\desktop_widget\ModelPurposeDraft.cs" Link="Presenters\ModelPurposeDraft.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Web panel pages (WebView2 GUI rewrite); served from the output folder's panels\. -->
+    <None Include="..\panels\**\*.html;..\panels\**\*.css;..\panels\**\*.js" Exclude="..\panels\tests\**" LinkBase="panels" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <!-- Only the WinForms control is used; the package's WPF assembly would clash with WindowsBase. -->
+  <Target Name="DropWebView2Wpf" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf'" />
+    </ItemGroup>
+  </Target>
 </Project>

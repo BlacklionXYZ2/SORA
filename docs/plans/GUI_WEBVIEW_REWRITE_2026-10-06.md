@@ -1,7 +1,10 @@
 # GUI rewrite on WebView2 — plan
 
 Prepared by **Opus 5.5**, 2026-10-06, after the owner's decision: "We are absolutely going with
-WebView." Status: **plan; nothing implemented yet.** It serves [VISION.md](../../VISION.md) and
+WebView." Status: **W0 spike and W1 foundation built and component-tested (2026-10-06 12:21,
+Opus 5.5); the W0 gate needs the owner's machine** — see the
+[W0 check list](../gui/W0_OWNER_CHECKS_2026-10-06.md). The WinForms state before the rewrite is
+kept on branch `snapshot/winforms-gui-2026-10-06`. It serves [VISION.md](../../VISION.md) and
 [V1.md](../../V1.md). The approved visual baseline is unchanged: the
 [concept images and design v0.1](../gui/reference/README.md).
 

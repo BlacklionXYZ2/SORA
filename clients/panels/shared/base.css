@@ -1,0 +1,39 @@
+@import url("./tokens.css");
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  /* Transparent so the host's blurred backdrop shows through the rounded window. */
+  background: transparent;
+  color: var(--ink);
+  font: 400 var(--text-md) / var(--line) var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Preview pages (gallery, browser dev server) show a stand-in desktop behind the glass. */
+body.preview-desktop {
+  background: radial-gradient(1200px 600px at 70% 20%, #23365e 0%, transparent 60%),
+    linear-gradient(180deg, #0b1424 0%, #142238 55%, #0d1626 100%);
+}
+
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+::selection { background: rgba(61, 139, 255, 0.45); }
+
+/* Thin, quiet scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgba(150, 190, 255, 0.25) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(150, 190, 255, 0.22); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+.selectable { user-select: text; }
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}

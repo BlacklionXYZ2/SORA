@@ -41,6 +41,10 @@ try {
     if ($LASTEXITCODE -ne 0) {
         throw "scripts/verify-pwa.ps1 failed with exit code $LASTEXITCODE"
     }
+    & "$PSScriptRoot/verify-panels.ps1"
+    if ($LASTEXITCODE -ne 0) {
+        throw "scripts/verify-panels.ps1 failed with exit code $LASTEXITCODE"
+    }
 }
 finally {
     Pop-Location

@@ -23,6 +23,10 @@ internal sealed class ShellHost : ApplicationContext
     private readonly Dictionary<string, PanelPreferencesBinding> bindings = [];
     private ShellShortcut registeredShortcut;
     private ShellForm? chat;
+    // WebView2 GUI rewrite (W0): opt in with SORA_PANELS=web; the WinForms Chat stays the default.
+    private static readonly bool WebPanels = Environment.GetEnvironmentVariable("SORA_PANELS") == "web";
+    private WebPanelForm? webChat;
+    private PanelApiProxy? panelProxy;
     private SettingsForm? settings;
     private CommandMenuForm? commands;
     private AppearanceForm? appearance;
@@ -107,7 +111,20 @@ internal sealed class ShellHost : ApplicationContext
     private void ShowPanel(string panel)
     {
         if (quitting || panel == "none") return;
-        if (panel == "chat")
+        if (panel == "chat" && WebPanels)
+        {
+            if (webChat is null || webChat.IsDisposed)
+            {
+                var options = core.Options;
+                panelProxy ??= new PanelApiProxy(options.CoreUrl, options.TokenFile, () => session.CoreInstanceId);
+                webChat = new WebPanelForm("chat", Path.Combine(AppContext.BaseDirectory, "panels"), panelProxy,
+                    options.StateRoot!, next => ShowPanel(next));
+                Bind(webChat, "chat");
+            }
+            if (webChat.WindowState == FormWindowState.Minimized) webChat.WindowState = FormWindowState.Normal;
+            webChat.Show(); webChat.Activate();
+        }
+        else if (panel == "chat")
         {
             if (chat is null || chat.IsDisposed)
             {
@@ -358,7 +375,8 @@ internal sealed class ShellHost : ApplicationContext
         quitting = true; refresh.Stop(); lifetime.Cancel();
         commands?.Close(); appearance?.Close(); settings?.CloseForHostShutdown(); agents?.CloseForHostShutdown(); paths?.CloseForHostShutdown();
         board?.CloseForHostShutdown(); content?.CloseForHostShutdown(); integrations?.CloseForHostShutdown(); memory?.CloseForHostShutdown();
-        voice?.CloseForHostShutdown(); activity?.CloseForHostShutdown(); chat?.CloseForHostShutdown(); tray.Visible = false;
+        voice?.CloseForHostShutdown(); activity?.CloseForHostShutdown(); chat?.CloseForHostShutdown(); webChat?.CloseForHostShutdown();
+        panelProxy?.Dispose(); tray.Visible = false;
         ExitThread();
     }
     protected override void Dispose(bool disposing)

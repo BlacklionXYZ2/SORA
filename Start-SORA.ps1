@@ -28,7 +28,12 @@ param(
     [switch]$AntigravitySkipPermissions,
     [switch]$UnifiedSettingsOnly,
     # Useful for supervised/automated launches; the normal interactive console stays available.
-    [switch]$HiddenCore
+    [switch]$HiddenCore,
+    # WebView2 GUI rewrite (W0, opt-in): open the new web Chat panel instead of the WinForms one.
+    [switch]$WebPanels,
+    # Translucency route for web panels: System (Windows 11 acrylic), Accent (older blur) or None.
+    [ValidateSet("System", "Accent", "None")]
+    [string]$PanelBackdrop = "System"
 )
 
 $ErrorActionPreference = "Stop"
@@ -99,6 +104,10 @@ if ($Client -eq "Shell") {
         if ($selection[1]) { $shellArgs.Add($selection[0]); $shellArgs.Add($selection[1]) }
     }
     $hostStart.Arguments = ($shellArgs | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' '
+    if ($WebPanels) {
+        $hostStart.EnvironmentVariables["SORA_PANELS"] = "web"
+        $hostStart.EnvironmentVariables["SORA_PANEL_BACKDROP"] = $PanelBackdrop.ToLowerInvariant()
+    }
     $hostProcess = [Diagnostics.Process]::Start($hostStart)
     Write-Host "SORA desktop host requested for $StateRoot (host/forwarder PID $($hostProcess.Id))."
     Write-Host "The host verifies profile ownership before startup. Use tray/menu for recovery and owned Quit."

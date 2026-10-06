@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Chat</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./chat.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA chat">
+    <header class="titlebar"><span class="title">Chat</span><nav class="window-controls"></nav></header>
+    <div class="window-body chat-body">
+      <div class="banner" id="offline" role="status" hidden></div>
+      <ol class="transcript selectable" id="transcript" aria-live="polite" aria-label="Conversation"></ol>
+      <button class="chip jump" id="jump" type="button" hidden>New messages</button>
+      <form class="composer" id="composer" autocomplete="off">
+        <label class="visually-hidden" for="draft">Message SORA</label>
+        <textarea id="draft" rows="1" placeholder="Message SORA..." spellcheck="true"></textarea>
+        <span class="composer-divider" aria-hidden="true"></span>
+        <button class="icon-btn" id="voice" type="button" title="Voice"></button>
+        <button class="icon-btn send" id="send" type="submit" title="Send" disabled></button>
+      </form>
+    </div>
+  </main>
+  <script type="module" src="./chat.js"></script>
+</body>
+</html>

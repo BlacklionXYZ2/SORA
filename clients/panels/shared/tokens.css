@@ -1,0 +1,72 @@
+/*
+ * SORA design tokens. Taken from the approved concepts (docs/gui/reference/02-chat.jpg and
+ * 05-settings.jpg) and design v0.1: dark translucent glass, restrained cyan/blue accents,
+ * rounded corners, minimal chrome, readable type. Change the look here, not in panels.
+ */
+:root {
+  /* Type. The owner has not chosen a font yet; this one token changes it everywhere. */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", var(--font-ui);
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --tracking-title: 0.28em;   /* the spaced "CHAT" / "SETTINGS" window titles */
+  --line: 1.5;
+
+  /* Text */
+  --ink: #e8eef8;
+  --ink-soft: #b8c4d6;
+  --ink-muted: #7f8ea6;
+  --ink-faint: #56637a;
+
+  /* Accents: used sparingly for state, selection and SORA herself */
+  --accent: #3d8bff;          /* send button, selected rail item */
+  --accent-strong: #2f7bf0;
+  --accent-ink: #5fb0ff;      /* SORA's name, links */
+  --accent-glow: rgba(64, 150, 255, 0.55);
+  --ok: #3ddc84;
+  --warn: #f5b84a;
+  --danger: #ff6b6b;
+
+  /* Glass. The window itself is see-through; the host supplies the blurred desktop. */
+  --glass-window: rgba(12, 20, 38, 0.46);
+  --glass-raised: rgba(30, 44, 72, 0.42);  /* cards, tiles, composer */
+  --glass-hover: rgba(48, 70, 110, 0.45);
+  --glass-selected: rgba(46, 104, 196, 0.42);
+  --hairline: rgba(150, 190, 255, 0.16);
+  --hairline-strong: rgba(150, 200, 255, 0.32);
+  --edge-glow: 0 0 0 1px rgba(120, 180, 255, 0.28), 0 0 24px rgba(60, 140, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+
+  /* Shape and space */
+  --radius-window: 22px;
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 28px;
+  --titlebar-height: 48px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 120ms;
+  --medium: 220ms;
+}
+
+/* When Windows turns transparency off (or the host reports no backdrop), use solid glass. */
+:root[data-backdrop="none"] {
+  --glass-window: rgba(13, 20, 34, 0.97);
+  --glass-raised: rgba(30, 42, 64, 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --fast: 0ms; --medium: 0ms; }
+}

@@ -1,6 +1,6 @@
 # How to use SORA (current state)
 
-**Last updated: 2026-10-06, Opus 5.5.** This page describes what works *today* and how to use it.
+**Last updated: 2026-10-06 12:21, Opus 5.5 (web Chat preview added).** This page describes what works *today* and how to use it.
 Every change that alters how SORA is started, set up or used must update this page in the same
 change (see [AGENTS.md](AGENTS.md)). If something here is wrong, it is a bug in this page.
 
@@ -83,6 +83,27 @@ SORA hands harder work to hosted agents and keeps chatting while they work:
   it a nickname, spoken aliases (for example "pip, pippa"), a protocol and either a port
   (OpenAI-compatible, such as LM Studio on 1234) or a command (Agent Client Protocol). Restart
   SORA, then ask for it by nickname. Chat-only custom agents cannot work in a project folder.
+
+## Trying the new web Chat (preview)
+
+SORA's windows are being rebuilt with web technology (WebView2) to match the concept images.
+The first piece is a new Chat window. It is **opt-in**; the normal Chat is unchanged.
+
+1. Quit SORA if she is running (tray → **Quit SORA**). The option only applies to a fresh start.
+2. `.\Start-SORA.ps1 -WebPanels`, then open Chat as usual (Ctrl+Alt+Space).
+3. To compare the two blur styles, quit and start again with `-PanelBackdrop Accent`
+   (the default is `System`, Windows 11's own acrylic; `None` is solid glass).
+4. To save a screenshot beside the concept image: `.\scripts\capture-panel.ps1`. Files go to
+   `.local\panels-review\`.
+
+What it does today: your conversation, sending (Enter; Shift+Enter for a new line), Stop, the
+microphone button (opens the existing Voice window), dragging, resizing, minimise/maximise, and
+a clear message when Core is not running. Not yet: attachments, activity chips, memory chips and
+the new-messages anchor of the old Chat. Settings is still the existing window.
+
+To preview the panels in an ordinary browser instead (no glass, for design review):
+`uv run python scripts\panels-dev-server.py --token-file .local\manual-test\private\sora-api-token`,
+then open <http://127.0.0.1:8790/chat/> or <http://127.0.0.1:8790/gallery/>.
 
 ## Known limits right now
 
