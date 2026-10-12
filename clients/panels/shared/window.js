@@ -39,6 +39,10 @@ export function setUpWindow(root = document) {
     if (event.key === "Escape" && !event.defaultPrevented) send("window.hide");
   });
   onHostMessage((message) => {
+    // Appearance → Reduced motion applies to every panel (Windows' own setting still wins).
+    if (message.type === "host.preferences" && typeof message.values?.reducedMotion === "boolean") {
+      document.documentElement.dataset.motion = message.values.reducedMotion ? "reduced" : "full";
+    }
     if (message.type === "host.backdrop") {
       const root = document.documentElement;
       root.dataset.backdrop = String(message.kind || "none");

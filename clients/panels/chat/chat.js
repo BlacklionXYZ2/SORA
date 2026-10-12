@@ -178,6 +178,17 @@ async function memoryLines(ids, list) {
     try {
       const memory = await api.memory(id);
       li.textContent = String(memory?.preview ?? memory?.content ?? memory?.memory?.content ?? id);
+      // Opens Memory on this exact record.
+      const show = document.createElement("button");
+      show.type = "button";
+      show.className = "link";
+      show.textContent = "Show";
+      show.title = "Show this memory in Memory";
+      show.addEventListener("click", () => {
+        sendToHost("panel.open", { panel: "memory", select: id });
+        if (!hosted) toast("Memory opens in SORA's app.");
+      });
+      li.append(" ", show);
     } catch {
       li.textContent = "No longer available (corrected or forgotten).";
     }
@@ -187,7 +198,10 @@ async function memoryLines(ids, list) {
   link.type = "button";
   link.className = "link";
   link.textContent = "Open Memory";
-  link.addEventListener("click", () => sendToHost("panel.open", { panel: "memory" }));
+  link.addEventListener("click", () => {
+    sendToHost("panel.open", { panel: "memory" });
+    if (!hosted) toast("Memory opens in SORA's app.");
+  });
   open.append(link);
   list.append(open);
 }

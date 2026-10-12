@@ -1,5 +1,5 @@
 import { CoreApi, CoreError } from "../shared/api.js";
-import { hosted, pickFile, send as sendToHost } from "../shared/bridge.js";
+import { hosted, onHostMessage, pickFile, send as sendToHost } from "../shared/bridge.js";
 import { icon } from "../shared/icons.js";
 import { setUpWindow } from "../shared/window.js";
 import {
@@ -62,14 +62,19 @@ function message(error) {
 
 // ---------- rail ----------
 
+function openPanel(panel) {
+  sendToHost("panel.open", { panel });
+  if (!hosted) toast("That panel opens in SORA's app.");
+}
+
 function openAppearanceWindow() {
   sendToHost("panel.open", { panel: "appearance" });
-  if (!hosted) toast("Appearance opens in SORA's app.");
+  if (!hosted) toast("The Appearance panel opens in SORA's app.");
 }
 
 function renderRail() {
   const categories = visibleCategories(state.projection);
-  // Core's Appearance category (her avatar) links to the older window from its pane instead.
+  // Core's Appearance category (her avatar) links to the Appearance panel from its pane instead.
   const appearanceListed = categories.some((category) => category.id === "Appearance");
   if (!categories.some((category) => category.id === state.category) && categories.length) {
     state.category = categories[0].id;
@@ -406,14 +411,18 @@ function renderPane() {
   const windowStyle = state.category === "Appearance" && el("div", {},
     el("h2", {}, "Windows"),
     el("button", { class: "btn", type: "button", onclick: openAppearanceWindow },
-      "Window style, Chat shortcut and placement…"),
-    el("div", { class: "field-help" }, "These are still in the older Appearance window."));
+      "Text size, Chat shortcut and placement…"),
+    el("div", { class: "field-help" },
+      "Window preferences live in the Appearance panel. They stay on this PC and are not Core settings."));
   const agentGroups = groups.filter((group) => group.name.startsWith("Agents · "));
   parts.push(...groups.filter((group) => !agentGroups.includes(group) && group.name !== "Vision detail")
     .map(groupBlock));
   if (agentGroups.length) {
     parts.push(el("h2", {}, "Agent colleagues"),
       el("p", { class: "lead" }, "The hosted agents SORA can hand work to, and how she describes them."),
+      el("div", { class: "panel-links" },
+        el("button", { class: "btn", type: "button", onclick: () => openPanel("agents") }, "Agents and their models…"),
+        el("button", { class: "btn", type: "button", onclick: () => openPanel("paths") }, "Project paths…")),
       ...agentGroups.map(groupBlock));
   }
   if (advanced.length) {
@@ -570,5 +579,11 @@ document.body.append(el("datalist", { id: "gpu-choices" },
 
 const wanted = new URLSearchParams(location.search).get("category");
 if (wanted) state.category = wanted;
+// Another panel can open Settings on a category (Voice → Audio, Appearance → her avatar).
+onHostMessage((message) => {
+  if (message.type !== "host.select" || typeof message.id !== "string") return;
+  state.category = message.id;
+  if (state.projection) { renderRail(); renderPane(); }
+});
 renderAll();
 await load({ keepDraft: false });

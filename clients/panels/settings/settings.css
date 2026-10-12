@@ -112,3 +112,5 @@ details.group.agent .group-help { margin: var(--space-1) 0 var(--space-2); }
   padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: rgba(245, 184, 74, 0.08);
 }
 .vision-disclaimer .icon { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+
+.panel-links { display: flex; gap: var(--space-2); flex-wrap: wrap; margin: 0 0 var(--space-3); }

@@ -23,11 +23,16 @@ internal sealed class ShellHost : ApplicationContext
     private readonly Dictionary<string, PanelPreferencesBinding> bindings = [];
     private ShellShortcut registeredShortcut;
     private ShellForm? chat;
-    // WebView2 GUI rewrite (W4): panels listed here open as web pages from clients/panels/ unless
+    // WebView2 GUI rewrite (W4, W5): panels listed here open as web pages from clients/panels/ unless
     // SORA_PANELS=classic; the rest keep their WinForms windows until their pages exist.
     private static readonly bool WebPanels = Environment.GetEnvironmentVariable("SORA_PANELS") != "classic";
     private static readonly IReadOnlyDictionary<string, Size> WebPages = new Dictionary<string, Size>
-        { ["chat"] = new(480, 560), ["settings"] = new(980, 680), ["activity"] = new(960, 660) };
+    {
+        ["chat"] = new(480, 560), ["settings"] = new(980, 680), ["activity"] = new(960, 660),
+        ["voice"] = new(840, 530), ["agents"] = new(820, 740), ["paths"] = new(1000, 670),
+        ["memory"] = new(1060, 740), ["appearance"] = new(600, 640),
+    };
+    private static bool WebMemory => WebPanels && WebPages.ContainsKey("memory");
     private readonly Dictionary<string, WebPanelForm> webPanels = [];
     private PanelApiProxy? panelProxy;
     private SettingsForm? settings;
@@ -41,7 +46,10 @@ internal sealed class ShellHost : ApplicationContext
     private KanbanBoardForm? board;
     private RetainedBrowserForm? content, integrations;
     private bool PendingSecondaryWork => session.SecondaryMutationBusy || session.MemoryPresentationBusy || settings?.HasPendingWork == true || voice?.HasPendingWork == true || agents?.HasPendingWork == true || paths?.HasPendingWork == true
-        || board?.HasPendingWork == true || content?.HasPendingWork == true || integrations?.HasPendingWork == true || memory?.HasPendingWork == true;
+        || board?.HasPendingWork == true || content?.HasPendingWork == true || integrations?.HasPendingWork == true || memory?.HasPendingWork == true
+        || webPresenting || PendingWebPanel() is not null;
+    private bool webPresenting;
+    private bool webCoreUsable;
     private bool quitting;
     private bool quitPending;
     private bool resourcesDisposed;
@@ -52,7 +60,11 @@ internal sealed class ShellHost : ApplicationContext
         this.session = session; this.instance = instance; this.core = core;
         session.EnableVoice();
         session.EnableMemoryPresentation(instance.ProfileKey, () => memoryGeneration, PresentMemoryAsync,
-            (request, confirmed) => memory?.SetPresentationOutcome(request, confirmed));
+            (request, confirmed) => {
+                if (WebMemory) webPanels.GetValueOrDefault("memory")?.Post(new {
+                    type = "host.presentation-outcome", requestId = request.Request, confirmed });
+                else memory?.SetPresentationOutcome(request, confirmed);
+            });
         preferences = new ShellPreferencesStore(options.StateRoot!, options.LegacyWidgetFile, options.LegacyDesktopFile);
         ShellTheme.Palette = preferences.Current.Theme;
         dispatch.CreateControl(); _ = dispatch.Handle;
@@ -117,17 +129,9 @@ internal sealed class ShellHost : ApplicationContext
     private void ShowPanel(string panel, string? select)
     {
         if (quitting || panel == "none") return;
-        if (WebPanels && WebPages.TryGetValue(panel, out var size))
+        if (WebPanels && WebPages.ContainsKey(panel))
         {
-            if (!webPanels.TryGetValue(panel, out var web) || web.IsDisposed)
-            {
-                var options = core.Options;
-                panelProxy ??= new PanelApiProxy(options.CoreUrl, options.TokenFile, () => session.CoreInstanceId);
-                web = new WebPanelForm(panel, Path.Combine(AppContext.BaseDirectory, "panels"), panelProxy,
-                    options.StateRoot!, (next, chosen) => ShowPanel(next, chosen), size);
-                webPanels[panel] = web;
-                Bind(web, panel);
-            }
+            var web = EnsureWebPanel(panel);
             if (web.WindowState == FormWindowState.Minimized) web.WindowState = FormWindowState.Normal;
             web.Show(); web.Activate();
             if (select is not null) web.Select(select);
@@ -232,7 +236,7 @@ internal sealed class ShellHost : ApplicationContext
         else if (panel == "appearance")
         {
             if (appearance is null || appearance.IsDisposed)
-            { appearance = new AppearanceForm(preferences, ShortcutStatus, ResetPlacement); Bind(appearance, "appearance"); }
+            { appearance = new AppearanceForm(preferences, ShortcutStatus, () => ResetPlacement(out _)); Bind(appearance, "appearance"); }
             appearance.Show(); appearance.Activate();
         }
         else if (panel == "menu")
@@ -245,6 +249,73 @@ internal sealed class ShellHost : ApplicationContext
             commands.Show(); commands.Activate();
         }
     }
+    private WebPanelForm EnsureWebPanel(string panel)
+    {
+        if (webPanels.TryGetValue(panel, out var web) && !web.IsDisposed) return web;
+        var options = core.Options;
+        panelProxy ??= new PanelApiProxy(options.CoreUrl, options.TokenFile, () => session.CoreInstanceId);
+        web = new WebPanelForm(panel, Path.Combine(AppContext.BaseDirectory, "panels"), panelProxy,
+            options.StateRoot!, (next, chosen) => ShowPanel(next, chosen), WebPages[panel], WebCommand);
+        web.SetTextScale(preferences.Current.TextScale);
+        // The tray and the host's own view of Core follow what a page just changed (the microphone, a task).
+        web.CorePosted += (_, _) => { if (!quitting) _ = RefreshAsync(); };
+        if (panel == "memory") web.GeometryChanged += (_, _) => ++memoryGeneration;
+        webPanels[panel] = web;
+        Bind(web, panel);
+        if (panel == "memory") ++memoryGeneration;
+        return web;
+    }
+    // Host work a page asked for. Preferences and placement are host-local, never Core.
+    private void WebCommand(WebPanelForm web, PanelCommand command)
+    {
+        if (quitting) return;
+        void Result(bool ok, string error = "") => web.Post(new { type = "host.result", requestId = command.RequestId, ok, error });
+        switch (command.Kind)
+        {
+            case PanelCommandKind.Ready:
+                web.Post(PreferencesMessage());
+                web.Post(new { type = "host.core", canUseCore = session.CanUseCore });
+                break;
+            case PanelCommandKind.PreferencesSave:
+                var latest = preferences.Current;
+                // Compare in the page's own units (whole percent), so an odd stored scale is not a phantom conflict.
+                var baseline = PanelAppearance.From(latest) == command.Baseline ? latest : command.Baseline!.ApplyTo(latest);
+                var saved = preferences.TrySaveAppearance(command.Values!.ApplyTo(latest), baseline, out var saveError);
+                Result(saved, saveError);
+                break;
+            case PanelCommandKind.PreferencesReload:
+                preferences.Reload(); Result(true);
+                break;
+            case PanelCommandKind.PreferencesRecover:
+                if (!preferences.ReadOnly) { Result(false, "UI preferences are readable; there is nothing to recover."); break; }
+                Result(preferences.TryRecoverDefaults(out var recoverError), recoverError);
+                break;
+            case PanelCommandKind.PlacementReset:
+                Result(ResetPlacement(out var resetError), resetError);
+                break;
+            case PanelCommandKind.MemoryHighlightCleared:
+                if (web.PanelName == "memory") ++memoryGeneration;
+                break;
+        }
+    }
+    private object PreferencesMessage()
+    {
+        var values = preferences.Current;
+        var imported = values.Imports.Where(item => item.Status == "imported").ToArray();
+        return new {
+            type = "host.preferences", revision = values.Revision, readOnly = preferences.ReadOnly,
+            diagnostic = preferences.Diagnostic, filePath = preferences.FilePath, shortcutStatus = ShortcutStatus(),
+            values = PanelAppearance.From(values),
+            legacy = new {
+                attempted = values.ImportAttempted, imported = imported.Length,
+                invalid = values.Imports.Any(item => item.Status == "invalid"),
+                topmostNotApplied = imported.Any(item => item.AlwaysOnTop == true),
+                quietOrTabRecorded = imported.Any(item => item.Quiet.HasValue || item.SelectedTab.HasValue),
+                legacyChatHint = values.LegacyChat is not null,
+            },
+        };
+    }
+    private WebPanelForm? PendingWebPanel() => webPanels.Values.FirstOrDefault(web => !web.IsDisposed && web.HasPendingWork);
     private Task<bool> QuitFromMenuAsync()
     {
         return Task.FromResult(QueueNativeQuit());
@@ -261,10 +332,55 @@ internal sealed class ShellHost : ApplicationContext
         // Semantic navigation does not activate a window or take ownership of user focus.
         if (quitting || quitPending || settings?.HasPendingWork == true || agents?.HasPendingWork == true
             || board?.HasPendingWork == true || paths?.HasPendingWork == true || content?.HasPendingWork == true
-            || integrations?.HasPendingWork == true || voice?.HasPendingWork == true)
+            || integrations?.HasPendingWork == true || voice?.HasPendingWork == true
+            || webPanels.Values.Any(web => !web.IsDisposed && web.HasPendingWork && web.PanelName != "memory"))
             return Task.FromResult(new MemoryPanelAck(request, "deferred", Math.Max(memoryGeneration, request.Generation)));
+        if (WebMemory) return PresentWebMemoryAsync(request, token);
         EnsureMemoryPanel();
         return memory!.PresentAsync(request, () => memoryGeneration, token);
+    }
+    // The web Memory page's half of MemoryForm.PresentAsync: the host checks and reads, the page
+    // selects and highlights, and the acknowledgement carries only what the page reports it shows.
+    private async Task<MemoryPanelAck> PresentWebMemoryAsync(MemoryPanelRequest request, CancellationToken token)
+    {
+        var web = EnsureWebPanel("memory");
+        MemoryPanelAck Outcome(string state) => new(request, state, Math.Max(memoryGeneration, request.Generation),
+            !web.IsDisposed && web.Visible && web.WindowState != FormWindowState.Minimized);
+        bool Allowed() => !quitting && !web.IsDisposed && session.CanUseCore && MemoryPanelClient.CanPresent(request,
+            session.CoreInstanceId, web.HasUnsavedChanges, web.HasPendingWork
+                || session.TaskControlBusy || session.SecondaryMutationBusy || session.VoiceBusy,
+            web.Visible, web.WindowState == FormWindowState.Minimized, web.LastDismissal, DateTimeOffset.UtcNow);
+        if (webPresenting || !Allowed()) return Outcome("deferred");
+        var beforeGeneration = memoryGeneration;
+        webPresenting = true;
+        using var bounded = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, token);
+        bounded.CancelAfter(request.Expires - DateTimeOffset.UtcNow > TimeSpan.Zero
+            ? request.Expires - DateTimeOffset.UtcNow : TimeSpan.FromMilliseconds(1));
+        try
+        {
+            var value = await session.MemoryDetailAsync(request.Id, bounded.Token);
+            if (!await session.MemoryPresentationPendingAsync(request, bounded.Token)) return Outcome("unavailable");
+            bounded.Token.ThrowIfCancellationRequested();
+            if (!Allowed() || beforeGeneration != memoryGeneration) return Outcome("deferred");
+            if (value.Epoch != request.Epoch || value.Item.Id != request.Id || value.Item.Version != request.Version)
+                return Outcome("unavailable");
+            if (!web.Visible) web.ShowPassive();
+            var shown = await web.PresentMemoryAsync(request, bounded.Token);
+            if (shown is not { Anchor: { } anchor } answer || answer.Status is not ("selected" or "already-visible")
+                || !Allowed() || !web.Visible || web.WindowState == FormWindowState.Minimized)
+            {
+                web.Post(new { type = "host.presentation-outcome", requestId = request.Request, confirmed = false });
+                return Outcome("unavailable");
+            }
+            return new(request, answer.Status, Math.Max(memoryGeneration, request.Generation), true, request.Id,
+                request.Version, new(anchor.X, anchor.Y, anchor.Width, anchor.Height));
+        }
+        catch (Exception error) when (error is not OperationCanceledException || !token.IsCancellationRequested)
+        {
+            web.Post(new { type = "host.presentation-outcome", requestId = request.Request, confirmed = false });
+            return Outcome("unavailable");
+        }
+        finally { webPresenting = false; }
     }
     private Task<bool> RetryFromMenuAsync() { _ = RetryCoreAsync(); return Task.FromResult(true); }
     private bool QueueNativeQuit()
@@ -278,7 +394,7 @@ internal sealed class ShellHost : ApplicationContext
         foreach (var web in webPanels.Values.Where(item => !item.IsDisposed && item.HasUnsavedChanges).ToArray())
         {
             ShowPanel(web.PanelName);
-            if (MessageBox.Show(web, "Settings has changes you have not saved. Quit anyway and lose them?",
+            if (MessageBox.Show(web, web.DisplayName + " has changes you have not saved. Quit anyway and lose them?",
                 "SORA · Unsaved changes", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
                 MessageBoxDefaultButton.Button2) != DialogResult.Yes) return false;
         }
@@ -316,19 +432,24 @@ internal sealed class ShellHost : ApplicationContext
             hotkey = new HotkeyWindow(() => ShowPanel("chat"), registeredShortcut);
         }
         chat?.ApplyPreferences(values); SessionChanged(null, EventArgs.Empty);
+        var message = PreferencesMessage();
+        foreach (var web in webPanels.Values.Where(item => !item.IsDisposed)) { web.SetTextScale(values.TextScale); web.Post(message); }
         if (board is { IsDisposed: false } && board.IsExpanded != values.BoardExpanded)
             board.SetExpanded(values.BoardExpanded, notify: false);
     }
     private void ShowPendingSecondary()
     {
+        if (PendingWebPanel() is { } web) { ShowPanel(web.PanelName); return; }
+        if (webPresenting) { ShowPanel("memory"); return; }
         ShowPanel(settings?.HasPendingWork == true ? "settings" : memory?.HasPendingWork == true ? "memory" : voice?.HasPendingWork == true ? "voice" : board?.HasPendingWork == true ? "board" : content?.HasPendingWork == true ? "content"
             : integrations?.HasPendingWork == true ? "integrations" : paths?.HasPendingWork == true ? "paths" : "agents");
     }
-    private void ResetPlacement()
+    private bool ResetPlacement(out string error)
     {
         var values = preferences.Current;
-        if (!preferences.TrySave(values with { Panels = [], LegacyChat = null }, values.Revision, out _)) return;
+        if (!preferences.TrySave(values with { Panels = [], LegacyChat = null }, values.Revision, out error)) return false;
         foreach (var binding in bindings.Values) binding.Restore(defaults: true);
+        return true;
     }
     private void DisplaySettingsChanged(object? sender, EventArgs args)
     {
@@ -365,6 +486,12 @@ internal sealed class ShellHost : ApplicationContext
         if (quitting) return;
         settings?.UpdateProjection();
         agents?.UpdateHostAvailability(session.CoreInstanceId); paths?.UpdateHostAvailability(session.CoreInstanceId);
+        if (session.CanUseCore != webCoreUsable)
+        {
+            webCoreUsable = session.CanUseCore;
+            foreach (var web in webPanels.Values.Where(item => !item.IsDisposed))
+                web.Post(new { type = "host.core", canUseCore = webCoreUsable });
+        }
         board?.Render(session.Retained); content?.Render(); integrations?.Render();
         var label = core.EffectsBlocked ? "Core " + core.Phase
             : !session.Snapshot.Connected ? "Core unavailable" : session.Snapshot.StatusLabel;

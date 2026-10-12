@@ -16,6 +16,17 @@ export class CoreError extends Error {
   }
 }
 
+/** An exact Core identifier (task, memory, reference). Core does not percent-decode paths. */
+export const ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
+
+/** The ID as a path segment: checked, then inserted unchanged (":" must stay ":"). */
+export function itemPath(id) {
+  if (typeof id !== "string" || !ITEM_ID.test(id) || id.includes("..")) {
+    throw new TypeError("Use an exact Core identifier.");
+  }
+  return id;
+}
+
 export class CoreApi {
   constructor({ fetchImpl = globalThis.fetch?.bind(globalThis), base = "" } = {}) {
     this.fetch = fetchImpl;
@@ -66,20 +77,54 @@ export class CoreApi {
   voiceAction(action) {
     return this.request("/api/v1/voice/local", { method: "POST", body: { action } });
   }
-  task(taskId) { return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}`); }
+  async task(taskId) { return this.request(`/api/v1/tasks/${itemPath(taskId)}`); }
   agents() { return this.request("/api/v1/agents/catalogue"); }
   tasks(limit = 50) { return this.request(`/api/v1/tasks?limit=${limit}`); }
-  taskEvidence(taskId) {
-    return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/evidence`);
+  async taskEvidence(taskId) {
+    return this.request(`/api/v1/tasks/${itemPath(taskId)}/evidence`);
   }
-  cancelTask(taskId) {
-    return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/cancel`, { method: "POST", body: {} });
+  async cancelTask(taskId) {
+    return this.request(`/api/v1/tasks/${itemPath(taskId)}/cancel`, { method: "POST", body: {} });
   }
-  steerTask(taskId, instruction) {
-    return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/steer`,
+  async steerTask(taskId, instruction) {
+    return this.request(`/api/v1/tasks/${itemPath(taskId)}/steer`,
       { method: "POST", body: { instruction } });
   }
-  memory(memoryId) { return this.request(`/api/v1/memories/${encodeURIComponent(memoryId)}`); }
+  async memory(memoryId) { return this.request(`/api/v1/memories/${itemPath(memoryId)}`); }
+
+  // Agents: the cached catalogue is free to read; refreshing asks each agent for its models.
+  refreshAgents(signal) {
+    return this.request("/api/v1/agents/catalogue/refresh", { method: "POST", body: {}, signal });
+  }
+  /** Start a delegated task. The body carries its own idempotency_key, reused on an exact retry. */
+  delegate(body) { return this.request("/api/v1/tasks", { method: "POST", body }); }
+
+  // Project paths: who holds a writer reservation, and the recent write evidence.
+  paths() { return this.request("/api/v1/paths"); }
+  reconcilePaths() { return this.request("/api/v1/paths/reconcile", { method: "POST", body: {} }); }
+
+  // Memory. Filters are checked by the page's model before they get here.
+  memories({ q = "", state = "active", project = "all", scope = "", cursor = null } = {}) {
+    const query = `limit=50&state=${state}&project=${project}&q=${encodeURIComponent(q)}`
+      + `&scope=${encodeURIComponent(scope)}${cursor ? `&cursor=${cursor}` : ""}`;
+    return this.request(`/api/v1/memories?${query}`);
+  }
+  async correctMemory(memoryId, body) {
+    return this.request(`/api/v1/memories/${itemPath(memoryId)}/correct`, { method: "POST", body });
+  }
+  async forgetMemory(memoryId, body) {
+    return this.request(`/api/v1/memories/${itemPath(memoryId)}/forget`, { method: "POST", body });
+  }
+  async memoryReceipt(requestId) { return this.request(`/api/v1/memory-mutations/${itemPath(requestId)}`); }
+  contentReferences() { return this.request("/api/v1/content/references"); }
+  async openReference(referenceId) {
+    return this.request("/api/v1/content/navigate", { method: "POST", body: {
+      utterance: "open this referenced content", verb: "open", explicit_reference_id: itemPath(referenceId) } });
+  }
+
+  identity() { return this.request("/api/v1/runtime/identity"); }
+  /** What the companion is running (dialogue model, voice), as Core reports it. */
+  companion() { return this.request("/api/v1/projections/companion"); }
 
   // Settings (owner-local; Core checks the revision so a stale page cannot overwrite).
   settings() { return this.request("/api/v1/projections/settings"); }

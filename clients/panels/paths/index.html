@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Project paths</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./paths.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA project paths">
+    <header class="titlebar"><span class="title">Project paths</span><nav class="window-controls"></nav></header>
+    <div class="window-body paths-body">
+      <div class="paths-top">
+        <div class="paths-head">
+          <div class="intro">
+            <h1>Project paths</h1>
+            <p class="lead">Project folders reserved for an agent to write in, and what SORA has recorded about files there.</p>
+          </div>
+          <div class="actions">
+            <button class="btn" id="refresh" type="button" title="Read the evidence again"></button>
+            <button class="btn" id="recheck" type="button">Recheck stopped writers</button>
+          </div>
+        </div>
+        <p class="read-label" id="read-label" aria-live="polite"></p>
+        <div id="confirm-slot"></div>
+        <div class="banner" id="banner" role="status" hidden></div>
+      </div>
+      <div class="paths-scroll selectable" id="content">
+        <p class="notice core-notice" id="notice" hidden></p>
+        <section class="card evidence-card" id="reservations" aria-labelledby="reservations-title">
+          <div class="card-head">
+            <h2 id="reservations-title">Reserved projects</h2>
+            <span class="badge muted" id="reservations-count" hidden></span>
+            <span class="badge warn" id="reservations-stale" hidden>May be out of date</span>
+          </div>
+          <p class="card-help">While an agent may still be writing in a project, SORA keeps it reserved and won't reserve the same folder, or one inside or around it, for another agent task. If SORA can't confirm the writer stopped, the reservation stays.</p>
+          <div id="reservations-body"></div>
+        </section>
+        <section class="card evidence-card" id="evidence" aria-labelledby="evidence-title">
+          <div class="card-head">
+            <h2 id="evidence-title">Recent write evidence</h2>
+            <span class="badge muted" id="evidence-count" hidden></span>
+            <span class="badge warn" id="evidence-stale" hidden>May be out of date</span>
+          </div>
+          <p class="card-help">The newest 250 records, newest first. “How SORA knows” describes how much SORA saw, not that a change succeeded.</p>
+          <div id="evidence-body"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="./paths.js"></script>
+</body>
+</html>

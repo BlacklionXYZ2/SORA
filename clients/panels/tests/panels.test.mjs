@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { CoreApi, CoreError } from "../shared/api.js";
-import { HOST_MESSAGES, OPENABLE_PANELS, hosted, send } from "../shared/bridge.js";
+import { CoreApi, CoreError, itemPath } from "../shared/api.js";
+import {
+  HOST_MESSAGES, OPENABLE_PANELS, hostRequest, hosted, send, validAppearance,
+} from "../shared/bridge.js";
 import { ICON_NAMES, icon } from "../shared/icons.js";
 import {
   canSend, isSendKey, newRequestId, normaliseMessages, sameMessages, speaker, viewRows,
@@ -103,6 +105,55 @@ test("bridge only sends known messages and panels", () => {
   assert.throws(() => send("shell.exec"), TypeError);
   assert.throws(() => send("panel.open", { panel: "C:/Windows" }), TypeError);
   assert.ok(HOST_MESSAGES.includes("window.drag") && OPENABLE_PANELS.includes("settings"));
+});
+
+test("IDs go into Core paths unchanged, and only exact IDs do", async () => {
+  assert.equal(itemPath("memory-1:2"), "memory-1:2");
+  for (const bad of ["", "../x", "a..b", "a/b", "a b", "-x", 5, null]) assert.throws(() => itemPath(bad), TypeError);
+  const calls = [];
+  const api = new CoreApi({ fetchImpl: async (url, init) => {
+    calls.push([url, init.method, init.body && JSON.parse(init.body)]);
+    return { ok: true, status: 200, json: async () => ({}) };
+  } });
+  await api.memory("memory-a:b");
+  await api.forgetMemory("memory-a", { request_id: "r" });
+  await api.openReference("content-1");
+  await api.memories({ q: "teal & blue", state: "all", project: "global", scope: "dialogue", cursor: "abc_1" });
+  assert.deepEqual(calls.map((call) => call.slice(0, 2)), [
+    ["/api/v1/memories/memory-a:b", "GET"], ["/api/v1/memories/memory-a/forget", "POST"],
+    ["/api/v1/content/navigate", "POST"],
+    ["/api/v1/memories?limit=50&state=all&project=global&q=teal%20%26%20blue&scope=dialogue&cursor=abc_1", "GET"],
+  ]);
+  assert.deepEqual(calls[2][2], { utterance: "open this referenced content", verb: "open",
+    explicit_reference_id: "content-1" });
+  // A bad ID is a rejected promise, never a request.
+  await assert.rejects(api.task("../status"), TypeError);
+  assert.equal(calls.length, 4);
+});
+
+test("the bridge carries busy reports, appearance saves and memory highlights, checked", async () => {
+  const values = { theme: "Dark", textScale: 110, shortcut: "CtrlAltSpace", chatCompact: false,
+    chatPinned: true, showTechnicalDetail: false, reducedMotion: true };
+  assert.deepEqual(send("panel.busy", { busy: true }), { type: "panel.busy", busy: true });
+  assert.throws(() => send("panel.busy", { busy: "yes" }), TypeError);
+  assert.ok(validAppearance(values));
+  for (const bad of [{ ...values, theme: "Light" }, { ...values, textScale: 200 }, { ...values, extra: 1 },
+    { ...values, chatPinned: 1 }, null]) assert.equal(validAppearance(bad), false);
+  assert.throws(() => send("prefs.save", { requestId: "r1", values, baseline: { ...values, shortcut: "F1" } }), TypeError);
+  assert.throws(() => send("placement.reset", {}), TypeError);
+  // Outside SoraShell a host request is refused honestly rather than left hanging.
+  const result = await hostRequest("prefs.save", { values, baseline: values });
+  assert.equal(result.ok, false);
+  assert.match(result.error, /SORA's app/);
+  const id = "0f8fad5b-d9cb-469f-a165-70867728950e";
+  const anchor = { x: 10, y: 20, width: 300, height: 120 };
+  assert.deepEqual(send("memory.presented", { requestId: id, status: "selected", anchor }),
+    { type: "memory.presented", requestId: id, status: "selected", anchor });
+  assert.ok(send("memory.presented", { requestId: id, status: "unavailable" }));
+  assert.throws(() => send("memory.presented", { requestId: id, status: "selected" }), TypeError);
+  assert.throws(() => send("memory.presented", { requestId: id, status: "unavailable", anchor }), TypeError);
+  assert.throws(() => send("memory.presented", { requestId: "r1", status: "unavailable" }), TypeError);
+  assert.ok(HOST_MESSAGES.includes("memory.highlight-cleared"));
 });
 
 test("icons are known, static SVG", () => {
