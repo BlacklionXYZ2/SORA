@@ -17,7 +17,7 @@ WebView." Status (2026-10-12, Opus 5.5):
   default, with the host messages they need (busy and quit protection, UI preferences, the
   Memory highlight handshake). They were checked in headless Chromium against an isolated Core
   only; the native check on Windows and the owner's look review are open, so W5's gate is not
-  passed ([changelog](../../changelog/2026-10-12T173000+0100_GUI-WEB-W5-PANELS_Opus-5.5.md)).
+  passed ([changelog](../../changelog/2026-10-12T173406+0100_GUI-WEB-W5-PANELS-PROGRESS_Opus-5.5.md)).
 - Details: [changelog](../../changelog/2026-10-07T130000+0100_GUI-WEB-SETTINGS-CHAT_Opus-5.5.md). The WinForms state before the rewrite is
 kept on branch `snapshot/winforms-gui-2026-10-06`. It serves [VISION.md](../../VISION.md) and
 [V1.md](../../V1.md). The approved visual baseline is unchanged: the

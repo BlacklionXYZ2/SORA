@@ -138,6 +138,13 @@ internal sealed class WebPanelForm : Form
         core.NavigationStarting += (_, args) => {
             // Panels never leave their own origin.
             if (!args.Uri.StartsWith($"https://{PanelApiProxy.Host}/", StringComparison.OrdinalIgnoreCase)) args.Cancel = true;
+            else PageGone();
+        };
+        core.ProcessFailed += (_, args) => {
+            // A hung page may recover, so only a page that has really gone is forgotten. A crashed
+            // renderer gets the panel back by reloading it; a lost browser process cannot.
+            if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.BrowserProcessExited) PageGone();
+            else if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.RenderProcessExited) { PageGone(); core.Reload(); }
         };
         core.NewWindowRequested += (_, args) => args.Handled = true;
         core.Navigate($"https://{PanelApiProxy.Host}/{panel}/index.html");
@@ -211,7 +218,11 @@ internal sealed class WebPanelForm : Form
             case PanelCommandKind.Busy: HasPendingWork = command.Busy; break;
             case PanelCommandKind.PickFile: PickFile(command.PickKind!, command.RequestId!, command.StartFolder); break;
             case PanelCommandKind.MemoryPresented:
-                if (presenting is { } waiting && waiting.Request.ToString() == command.RequestId) waiting.Reply.TrySetResult(command);
+                if (presenting is { } waiting && waiting.Request.ToString() == command.RequestId)
+                {
+                    hostCommand?.Invoke(this, command); // before the reply, so the host's snapshot is this moment's
+                    waiting.Reply.TrySetResult(command);
+                }
                 break;
             case PanelCommandKind.Ready:
                 pageReady = true;
@@ -226,6 +237,16 @@ internal sealed class WebPanelForm : Form
                 hostCommand?.Invoke(this, command!);
                 break;
         }
+    }
+
+    // The page that reported unsaved or in-flight work is gone (a reload or a failed renderer), so
+    // nothing of it can hold up Quit, and a presentation waiting on it ends now.
+    private void PageGone()
+    {
+        pageReady = false;
+        HasUnsavedChanges = false;
+        HasPendingWork = false;
+        presenting?.Reply.TrySetCanceled();
     }
 
     /// <summary>Sends a host message to the page once it is listening; earlier messages are dropped.</summary>

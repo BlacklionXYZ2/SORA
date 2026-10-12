@@ -764,8 +764,9 @@ export class MemoryBrowser {
         s.listNote = { tone: "warn", text: "This is the last page SORA keeps track of. Refresh to start again from the newest." };
       }
       const listed = page.items.some((row) => row.id === s.selected);
-      if (s.selected !== null && s.selected === selectedAtStart && !listed) {
-        // The classic rule: a selection that is not on the new page is let go.
+      if (s.selected !== null && s.selected === selectedAtStart && !listed && s.highlight?.id !== s.selected) {
+        // The classic rule: a selection that is not on the new page is let go. The record SORA is
+        // showing stays: the owner did not choose this read, and dropping it would end the highlight.
         s.selected = null;
         s.detail = null;
         s.detailCurrent = false;
@@ -1170,6 +1171,8 @@ export class MemoryBrowser {
     this.activePresentation = null;
     this.state.presenting = false;
     this.emit();
+    // SORA's request can open the window before its first list read, which waits while presenting.
+    if (!this.state.page && !this.state.reading) void this.readPage({ user: false });
     return true;
   }
 

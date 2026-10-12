@@ -93,9 +93,12 @@ test("CoreApi separates 'Core unreachable' from 'Core refused'", async () => {
   const conflict = await refused.dialogue("x", "r1").catch((e) => e);
   assert.equal(conflict.code, "DIALOGUE_REQUEST_CONFLICT");
   assert.equal(conflict.message, "Use a new request ID");
+  assert.equal(conflict.detail.code, "DIALOGUE_REQUEST_CONFLICT");
   assert.ok(!conflict.unavailable);
   const proxyDown = new CoreApi({ fetchImpl: async () => ({ ok: false, status: 503, json: async () => ({}) }) });
-  assert.ok((await proxyDown.status().catch((e) => e)).unavailable);
+  const gone = await proxyDown.status().catch((e) => e);
+  assert.ok(gone.unavailable);
+  assert.equal(gone.detail, null);
 });
 
 test("bridge only sends known messages and panels", () => {

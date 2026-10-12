@@ -3,11 +3,13 @@
 // Core and adds the owner token. The token never reaches page code.
 
 export class CoreError extends Error {
-  constructor(message, { status = 0, code = "CORE_UNAVAILABLE" } = {}) {
+  constructor(message, { status = 0, code = "CORE_UNAVAILABLE", detail = null } = {}) {
     super(message);
     this.name = "CoreError";
     this.status = status;
     this.code = code;
+    /** Core's own error object (for example the facts behind a 409), when it sent one. */
+    this.detail = detail;
   }
 
   /** True when Core could not be reached at all, rather than refusing the request. */
@@ -51,9 +53,9 @@ export class CoreApi {
     }
     const data = await response.json().catch(() => null);
     if (!response.ok) {
-      const detail = data?.error ?? {};
-      throw new CoreError(detail.message || `Core returned ${response.status}.`,
-        { status: response.status, code: detail.code || "CORE_ERROR" });
+      const detail = data?.error && typeof data.error === "object" ? data.error : null;
+      throw new CoreError(detail?.message || `Core returned ${response.status}.`,
+        { status: response.status, code: detail?.code || "CORE_ERROR", detail });
     }
     return data;
   }

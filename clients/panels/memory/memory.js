@@ -3,13 +3,12 @@ import { onHostMessage, send as sendToHost } from "../shared/bridge.js";
 import { icon } from "../shared/icons.js";
 import { setUpWindow } from "../shared/window.js";
 import {
-  DEFAULT_QUERY, ErrorDetails, FORGET_MEANING, MAX_CONTENT, MemoryBrowser, PROJECTS, STATES,
+  DEFAULT_QUERY, FORGET_MEANING, MAX_CONTENT, MemoryBrowser, PROJECTS, STATES,
   codePoints, contentError, inspectionFacts, pageStatus, sameQuery, stateLabel, when,
 } from "./memory-model.js";
 
 const IDENTITY_MS = 5000;
-const errors = new ErrorDetails(globalThis.fetch.bind(globalThis));
-const memory = new MemoryBrowser({ api: new CoreApi({ fetchImpl: errors.fetch }), errors });
+const memory = new MemoryBrowser({ api: new CoreApi() });
 const s = memory.state;
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -101,7 +100,7 @@ function reveal(node) {
 
 els.modeOverview.innerHTML = icon("memory") + "<span>Overview</span>";
 els.modeSearch.innerHTML = icon("search") + "<span>Search</span>";
-els.modeGraph.innerHTML = icon("models") + "<span>Graph</span><span class=\"soon\">not yet</span>";
+els.modeGraph.innerHTML = icon("graph") + "<span>Graph</span><span class=\"soon\">not yet</span>";
 els.search.innerHTML = icon("search") + "<span>Search</span>";
 els.refresh.innerHTML = icon("retry", "Read again");
 els.state.replaceChildren(...STATES.map((item) => el("option", { value: item.value }, item.label)));

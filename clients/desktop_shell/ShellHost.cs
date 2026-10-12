@@ -49,6 +49,8 @@ internal sealed class ShellHost : ApplicationContext
         || board?.HasPendingWork == true || content?.HasPendingWork == true || integrations?.HasPendingWork == true || memory?.HasPendingWork == true
         || webPresenting || PendingWebPanel() is not null;
     private bool webPresenting;
+    // memoryGeneration when the Memory page's report arrived; a later change makes that report stale.
+    private long? presentedGeneration;
     private bool webCoreUsable;
     private bool quitting;
     private bool quitPending;
@@ -272,6 +274,10 @@ internal sealed class ShellHost : ApplicationContext
         void Result(bool ok, string error = "") => web.Post(new { type = "host.result", requestId = command.RequestId, ok, error });
         switch (command.Kind)
         {
+            case PanelCommandKind.PreferencesSave or PanelCommandKind.PreferencesReload or PanelCommandKind.PreferencesRecover
+                or PanelCommandKind.PlacementReset when web.PanelName != "appearance":
+                Result(false, "Only the Appearance window changes these preferences.");
+                break;
             case PanelCommandKind.Ready:
                 web.Post(PreferencesMessage());
                 web.Post(new { type = "host.core", canUseCore = session.CanUseCore });
@@ -295,6 +301,9 @@ internal sealed class ShellHost : ApplicationContext
                 break;
             case PanelCommandKind.MemoryHighlightCleared:
                 if (web.PanelName == "memory") ++memoryGeneration;
+                break;
+            case PanelCommandKind.MemoryPresented:
+                if (web.PanelName == "memory") presentedGeneration = memoryGeneration;
                 break;
         }
     }
@@ -348,7 +357,9 @@ internal sealed class ShellHost : ApplicationContext
             !web.IsDisposed && web.Visible && web.WindowState != FormWindowState.Minimized);
         bool Allowed() => !quitting && !web.IsDisposed && session.CanUseCore && MemoryPanelClient.CanPresent(request,
             session.CoreInstanceId, web.HasUnsavedChanges, web.HasPendingWork
-                || session.TaskControlBusy || session.SecondaryMutationBusy || session.VoiceBusy,
+                || session.TaskControlBusy || session.SecondaryMutationBusy || session.VoiceBusy
+                // Web Voice, Agents and Paths call Core directly, so the session does not see their work.
+                || webPanels.Values.Any(other => other != web && !other.IsDisposed && other.HasPendingWork),
             web.Visible, web.WindowState == FormWindowState.Minimized, web.LastDismissal, DateTimeOffset.UtcNow);
         if (webPresenting || !Allowed()) return Outcome("deferred");
         var beforeGeneration = memoryGeneration;
@@ -364,16 +375,20 @@ internal sealed class ShellHost : ApplicationContext
             if (!Allowed() || beforeGeneration != memoryGeneration) return Outcome("deferred");
             if (value.Epoch != request.Epoch || value.Item.Id != request.Id || value.Item.Version != request.Version)
                 return Outcome("unavailable");
-            if (!web.Visible) web.ShowPassive();
+            // The page judges "already visible" after this show, so the host remembers what was on screen.
+            var wasVisible = web.Visible;
+            if (!wasVisible) web.ShowPassive();
+            presentedGeneration = null;
             var shown = await web.PresentMemoryAsync(request, bounded.Token);
             if (shown is not { Anchor: { } anchor } answer || answer.Status is not ("selected" or "already-visible")
+                || presentedGeneration != memoryGeneration
                 || !Allowed() || !web.Visible || web.WindowState == FormWindowState.Minimized)
             {
                 web.Post(new { type = "host.presentation-outcome", requestId = request.Request, confirmed = false });
                 return Outcome("unavailable");
             }
-            return new(request, answer.Status, Math.Max(memoryGeneration, request.Generation), true, request.Id,
-                request.Version, new(anchor.X, anchor.Y, anchor.Width, anchor.Height));
+            return new(request, wasVisible ? answer.Status : "selected", Math.Max(memoryGeneration, request.Generation),
+                true, request.Id, request.Version, new(anchor.X, anchor.Y, anchor.Width, anchor.Height));
         }
         catch (Exception error) when (error is not OperationCanceledException || !token.IsCancellationRequested)
         {

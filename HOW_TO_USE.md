@@ -1,6 +1,6 @@
 # How to use SORA (current state)
 
-**Last updated: 2026-10-12 17:30, Opus 5.5 (Voice, Agents, Project paths, Memory and Appearance are now glass windows too).** This page describes what works *today* and how to use it.
+**Last updated: 2026-10-12 17:34, Opus 5.5 (Voice, Agents, Project paths, Memory and Appearance are now glass windows too).** This page describes what works *today* and how to use it.
 Every change that alters how SORA is started, set up or used must update this page in the same
 change (see [AGENTS.md](AGENTS.md)). If something here is wrong, it is a bug in this page.
 
@@ -240,7 +240,8 @@ style.
       click to open Activity on that exact task.
 - **Settings:** categories on the left. **Models** is described under First-time setup.
   **Appearance** chooses her avatar; its **Text size, Chat shortcut and placement…** button opens
-  the Appearance window. **Tools** has buttons for the Agents and Project paths windows.
+  the Appearance window. **Models** has buttons for the Agents and Project paths windows, above
+  the agent colleagues.
   - **Change model** opens the file picker in the current model's folder.
 - **Voice:** the microphone and voice state, the dialogue model, **Hold to talk** (mouse or
   Space; letting go sends, and switching away throws the recording away), **Stop speaking**
@@ -264,9 +265,10 @@ style.
 - **Appearance:** panel text size, reduced motion, the Chat shortcut, compact Chat, pinning
   Chat on top, and **Reset panel placement**. Each setting says which windows it affects. These
   stay on this PC; they are not Core settings.
-- **Quitting with unsaved work:** if Settings, Appearance or a memory correction has unsaved
-  changes, SORA names the window and asks before throwing them away. While a recording, a task
-  start or a memory change is still being sent, Quit waits and shows that window instead.
+- **Quitting with unsaved work:** if Settings, Appearance, a memory correction, or a task or
+  model description typed in Agents is not saved yet, SORA names the window and asks before
+  throwing it away. While a recording, a task start or a memory change is still being sent, Quit
+  waits and shows that window instead.
 - **See-through glass** needs Windows' **Transparency effects** on (Settings → Personalisation
   → Colours). When it is off, the windows use solid dark glass.
 - **Blur style:** to compare, start with `-PanelBackdrop Accent`. The default is `System`,

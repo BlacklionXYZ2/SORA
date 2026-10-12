@@ -562,6 +562,27 @@ test("a presentation of what is already on screen says so, and only one runs at 
   assert.equal(hidden.status, "selected", "a hidden window was not already showing it");
 });
 
+test("when SORA opens Memory on a record, the list still loads and that record stays selected", async () => {
+  const gate = deferred();
+  const { memory, s, cleared } = browser({
+    "GET /api/v1/runtime/identity": async () => { await gate.promise; return identity(); },
+    [`GET ${FIRST}`]: () => reply(200, pageOf(["memory-a"])),
+    "GET /api/v1/memories/memory-teal": () => reply(200, detailOf("memory-teal")),
+  });
+  const starting = memory.start();
+  // The host's request lands while the page is still starting.
+  assert.equal((await present(memory)).status, "selected");
+  gate.resolve();
+  await starting;
+  assert.equal(s.page, null, "the first read waits while SORA's request runs");
+  memory.endPresentation(REQUEST);
+  await new Promise((done) => setTimeout(done, 0));
+  assert.deepEqual(s.page.items.map((m) => m.id), ["memory-a"]);
+  assert.equal(s.selected, "memory-teal", "not on this page, but SORA is showing it");
+  assert.equal(s.highlight.id, "memory-teal");
+  assert.equal(cleared.length, 0);
+});
+
 test("when Core was down at the start, the page reads as soon as it answers", async () => {
   let up = false;
   const { memory, s } = browser({
