@@ -1,6 +1,6 @@
 # How to use SORA (current state)
 
-**Last updated: 2026-10-12 09:40, Opus 5.5 (Alice is her default avatar; Settings → Appearance chooses it; "wave" removed, walk instead).** This page describes what works *today* and how to use it.
+**Last updated: 2026-10-12 17:30, Opus 5.5 (Voice, Agents, Project paths, Memory and Appearance are now glass windows too).** This page describes what works *today* and how to use it.
 Every change that alters how SORA is started, set up or used must update this page in the same
 change (see [AGENTS.md](AGENTS.md)). If something here is wrong, it is a bug in this page.
 
@@ -127,8 +127,9 @@ git pull                 # get the latest version
   - **She hears your voice itself** on Gemma 4 E2B and E4B (their vision projector also has
     an audio encoder), not only the transcript, so tone and mis-transcribed words reach her.
     Settings → Audio → **Voice to the brain** → **transcribe** sends only the text.
-  - The older **Voice / microphone** window still works (right-click the microphone, or use the
-    tray). Hold **Hold to talk** there in the same way. She answers out loud with her mouth moving. Holding again interrupts her.
+  - The **Voice** window (right-click the microphone in Chat, or use the tray) shows the
+    microphone, the audio devices Core last reported and a big **Hold to talk** button. Hold it,
+    or Space, in the same way. She answers out loud with her mouth moving. Holding again interrupts her.
   She starts speaking her first sentence while she is still thinking up the rest, usually
   about 2 seconds after you let go. Spoken answers are kept short (one to three sentences);
   ask "tell me more" for detail.
@@ -142,8 +143,8 @@ git pull                 # get the latest version
 - **Looking and pointing:** "look at the play button", "point at it". She looks at or points to
   a control she has inspected in a window.
 - She cannot yet press buttons or type in other apps from chat.
-- **Memory:** she remembers things you tell her across restarts. Browse or correct what she
-  remembers in **Memory / browse**.
+- **Memory:** she remembers things you tell her across restarts. Browse, search, correct or
+  forget what she remembers in **Memory** (tray icon or command menu).
 
 ## Her character, goals and memories
 
@@ -220,10 +221,12 @@ SORA hands harder work to hosted agents and keeps chatting while they work:
   SORA, then ask for it by nickname ("ask Pip to …"). Chat-only custom agents cannot work in a
   project folder; they always use the model you configured for them.
 
-## The new glass windows (Chat, Settings and Activity)
+## The glass windows
 
-Chat, Settings and Activity are the new see-through windows that match the concept images. The
-other windows (Voice, Agents, Memory, Appearance) are still the older style for now.
+Chat, Settings, Activity, Voice, Agents, Project paths, Memory and Appearance are the new
+see-through windows that match the concept images. Open any of them from the tray icon or the
+command menu. The note board, Content, Integrations and the command menu are still the older
+style.
 
 - **Chat:**
   - Enter sends, and Shift+Enter adds a new line. **Stop** cancels her reply.
@@ -232,14 +235,38 @@ other windows (Voice, Agents, Memory, Appearance) are still the older style for 
   - Her lists, **bold** words and code are formatted.
   - Small chips under her reply show what Core recorded for that turn:
     - "Looked at the window" or "Read 2 sources": click to see the detail;
-    - "Used 1 memory": click to see which memories, with a link to open Memory;
+    - "Used 1 memory": click to see which memories; **Show** opens Memory on that exact memory;
     - "Asked Cody · Working": the agent task this message started, with its current state;
       click to open Activity on that exact task.
 - **Settings:** categories on the left. **Models** is described under First-time setup.
-  **Appearance** chooses her avatar; its **Window style, Chat shortcut and placement…** button
-  opens the older Appearance window.
+  **Appearance** chooses her avatar; its **Text size, Chat shortcut and placement…** button opens
+  the Appearance window. **Tools** has buttons for the Agents and Project paths windows.
   - **Change model** opens the file picker in the current model's folder.
-  - If you try to quit SORA with unsaved changes in Settings, she asks before throwing them away.
+- **Voice:** the microphone and voice state, the dialogue model, **Hold to talk** (mouse or
+  Space; letting go sends, and switching away throws the recording away), **Stop speaking**
+  (she stops talking), **Stop voice response** (stops the whole reply), **Close audio worker**,
+  and the audio devices Core last reported. Copy a device key into Settings → Audio to use it.
+- **Agents:** the agents SORA can hand work to, their models and what each can do.
+  **Refresh models** asks each agent for its current model list. To give an agent a task
+  yourself, pick the agent (or automatic), model, effort and project folder, describe the work
+  and press **Start**; you confirm first. If sending fails, **Retry exact submission** sends the
+  very same request again rather than starting a second task. **Open in Activity** follows it.
+  You can also describe what each model is for, which SORA uses when choosing one.
+- **Project paths:** which project folders an agent has reserved for writing, and what SORA
+  recorded about files there. **Recheck stopped writers** (after you confirm) asks Core to
+  release reservations whose writer has really stopped. It never forces anything open.
+- **Memory:** **Overview** and **Search** list what she remembers, newest first, 50 at a time;
+  filter by words, state (active, expired, replaced), project and scope. Selecting one shows
+  exactly what Core holds and the evidence it came from (**Open** opens that file). **Correct**
+  replaces a memory with your wording; **Forget** removes it after you confirm. When SORA shows
+  you a memory, Memory opens on it with a glow around it. The graph view comes later, once
+  Core records real links between memories.
+- **Appearance:** panel text size, reduced motion, the Chat shortcut, compact Chat, pinning
+  Chat on top, and **Reset panel placement**. Each setting says which windows it affects. These
+  stay on this PC; they are not Core settings.
+- **Quitting with unsaved work:** if Settings, Appearance or a memory correction has unsaved
+  changes, SORA names the window and asks before throwing them away. While a recording, a task
+  start or a memory change is still being sent, Quit waits and shows that window instead.
 - **See-through glass** needs Windows' **Transparency effects** on (Settings → Personalisation
   → Colours). When it is off, the windows use solid dark glass.
 - **Blur style:** to compare, start with `-PanelBackdrop Accent`. The default is `System`,
@@ -247,7 +274,9 @@ other windows (Voice, Agents, Memory, Appearance) are still the older style for 
 - **The old windows:** to go back for one run, quit SORA and start it with
   `.\Start-SORA.ps1 -ClassicPanels`. Please say what made you go back.
 - **Screenshots** beside the concept image: run `.\scripts\capture-panel.ps1` (Chat), or
-  `.\scripts\capture-panel.ps1 -Title "SORA · Settings" -Concept 05-settings.jpg`. Files go to
+  `.\scripts\capture-panel.ps1 -Title "SORA · Settings" -Concept 05-settings.jpg`. The other
+  titles are "SORA · Activity", "SORA · Voice", "SORA · Agents", "SORA · Project paths",
+  "SORA · Memory" (concept `04-memory.jpg`) and "SORA · Appearance". Files go to
   `.local\panels-review\`.
 
 Memory chips only appear for messages typed in this Chat. Spoken turns show their reply, but not
@@ -255,14 +284,18 @@ which memories it used.
 
 To preview the pages in an ordinary browser (no glass, for design review):
 `uv run python scripts\panels-dev-server.py --token-file .local\manual-test\private\sora-api-token`,
-then open <http://127.0.0.1:8790/chat/>, <http://127.0.0.1:8790/settings/> or
-<http://127.0.0.1:8790/gallery/>.
+then open <http://127.0.0.1:8790/chat/>, or `/settings/`, `/activity/`, `/voice/`, `/agents/`,
+`/paths/`, `/memory/`, `/appearance/` or `/gallery/` on the same address. Things only the app can
+do (opening another window, file pickers, Appearance) say so in a browser.
 
 ## Known limits right now
 
 - **Not yet tested end to end on the real model:** voice, the avatar, screen answers, choosing
   agents by name in conversation, and memory across restarts. This is the
   [V1 acceptance test](V1.md#how-to-run-the-acceptance-test).
+- **The new Voice, Agents, Project paths, Memory and Appearance windows** were checked in a
+  browser against a test Core, not yet inside SORA's app on Windows. If one misbehaves,
+  `.\Start-SORA.ps1 -ClassicPanels` brings back the older windows.
 - **Task routing misses "not".** "Don't edit files" can be read as a request to edit files,
   so phrase requests positively for now.
 - **Not built yet:** pressing or typing in other apps from chat, Automations, the memory graph
