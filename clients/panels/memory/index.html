@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Memory</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./memory.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA memory">
+    <header class="titlebar"><span class="title">Memory</span><nav class="window-controls"></nav></header>
+    <div class="window-body memory-body" id="body">
+      <section class="browse" aria-label="Memories">
+        <nav class="modes" role="tablist" aria-label="Memory views">
+          <button class="mode" id="mode-overview" role="tab" type="button" title="SORA's active memories"></button>
+          <button class="mode" id="mode-search" role="tab" type="button" title="Search remembered words and filter"></button>
+          <button class="mode" id="mode-graph" role="tab" type="button" aria-disabled="true" aria-describedby="graph-reason"
+            title="Not available yet: Core does not share connections between memories"></button>
+          <span class="visually-hidden" id="graph-reason">Not available yet. Core does not share connections between memories, so SORA does not draw any.</span>
+        </nav>
+        <form class="filters" id="filters" hidden>
+          <div class="filter-row">
+            <label class="words"><span class="visually-hidden">Remembered words</span>
+              <input class="input" id="q" type="search" maxlength="256" autocomplete="off" spellcheck="false"
+                placeholder="Search remembered words"></label>
+            <button class="btn primary" id="search" type="submit"></button>
+          </div>
+          <div class="filter-row">
+            <label>State <select class="input" id="state"></select></label>
+            <label>Where <select class="input" id="project"></select></label>
+            <label class="scope">Scope <input class="input" id="scope" maxlength="128" autocomplete="off"
+              spellcheck="false" placeholder="Any scope"></label>
+          </div>
+          <div class="filter-row">
+            <label class="exact">Exact ID <input class="input mono" id="exact" maxlength="128" autocomplete="off"
+              spellcheck="false" placeholder="memory-…"></label>
+            <button class="btn" id="inspect-id" type="button" title="Open exactly this memory; no other is substituted">Inspect ID</button>
+          </div>
+        </form>
+        <div class="list-head">
+          <span id="list-title">Active memories</span>
+          <button class="icon-btn" id="refresh" type="button" title="Read again"></button>
+        </div>
+        <ol class="memories" id="list" aria-label="Memories, newest saved first"></ol>
+        <div class="list-note" id="list-note" role="status" hidden></div>
+        <footer class="pager">
+          <button class="btn" id="previous" type="button" title="Read the previous page again">Previous</button>
+          <span class="page-status" id="page-status"></span>
+          <button class="btn" id="next" type="button" title="Read the next, older page">Next</button>
+        </footer>
+        <details class="about" id="about" hidden>
+          <summary>What this list shows</summary>
+          <p class="notice" id="about-note"></p>
+        </details>
+      </section>
+      <aside class="inspector selectable" id="inspector" aria-label="Selected memory">
+        <div id="inspector-main" aria-live="polite"></div>
+        <div id="draft"></div>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="./memory.js"></script>
+</body>
+</html>
