@@ -1,0 +1,92 @@
+.appearance-body { display: flex; border-top: 0; min-height: 0; }
+
+/* One settings-style pane, as in Settings but without the rail. */
+.pane { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.pane-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-5) var(--space-6); }
+.appearance-content { max-width: 880px; }
+.pane h1 { margin: 0; font: 600 var(--text-xl) / 1.3 var(--font-display); }
+.pane .lead { margin: 2px 0 var(--space-4); color: var(--ink-muted); font-size: var(--text-sm); }
+.pane h2 { margin: var(--space-5) 0 var(--space-2); font-size: var(--text-md); font-weight: 600; }
+
+.notices:empty { display: none; }
+.notices .banner { flex-wrap: wrap; }
+.notices .banner > span { flex: 1; min-width: 220px; overflow-wrap: anywhere; }
+.notices .banner .icon { flex: none; }
+.notices .banner.error { border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.1); color: #ffc9c9; }
+.banner-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+/* ---------- Fields (copied from Settings) ---------- */
+fieldset.prefs { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.prefs[hidden] { display: none; }
+fieldset.prefs:disabled .field-control { opacity: 0.55; }
+.group { margin-top: var(--space-4); }
+.group:first-child { margin-top: 0; }
+.group-title { font-size: var(--text-sm); font-weight: 600; color: var(--ink-soft); margin: 0 0 var(--space-2); }
+.fields { display: flex; flex-direction: column; gap: 2px; }
+.field {
+  display: grid; grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.1fr); gap: var(--space-3);
+  align-items: center; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control);
+}
+.field:hover { background: rgba(48, 70, 110, 0.18); }
+.field.edited { box-shadow: inset 2px 0 0 var(--accent); background: rgba(46, 104, 196, 0.12); }
+.field-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.field-label { font-size: var(--text-sm); }
+.field-head .badge { font-weight: 500; }
+.field-help { font-size: var(--text-xs); color: var(--ink-muted); margin-top: 2px; }
+.field-control { display: flex; gap: var(--space-2); align-items: center; min-width: 0; }
+.field-control > select.input { flex: 1; width: 100%; }
+.field-preview { font-size: var(--text-xs); color: var(--ink-muted); }
+.control-stack { display: flex; flex-direction: column; align-items: stretch; gap: 6px; width: 100%; min-width: 0; }
+.control-note { font-size: var(--text-xs); color: var(--ink-muted); }
+.control-note .state { white-space: normal; }
+
+/* Panel text size: slider plus a typed value, like the classic number box. */
+.scale { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-width: 0; }
+.scale input[type="range"] { flex: 1; min-width: 80px; accent-color: var(--accent); margin: 0; }
+.scale .input { width: 74px; flex: none; text-align: right; }
+.scale .unit { color: var(--ink-muted); font-size: var(--text-sm); }
+
+/* ---------- Avatar link, placement and file ---------- */
+.avatar-note {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-control);
+  border: 1px dashed var(--hairline); color: var(--ink-soft); font-size: var(--text-sm);
+}
+.avatar-note:empty { display: none; }
+.avatar-note > span { flex: 1; min-width: 200px; }
+.avatar-note > .avatar-icon { flex: none; min-width: 0; display: grid; place-items: center; }
+.avatar-note .icon { color: var(--accent-ink); width: 18px; height: 18px; }
+
+.block:empty { display: none; }
+.block .card { display: flex; flex-direction: column; gap: var(--space-2); }
+.block p { margin: 0; font-size: var(--text-sm); color: var(--ink-soft); }
+.block .actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.file-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.file-head strong { font-size: var(--text-sm); }
+.file-path {
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-control);
+  background: rgba(8, 14, 28, 0.45); border: 1px solid var(--hairline);
+  font: var(--text-xs) / 1.5 var(--font-mono); color: var(--ink-soft); overflow-wrap: anywhere; user-select: text;
+}
+.legacy { margin: 0; padding-left: 18px; }
+.legacy li { margin: 2px 0; overflow-wrap: anywhere; }
+.confirm .btn { flex: none; }
+
+.state-card { display: flex; gap: var(--space-3); align-items: flex-start; margin-bottom: var(--space-4); }
+.state-card .icon { width: 20px; height: 20px; color: var(--accent-ink); margin-top: 2px; }
+.state-card p { margin: 0; font-size: var(--text-sm); color: var(--ink-soft); }
+
+/* ---------- Save bar (copied from Settings) ---------- */
+.savebar {
+  flex: none; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+  margin: 0 var(--space-3) var(--space-3); padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border-radius: 14px; background: var(--glass-raised); border: 1px solid var(--hairline-strong);
+}
+.savebar[hidden] { display: none; }
+.savebar-text { flex: 1; min-width: 160px; font-size: var(--text-sm); color: var(--ink-soft); }
+.btn[hidden] { display: none; }
+
+@media (max-width: 560px) {
+  .field { grid-template-columns: 1fr; gap: var(--space-2); }
+  .pane-scroll { padding: var(--space-3) var(--space-4) var(--space-5); }
+}

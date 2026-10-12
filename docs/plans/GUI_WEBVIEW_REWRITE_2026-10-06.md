@@ -1,7 +1,7 @@
 # GUI rewrite on WebView2 — plan
 
 Prepared by **Opus 5.5**, 2026-10-06, after the owner's decision: "We are absolutely going with
-WebView." Status (2026-10-07, Opus 5.5):
+WebView." Status (2026-10-12, Opus 5.5):
 - **W0 and W1** are built. On the owner's machine there is real blur behind the glass; the
   owner's own look review is still open ([W0 check list](../gui/W0_OWNER_CHECKS_2026-10-06.md)).
 - **W2 Chat** is built: formatting, evidence chips, attachments, task and memory chips, and
@@ -12,8 +12,12 @@ WebView." Status (2026-10-07, Opus 5.5):
   windows. W4's gate (a week of daily use) is open.
 - **W5:** Activity is built as a web window, opened from Chat's task chips on the exact task. It
   was checked natively, and a [captioned test video](../../.local/videos/SORA_GUI_test_2026-10-07.mp4)
-  (local only) shows Chat, Activity and Settings working. Voice, Agents, Paths, Memory and
-  Appearance are still WinForms.
+  (local only) shows Chat, Activity and Settings working. On 2026-10-12 the Voice, Agents,
+  Project paths, Memory (Overview and Search) and Appearance pages were built and became the
+  default, with the host messages they need (busy and quit protection, UI preferences, the
+  Memory highlight handshake). They were checked in headless Chromium against an isolated Core
+  only; the native check on Windows and the owner's look review are open, so W5's gate is not
+  passed ([changelog](../../changelog/2026-10-12T173406+0100_GUI-WEB-W5-PANELS-PROGRESS_Opus-5.5.md)).
 - Details: [changelog](../../changelog/2026-10-07T130000+0100_GUI-WEB-SETTINGS-CHAT_Opus-5.5.md). The WinForms state before the rewrite is
 kept on branch `snapshot/winforms-gui-2026-10-06`. It serves [VISION.md](../../VISION.md) and
 [V1.md](../../V1.md). The approved visual baseline is unchanged: the

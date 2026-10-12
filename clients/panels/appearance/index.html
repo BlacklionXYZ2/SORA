@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Appearance</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./appearance.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA appearance">
+    <header class="titlebar"><span class="title">Appearance</span><nav class="window-controls"></nav></header>
+    <div class="window-body appearance-body">
+      <section class="pane" id="pane">
+        <div class="notices" id="notices" aria-live="polite"></div>
+        <div class="pane-scroll selectable" id="content">
+          <div class="appearance-content">
+            <h1>Appearance</h1>
+            <p class="lead">How SORA's windows look and behave on this PC. SORA's app keeps these, not Core:
+              no model, access, voice or agent settings change here.</p>
+            <div id="state-note"></div>
+            <fieldset class="prefs" id="fields"></fieldset>
+            <div class="avatar-note" id="avatar"></div>
+            <section class="block" id="placement" aria-labelledby="placement-title"></section>
+            <section class="block" id="file" aria-labelledby="file-title"></section>
+          </div>
+        </div>
+        <footer class="savebar" id="savebar" hidden>
+          <span class="savebar-text" id="savebar-text" aria-live="polite"></span>
+          <button class="btn" id="discard" type="button">Discard</button>
+          <button class="btn primary" id="save" type="button">Save</button>
+        </footer>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./appearance.js"></script>
+</body>
+</html>

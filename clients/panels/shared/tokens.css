@@ -70,3 +70,6 @@
 @media (prefers-reduced-motion: reduce) {
   :root { --fast: 0ms; --medium: 0ms; }
 }
+
+/* Appearance → Reduced motion (the host reports it). */
+:root[data-motion="reduced"] { --fast: 0ms; --medium: 0ms; }

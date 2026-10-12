@@ -12,10 +12,12 @@ namespace Sora.DesktopShell;
 //   none    Solid glass; what the page uses when Windows has transparency turned off.
 public enum PanelBackdrop { System, Accent, None }
 
-// One web panel window (Chat, Settings). Content is clients/panels/<panel>/ served from a virtual
-// host; Core calls go through PanelApiProxy so the owner token never reaches page code.
+// One web panel window (Chat, Settings, Activity, Voice, Agents, Project paths, Memory, Appearance).
+// Content is clients/panels/<panel>/ served from a virtual host; Core calls go through
+// PanelApiProxy so the owner token never reaches page code.
 internal sealed class WebPanelForm : Form
 {
+    private static readonly JsonSerializerOptions WebJson = new(JsonSerializerDefaults.Web);
     private static Task<CoreWebView2Environment>? environment;
     private readonly WebView2 view = new() { Dock = DockStyle.Fill, DefaultBackgroundColor = Color.Transparent };
     private readonly string panel;
@@ -23,21 +25,38 @@ internal sealed class WebPanelForm : Form
     private readonly PanelApiProxy proxy;
     private readonly string userDataFolder;
     private readonly Action<string, string?> openPanel;
+    private readonly Action<WebPanelForm, PanelCommand>? hostCommand;
+    private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private (Guid Request, TaskCompletionSource<PanelCommand> Reply)? presenting;
     private string? pendingSelect;
     private bool pageReady;
+    private bool passiveShow;
+    private double zoom = 1;
 
-    /// <summary>The page reports unsaved edits (Settings drafts), so Quit can ask first.</summary>
+    /// <summary>The page reports unsaved edits (a Settings or Appearance draft), so Quit can ask first.</summary>
     public bool HasUnsavedChanges { get; private set; }
+    /// <summary>The page reports work in flight (a voice hold, a task start, a memory edit), so Quit waits.</summary>
+    public bool HasPendingWork { get; private set; }
     public string PanelName => panel;
+    /// <summary>The name people see: "Project paths" rather than the "paths" key.</summary>
+    public string DisplayName => DisplayNames.GetValueOrDefault(panel) ?? char.ToUpperInvariant(panel[0]) + panel[1..];
+    /// <summary>When the owner last hid this window; Memory does not pop a passive highlight straight back up.</summary>
+    public DateTimeOffset LastDismissal { get; private set; } = DateTimeOffset.MinValue;
+    /// <summary>The window moved, resized, changed DPI, showed or hid, so any on-screen highlight is stale.</summary>
+    public event EventHandler? GeometryChanged;
     private PanelBackdrop applied = PanelBackdrop.None;
     private bool hostShutdown;
 
+    private static readonly IReadOnlyDictionary<string, string> DisplayNames = new Dictionary<string, string>
+        { ["paths"] = "Project paths" };
+
     public WebPanelForm(string panel, string panelsFolder, PanelApiProxy proxy, string stateRoot,
-        Action<string, string?> openPanel, Size? size = null)
+        Action<string, string?> openPanel, Size? size = null, Action<WebPanelForm, PanelCommand>? hostCommand = null)
     {
         this.panel = panel; this.panelsFolder = panelsFolder; this.proxy = proxy; this.openPanel = openPanel;
+        this.hostCommand = hostCommand;
         userDataFolder = Path.Combine(stateRoot, "webview2");
-        Text = "SORA · " + char.ToUpperInvariant(panel[0]) + panel[1..];
+        Text = "SORA · " + DisplayName;
         AccessibleName = Text;
         FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.CenterScreen;
@@ -50,6 +69,13 @@ internal sealed class WebPanelForm : Form
         FormClosing += (_, e) => {
             if (!hostShutdown && e.CloseReason == CloseReason.UserClosing) { e.Cancel = true; Hide(); }
         };
+        Move += (_, _) => GeometryChanged?.Invoke(this, EventArgs.Empty);
+        Resize += (_, _) => GeometryChanged?.Invoke(this, EventArgs.Empty);
+        DpiChanged += (_, _) => GeometryChanged?.Invoke(this, EventArgs.Empty);
+        VisibleChanged += (_, _) => {
+            if (!Visible && !hostShutdown) LastDismissal = DateTimeOffset.UtcNow;
+            GeometryChanged?.Invoke(this, EventArgs.Empty);
+        };
     }
 
     public static PanelBackdrop RequestedBackdrop() =>
@@ -59,6 +85,16 @@ internal sealed class WebPanelForm : Form
             "none" => PanelBackdrop.None,
             _ => PanelBackdrop.System,
         };
+
+    // Memory's passive highlight shows the window without taking focus from what the owner is doing.
+    protected override bool ShowWithoutActivation => passiveShow;
+
+    /// <summary>Shows the window without activating it.</summary>
+    public void ShowPassive()
+    {
+        passiveShow = true;
+        try { Show(); } finally { passiveShow = false; }
+    }
 
     protected override async void OnHandleCreated(EventArgs e)
     {
@@ -72,9 +108,9 @@ internal sealed class WebPanelForm : Form
             Controls.Add(new Label {
                 Dock = DockStyle.Fill, ForeColor = Color.White, BackColor = Color.FromArgb(16, 24, 40),
                 Padding = new Padding(16), Font = new Font("Segoe UI", 10f),
-                Text = "The web panel could not start, so this window cannot show SORA's new Chat.\r\n\r\n"
-                    + error.Message + "\r\n\r\nClose this window and start SORA without -WebPanels to use the "
-                    + "existing Chat. The WebView2 runtime ships with Windows 11.",
+                Text = "The web panel could not start, so this window cannot show SORA's " + DisplayName + ".\r\n\r\n"
+                    + error.Message + "\r\n\r\nClose this window and start SORA with -ClassicPanels to use the "
+                    + "older windows. The WebView2 runtime ships with Windows 11.",
             });
         }
     }
@@ -83,6 +119,7 @@ internal sealed class WebPanelForm : Form
     {
         environment ??= CoreWebView2Environment.CreateAsync(null, userDataFolder);
         await view.EnsureCoreWebView2Async(await environment);
+        view.ZoomFactor = zoom;
         var core = view.CoreWebView2;
         var settings = core.Settings;
         var devTools = Environment.GetEnvironmentVariable("SORA_PANELS_DEVTOOLS") == "1";
@@ -101,9 +138,24 @@ internal sealed class WebPanelForm : Form
         core.NavigationStarting += (_, args) => {
             // Panels never leave their own origin.
             if (!args.Uri.StartsWith($"https://{PanelApiProxy.Host}/", StringComparison.OrdinalIgnoreCase)) args.Cancel = true;
+            else PageGone();
+        };
+        core.ProcessFailed += (_, args) => {
+            // A hung page may recover, so only a page that has really gone is forgotten. A crashed
+            // renderer gets the panel back by reloading it; a lost browser process cannot.
+            if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.BrowserProcessExited) PageGone();
+            else if (args.ProcessFailedKind == CoreWebView2ProcessFailedKind.RenderProcessExited) { PageGone(); core.Reload(); }
         };
         core.NewWindowRequested += (_, args) => args.Handled = true;
         core.Navigate($"https://{PanelApiProxy.Host}/{panel}/index.html");
+    }
+
+    /// <summary>Appearance → Panel text size: the whole page scales, title bar included.</summary>
+    public void SetTextScale(double scale)
+    {
+        if (!double.IsFinite(scale) || scale is < 0.85 or > 1.75) return;
+        zoom = scale;
+        if (view.CoreWebView2 is not null) view.ZoomFactor = scale;
     }
 
     private async void OnRequest(object? sender, CoreWebView2WebResourceRequestedEventArgs args)
@@ -134,6 +186,7 @@ internal sealed class WebPanelForm : Form
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(result.Body));
             args.Response = view.CoreWebView2.Environment.CreateWebResourceResponse(stream, result.Status,
                 PanelApiProxy.ReasonPhrase(result.Status), "Content-Type: application/json\r\nCache-Control: no-store");
+            if (args.Request.Method == "POST") CorePosted?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception error) when (error is IOException or InvalidOperationException or COMException)
         {
@@ -143,6 +196,9 @@ internal sealed class WebPanelForm : Form
                 "Content-Type: application/json");
         }
     }
+
+    /// <summary>A page changed something in Core (a voice action, a task, a memory edit); the host refreshes its own view.</summary>
+    public event EventHandler? CorePosted;
 
     private void OnMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs args)
     {
@@ -159,16 +215,45 @@ internal sealed class WebPanelForm : Form
             case PanelCommandKind.Resize: WindowGlass.BeginNativeMove(Handle, PanelBridge.HitTest(command.Edge!)); break;
             case PanelCommandKind.OpenPanel: openPanel(command.Panel!, command.Select); break;
             case PanelCommandKind.Dirty: HasUnsavedChanges = command.Dirty; break;
+            case PanelCommandKind.Busy: HasPendingWork = command.Busy; break;
             case PanelCommandKind.PickFile: PickFile(command.PickKind!, command.RequestId!, command.StartFolder); break;
+            case PanelCommandKind.MemoryPresented:
+                if (presenting is { } waiting && waiting.Request.ToString() == command.RequestId)
+                {
+                    hostCommand?.Invoke(this, command); // before the reply, so the host's snapshot is this moment's
+                    waiting.Reply.TrySetResult(command);
+                }
+                break;
             case PanelCommandKind.Ready:
                 pageReady = true;
-                if (pendingSelect is { } waiting) { pendingSelect = null; Select(waiting); }
+                if (pendingSelect is { } chosen) { pendingSelect = null; Select(chosen); }
                 var radius = applied == PanelBackdrop.System ? 8 : 22;
-                view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new {
-                    type = "host.backdrop", kind = applied.ToString().ToLowerInvariant(), cornerRadius = radius,
-                }));
+                Post(new { type = "host.backdrop", kind = applied.ToString().ToLowerInvariant(), cornerRadius = radius });
+                hostCommand?.Invoke(this, command);
+                ready.TrySetResult();
+                break;
+            case PanelCommandKind.PreferencesSave or PanelCommandKind.PreferencesReload or PanelCommandKind.PreferencesRecover
+                or PanelCommandKind.PlacementReset or PanelCommandKind.MemoryHighlightCleared:
+                hostCommand?.Invoke(this, command!);
                 break;
         }
+    }
+
+    // The page that reported unsaved or in-flight work is gone (a reload or a failed renderer), so
+    // nothing of it can hold up Quit, and a presentation waiting on it ends now.
+    private void PageGone()
+    {
+        pageReady = false;
+        HasUnsavedChanges = false;
+        HasPendingWork = false;
+        presenting?.Reply.TrySetCanceled();
+    }
+
+    /// <summary>Sends a host message to the page once it is listening; earlier messages are dropped.</summary>
+    public void Post(object message)
+    {
+        if (!pageReady || view.CoreWebView2 is null || IsDisposed) return;
+        view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(message, WebJson));
     }
 
     // Native open dialog for a page; the page only ever receives the chosen path.
@@ -192,13 +277,40 @@ internal sealed class WebPanelForm : Form
         view.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(new { type = "host.file", requestId, path }));
     }
 
-    /// <summary>Asks the page to select an exact item (for Activity, a task ID).</summary>
+    /// <summary>Asks the page to select an exact item (a task ID for Activity, a memory ID for Memory).</summary>
     public void Select(string id)
     {
         if (!PanelBridge.ValidItemId(id)) return;
         // Until the page has said it is ready, its message listener may not exist yet.
         if (!pageReady || view.CoreWebView2 is null) { pendingSelect = id; return; }
         view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { type = "host.select", id }));
+    }
+
+    /// <summary>
+    /// Memory only: asks the page to show and highlight an exact memory version, and returns what the
+    /// page reports it did, with the highlighted area in screen pixels. Null means no usable answer.
+    /// </summary>
+    public async Task<(string Status, Rectangle? Anchor)?> PresentMemoryAsync(MemoryPanelRequest request, CancellationToken token)
+    {
+        if (presenting is not null) return null;
+        var reply = new TaskCompletionSource<PanelCommand>(TaskCreationOptions.RunContinuationsAsynchronously);
+        presenting = (request.Request, reply);
+        try
+        {
+            await ready.Task.WaitAsync(token);
+            Post(new { type = "host.present-memory", requestId = request.Request, id = request.Id,
+                version = request.Version, expiresAt = request.Expires.ToUniversalTime().ToString("O") });
+            var answer = await reply.Task.WaitAsync(token);
+            if (answer.Status == "unavailable" || answer.Anchor is not { } rect || IsDisposed || !Visible) return (answer.Status!, null);
+            // CSS pixels → physical pixels: the monitor's scale times this page's zoom, then to the screen.
+            var scale = DeviceDpi / 96d * view.ZoomFactor;
+            var local = Rectangle.FromLTRB((int)Math.Floor(rect.X * scale), (int)Math.Floor(rect.Y * scale),
+                (int)Math.Ceiling((rect.X + rect.Width) * scale), (int)Math.Ceiling((rect.Y + rect.Height) * scale));
+            var onScreen = Rectangle.Intersect(view.RectangleToScreen(Rectangle.Intersect(local, view.ClientRectangle)),
+                Screen.FromControl(view).Bounds);
+            return (answer.Status!, onScreen.Width > 0 && onScreen.Height > 0 ? onScreen : null);
+        }
+        finally { presenting = null; }
     }
 
     public void CloseForHostShutdown() { hostShutdown = true; Close(); }

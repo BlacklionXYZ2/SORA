@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Agents</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./agents.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA agents">
+    <header class="titlebar"><span class="title">Agents</span><nav class="window-controls"></nav></header>
+    <div class="window-body agents-body">
+      <section class="agent-list" aria-label="Agents SORA can hand work to">
+        <div class="list-head">
+          <span>Agents</span>
+          <button class="icon-btn" id="reload" type="button" title="Read the agent list again (no discovery)"></button>
+        </div>
+        <ol class="agents" id="agents"></ol>
+        <div class="list-foot" id="list-foot"></div>
+      </section>
+      <section class="agent-detail selectable" id="detail" aria-live="polite"></section>
+    </div>
+  </main>
+  <script type="module" src="./agents.js"></script>
+</body>
+</html>

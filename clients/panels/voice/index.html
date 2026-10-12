@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Voice</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./voice.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA voice">
+    <header class="titlebar"><span class="title">Voice</span><nav class="window-controls"></nav></header>
+    <div class="window-body voice-body">
+      <div class="banner" id="banner" role="status" hidden></div>
+      <div class="voice-scroll" id="scroll">
+        <section class="card voice-hero" aria-label="Voice status and controls">
+          <div class="hold-zone">
+            <button class="hold" id="hold" type="button" data-hold="off" disabled
+              title="Hold the mouse button or Space to record; let go to send what you said"
+              aria-describedby="hold-hint">
+              <span class="hold-icon" id="hold-icon" aria-hidden="true"></span>
+              <span class="hold-label" id="hold-label">Hold to talk</span>
+            </button>
+            <p class="hold-hint" id="hold-hint"></p>
+          </div>
+          <div class="hero-main">
+            <div class="status-block selectable" id="status" aria-live="polite" aria-label="Voice status"></div>
+            <div class="voice-actions" id="actions">
+              <button class="btn primary" id="start" type="button" disabled
+                title="Start Core's local speech worker. The microphone stays closed.">Start voice</button>
+              <button class="btn" id="stop-output" type="button" disabled
+                title="Silence her voice without cancelling the answer she is working on">Stop speaking</button>
+              <button class="btn" id="stop" type="button" disabled
+                title="Throw away a recording and cancel her spoken answer. Chat and agent tasks are not affected.">Stop voice response</button>
+              <button class="btn" id="close-audio" type="button" disabled
+                title="Close Core's local audio worker and its microphone. Closing this window only hides it.">Close audio worker</button>
+              <button class="btn link" id="settings" type="button"
+                title="Open Settings → Audio. This window never saves its own voice settings.">Voice settings</button>
+            </div>
+          </div>
+        </section>
+        <p class="outcome selectable" id="outcome" role="status" hidden></p>
+        <section class="card devices" aria-labelledby="devices-title">
+          <div class="card-head">
+            <h2 id="devices-title">Audio devices</h2>
+            <span class="badge muted">Last reported by Core</span>
+            <span class="badge warn" id="devices-stale" hidden>May be out of date</span>
+          </div>
+          <p class="notice">Read-only. To use a device, copy its key into Settings → Audio (Microphone device key or Speaker device key).</p>
+          <div class="device-list selectable" id="devices" aria-label="Device keys and channels, as the voice worker last reported them"></div>
+        </section>
+        <section class="help" aria-labelledby="help-title">
+          <h2 id="help-title">How voice works here</h2>
+          <ul id="help"></ul>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="./voice.js"></script>
+</body>
+</html>

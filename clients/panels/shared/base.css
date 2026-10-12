@@ -37,3 +37,13 @@ button { cursor: pointer; }
   position: absolute !important; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); white-space: nowrap;
 }
+
+/* Reduced motion (Windows' setting, or Appearance → Reduced motion): nothing loops or pulses. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+}
+:root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after { animation: none !important; }
+
+/* The hidden attribute always wins over a component's own display (badges, buttons, rows). */
+[hidden] { display: none !important; }

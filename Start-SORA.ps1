@@ -29,8 +29,9 @@ param(
     [switch]$UnifiedSettingsOnly,
     # Useful for supervised/automated launches; the normal interactive console stays available.
     [switch]$HiddenCore,
-    # The new glass Chat and Settings windows are the default (WebView2). -ClassicPanels opens the
-    # previous WinForms windows instead. -WebPanels is still accepted and changes nothing.
+    # The new glass windows (Chat, Settings, Activity, Voice, Agents, Project paths, Memory and
+    # Appearance) are the default (WebView2). -ClassicPanels opens the previous WinForms windows
+    # instead. -WebPanels is still accepted and changes nothing.
     [switch]$ClassicPanels,
     [switch]$WebPanels,
     # Translucency route for web panels: System (Windows 11 acrylic), Accent (older blur) or None.
