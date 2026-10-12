@@ -85,7 +85,7 @@ async def test_companion_control_is_local_and_requires_managed_session(tmp_path:
             denied = await routes.handle_request(request, remote_scopes=frozenset({"tasks:read"}))
             assert denied.status_code == 403
         response = await routes.handle_request(HttpRequest(
-            method="POST", path="/api/v1/companion", headers={}, body=b'{"state":"waving"}',
+            method="POST", path="/api/v1/companion", headers={}, body=b'{"state":"sitting"}',
         ))
         assert response.status_code == 409
     finally:
@@ -118,7 +118,7 @@ async def test_settings_backed_avatar_dispatch_and_revocation_without_grants(
         await session.start(token="fixture-only-avatar-token", port=12345)
         assert calls[0]["env"]["SORA_EMBODIMENT_CONNECT_GRANT"] == ""
         assert not session._grants
-        await session.present("waving")
+        await session.present("sitting")
         command = queue.get_nowait()
         assert await runtime.validate_embodiment_delivery(command)
         settings.save(SettingsEdit(version=3, expected_revision=0,

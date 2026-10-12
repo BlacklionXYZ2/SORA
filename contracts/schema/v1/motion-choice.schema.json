@@ -3,7 +3,6 @@
     "MotionKeyword": {
       "enum": [
         "none",
-        "wave",
         "sit",
         "lean",
         "climb",

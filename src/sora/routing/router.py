@@ -74,7 +74,10 @@ _OFFLINE_PATTERNS = re.compile(
 
 # Agent names for steering come from the shared AgentDirectory (Cody, Hermes, Aggie, Claude
 # and the owner's custom nicknames, with their spoken variants).
-_PRONOUN_TARGET = re.compile(r"\b(?:him|her|them|it)\b", re.IGNORECASE)
+# "Cancel that task" and "stop the job" refer to the one running task, like "cancel it".
+_PRONOUN_TARGET = re.compile(
+    r"\b(?:him|her|them|it|that|this)\b|\bthe (?:task|job|run)\b", re.IGNORECASE,
+)
 
 
 class RoutingEngine:

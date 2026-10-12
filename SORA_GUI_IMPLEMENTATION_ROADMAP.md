@@ -93,6 +93,9 @@ Preserve conventional category navigation and progressive model detail. The pict
 **Latest recorded regression:** 904 Python passed / 25 opt-in skipped, 8 PWA, mypy/lint/schema/compile, 369 C# and three zero-warning Windows builds, observed 2026-10-04 13:47:07 +01:00 by GPT-6.1 Sol (§4.33). **Independent rerun, 2026-10-05, Opus 5.5:** `pytest` 904 passed / 25 skipped, `ruff check` clean and `mypy --strict` clean (284 files) on the same source. C# 369/369, zero-warning builds of all three Windows clients and PWA 8/8 also confirmed. After the same day's [P03A/P06 audit](docs/verification/P03A_P06_INDEPENDENT_AUDIT_Opus-5.5_2026-10-05.md) (no GUI change): 908 passed / 25 skipped / 6 strict expected failures. Native and live checks were not rerun.
 
 **Technology change (2026-10-06, owner decision):** panel contents move from WinForms to **WebView2** (HTML/CSS/JS) inside the existing C# host. Stages, gates and order are in [the WebView2 rewrite plan](docs/plans/GUI_WEBVIEW_REWRITE_2026-10-06.md); this roadmap's requirements and acceptance gates still apply. The GUI-0b WinForms framework choice is superseded.
+- **Current position (2026-10-07, Opus 5.5):** the web Chat and Settings are the default windows.
+  The other panels are still WinForms, and `-ClassicPanels` brings back the old Chat and Settings.
+- Rewrite stage status is kept in the plan's header only.
 
 **Next (changed 2026-10-05 by owner decision):** the [V1](V1.md) acceptance test, not GUI-4b. V1 needs the GUI-0b/1/2/5c/6 parts listed in the [realignment](docs/plans/V1_REALIGNMENT_2026-10-05.md). **Automations (GUI-4), the memory graph (GUI-5a/b) and the Memory window's acceptance (GUI-3) are after V1.** No status above changes; component results still do not close native/live gates.
 

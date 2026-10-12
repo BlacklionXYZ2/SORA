@@ -30,6 +30,9 @@ class WindowsCaptureRequest(StrictModel):
     process_started_at: datetime | None = None
     max_pixels: int = Field(default=8_294_400, ge=1, le=8_294_400)
     max_bytes: int = Field(default=16_777_216, ge=1, le=16_777_216)
+    # Region only: scale the image down so its longest edge fits. This lets one overview cover
+    # every monitor; max_pixels then limits the scaled image, not the source rectangle.
+    output_max_edge: int | None = Field(default=None, ge=256, le=4096)
 
     @field_validator("process_started_at")
     @classmethod
@@ -44,6 +47,8 @@ class WindowsCaptureRequest(StrictModel):
                 raise ValueError("window capture requires native process/window identity")
         elif self.region is None or any(value is not None for value in window_fields):
             raise ValueError("region capture requires only a rectangle")
+        if self.output_max_edge is not None and self.source is not DesktopCaptureSource.REGION:
+            raise ValueError("only region capture can be scaled")
         return self
 
 
@@ -55,6 +60,8 @@ class WindowsCaptureReply(StrictModel):
     window_handle: int | None = Field(default=None, ge=1)
     process_started_at: datetime | None = None
     png_base64: str = Field(default="", max_length=22_369_624)
+    image_width: int | None = Field(default=None, ge=1)  # set only for a scaled region
+    image_height: int | None = Field(default=None, ge=1)
 
     @field_validator("captured_at", "process_started_at")
     @classmethod

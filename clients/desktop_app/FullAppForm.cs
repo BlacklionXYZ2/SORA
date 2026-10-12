@@ -200,8 +200,8 @@ public sealed class FullAppForm : Form
             Text = "Drag SORA to move her around the desktop. These buttons preview her poses. " +
                 "She shows thinking while answering and waiting while a specialist works." });
         var poses = new FlowLayoutPanel { AutoSize = true, WrapContents = true };
-        foreach (var pose in new[] { ("Wave", "waving"), ("Sit", "sitting"),
-            ("Lean", "leaning"), ("Climb pose", "climbing"), ("Stand / reset", "idle") })
+        foreach (var pose in new[] { ("Sit", "sitting"), ("Lean", "leaning"),
+            ("Climb pose", "climbing"), ("Stand / reset", "idle") })
         {
             var button = Button(pose.Item1);
             button.Click += async (_, _) => await RunActionAsync(async () =>

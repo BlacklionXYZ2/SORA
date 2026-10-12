@@ -23,6 +23,9 @@ from sora.contracts.companion_call import (
     Point,
     Pose,
     PresentMemory,
+    Remember,
+    RememberThought,
+    ViewWindow,
 )
 from sora.contracts.companion_read import (
     CompanionReadCall,
@@ -42,13 +45,21 @@ from sora.runtime.delegation_catalogue import DelegationCatalogue
 from sora.runtime.memory_references import MemoryReferences, MemoryTarget
 from sora.runtime.read_tools import CompanionReadTools, desktop_directories
 
+_TRIM_ORDER = {"desktop_metadata": 0, "agent_defaults": 1, "memory_context": 2}
+
 
 def bounded_observations(records: list[dict[str, Any]], budget: int) -> str:
     """Trim structured data, never slice serialized JSON halfway through a field."""
     copies = json.loads(json.dumps(records))
     while len(encoded := json.dumps(copies, ensure_ascii=False)) > budget:
-        # Discard older context before clipping the fresh inspection that answers the task.
-        older = [row for row in copies[:-1] if row.get("data")]
+        # Discard background context before clipping the fresh inspection that answers the task:
+        # Desktop folder previews first, then the agent list (its roster line is kept on the
+        # header), then memory previews, and the window inventory last, since every window,
+        # look or point request depends on its targets. Other records go oldest first.
+        older = sorted(
+            (row for row in copies[:-1] if row.get("data")),
+            key=lambda row: _TRIM_ORDER.get(str(row.get("operation")), len(_TRIM_ORDER)),
+        )
         biggest = older[0] if older else copies[-1]
         data = biggest.get("data", {})
         lists = [value for value in data.values() if isinstance(value, list) and value]
@@ -76,17 +87,61 @@ def bounded_observations(records: list[dict[str, Any]], budget: int) -> str:
     return encoded
 
 
+def named_windows(prompt: str, tools: CompanionReadTools) -> str:
+    """Point a model that keeps re-listing windows at the ones the owner's message names."""
+    wanted = prompt.casefold()
+    matches = [
+        f"{ref} ({node.name})" for ref, (node, _) in tools.windows.items()
+        if (title := node.name.split(" - ")[0].strip()) and len(title) >= 3
+        and title.casefold() in wanted
+    ]
+    if not matches:
+        return ""
+    return (" Windows named in the owner's request: " + ", ".join(matches[:3])
+            + ". To look at or point to a control, inspect_window it with view controls.")
+
+
+ABILITIES = {
+    "move": "walk or run my avatar to the pointer, a window or a place on screen",
+    "pose": "sit, lean, climb or stand",
+    "look": "look at a control in a window",
+    "point": "point at a control in a window",
+    "list_windows": "see which windows are open",
+    "inspect_window": "read a window's controls and text",
+    "view_window": "look closely at one window",
+    "list_files": "browse folders",
+    "read_file": "read files",
+    "delegate": "hand work to my agent colleagues",
+    "find_memory": "search my memories",
+    "remember": "remember something about you, with this whole moment",
+    "remember_thought": "keep a thought of my own as a memory",
+}
+
+
+def abilities(offered: tuple[str, ...]) -> str:
+    """Her abilities this turn, in plain words, so "what can you do?" isn't answered from
+    whichever single tool result happens to be in front of her."""
+    listed = "; ".join(ABILITIES[op] for op in sorted(offered) if op in ABILITIES)
+    # Live, she promised to "set a reminder" (2026-10-10); SORA has no reminders yet.
+    return listed and listed + ". Nothing beyond these: no reminders, timers or alarms yet"
+
+
 @dataclass(frozen=True)
 class ReadTurn:
     observations: str
     attempted: bool
     sources: tuple[str, ...]
-    action: Delegate | Pose | Move | Look | Point | PresentMemory | None = None
+    action: Delegate | Pose | Move | ViewWindow | Look | Point | PresentMemory | None = None
     presentation_target: str | None = None
     action_error: str | None = None
     memory_target: MemoryTarget | None = None
     memory_supplied: tuple[str, ...] = ()
     move_window: DesktopNode | None = None
+    view_window: DesktopNode | None = None  # None with a ViewWindow action: the recent window
+    thought: str | None = None  # her own thought to remember after the reply (remember_thought)
+    offered: tuple[str, ...] = ()  # operations the model could choose, for the turn's trace
+    chosen: tuple[str, ...] = ()  # the operations it chose, in order
+    remember: Remember | None = None  # this moment, to store with the turn after the reply
 
 
 async def collect_reads(
@@ -106,17 +161,24 @@ async def collect_reads(
     native_presentation: bool = False,
     memory: MemoryReferences | None = None,
     memory_presentation: bool = False,
+    window_view: bool = False,
+    allowed: frozenset[str] | None = None,
+    self_memory: bool = False,
 ) -> ReadTurn:
     records: list[dict[str, Any]] = []
     sources: list[str] = []
     attempted = False
     seen: set[str] = set()
     repair_used = False
-    action: Delegate | Pose | Move | Look | Point | PresentMemory | None = None
+    action: Delegate | Pose | Move | ViewWindow | Look | Point | PresentMemory | None = None
     memory_target: MemoryTarget | None = None
     presentation_target: str | None = None
     action_error: str | None = None
     move_window: DesktopNode | None = None
+    view_window: DesktopNode | None = None
+    chosen: list[str] = []
+    thought: str | None = None
+    remember: Remember | None = None
     operations = {"finish"}
     if file_read:
         operations.update({"list_files", "search_files", "read_file"})
@@ -128,6 +190,14 @@ async def collect_reads(
             operations.add("delegate")
     if avatar_control:
         operations.update({"pose", "move"})
+    if window_view:
+        operations.add("view_window")
+    if self_memory:
+        operations.add("remember_thought")  # her own thoughts; needs no Memory panel
+        operations.add("remember")  # the owner's moment, stored with the whole turn
+    if allowed is not None:
+        # The decision layer (System-1) chose which tool families this message needs.
+        operations &= allowed | {"finish"}
     if desktop_read and native_presentation:
         operations.update({"look", "point"})
     if memory is not None:
@@ -153,6 +223,7 @@ async def collect_reads(
                 "data": catalogue.preview(),
             }
         )
+    offered = tuple(sorted(operations))
     try:
         async with asyncio.timeout(timeout):
             if desktop_read and seed_windows:
@@ -162,6 +233,12 @@ async def collect_reads(
                 check_epoch()
                 records.append({"operation": "list_windows", **result.model_dump(mode="json")})
                 seen.add(seed.model_dump_json())
+                # The list is fresh for this turn; re-listing only stalls small models, which
+                # then hit the repeat stop before acting (spoken "walk to the Claude window").
+                operations.discard("list_windows")
+                if hint := named_windows(prompt, tools):
+                    records.append({"operation": "window_hint", "source": "core",
+                                    "status": "ok", "data": {"note": hint.strip()}})
                 sources.append(
                     f"Window context: {result.source}, {result.status}, "
                     f"{result.observed_at.isoformat(timespec='seconds')}"
@@ -208,7 +285,11 @@ async def collect_reads(
                         chooser_supplied = memory.expose(json.loads(bounded))
                         await memory.publish("chooser", chooser_supplied)
                         check_epoch()
-                    observations = "Enabled read capabilities: " + capabilities + "\n" + bounded
+                    # One header line, then the JSON records: the roster stays on the header.
+                    observations = "Enabled read capabilities: " + capabilities + (
+                        ". Agents (name = provider): " + catalogue.roster()
+                        if catalogue is not None and catalogue.rows else ""
+                    ) + "\n" + bounded
                     if isinstance(provider, CompanionCallProvider):
                         call = CompanionCall.model_validate(
                             await provider.choose_call(
@@ -244,9 +325,12 @@ async def collect_reads(
                     repair_used = True
                     continue
                 check_epoch()
+                chosen.append(call.root.op)
                 if isinstance(call.root, FinishRead):
                     break
-                if isinstance(call.root, (Delegate, Pose, Move, Look, Point, PresentMemory)):
+                if isinstance(
+                    call.root, (Delegate, Pose, Move, ViewWindow, Look, Point, PresentMemory),
+                ):
                     action = call.root
                     attempted = True
                     if isinstance(action, (Look, Point)):
@@ -264,6 +348,14 @@ async def collect_reads(
                             action_error = "That window is minimized or has no position on screen"
                         else:
                             move_window = stored[0]
+                    if isinstance(action, ViewWindow) and action.target is not None:
+                        stored = tools.windows.get(action.target)
+                        if stored is None or time.monotonic() - stored[1] > 60:
+                            action_error = (
+                                "That window reference is not current; list windows again"
+                            )
+                        else:
+                            view_window = stored[0]
                     if isinstance(action, PresentMemory):
                         assert memory is not None
                         try:
@@ -274,17 +366,34 @@ async def collect_reads(
                 attempted = True
                 signature = call.model_dump_json()
                 if signature in seen:
-                    records.append(
-                        {
-                            "source": "core",
-                            "status": "partial",
-                            "data": {
-                                "reason": "Repeated read stopped; use evidence already returned",
-                            },
-                        }
-                    )
+                    # Small models repeat a read whose result is already above (live, E4B ran
+                    # the same find_memory three times, 2026-10-10). The first repeat ends the
+                    # reading; the earlier result is still in her observations.
+                    records.append({"source": "core", "status": "partial", "data": {
+                        "reason": "Repeated read stopped; use evidence already returned"}})
                     break
                 seen.add(signature)
+                if isinstance(call.root, Remember):
+                    # Kept for after the reply, with the turn's data; the first one wins.
+                    if remember is None:
+                        remember = call.root
+                    # One memory per turn. Live, E4B repeated remember, then re-filed the same
+                    # fact as "her own thought" (2026-10-10).
+                    operations -= {"remember", "remember_thought"}
+                    records.append({"operation": "remember", "source": "core", "status": "ok",
+                                    "data": {"note": "This moment will be remembered after you "
+                                             "reply. Continue or finish."}})
+                    continue
+                if isinstance(call.root, RememberThought):
+                    # Kept for after the reply; one per turn, the first one wins.
+                    if thought is None:
+                        thought = " ".join(call.root.thought.split())
+                    operations -= {"remember", "remember_thought"}  # one memory per turn
+                    records.append({"operation": "remember_thought", "source": "core",
+                                    "status": "ok",
+                                    "data": {"note": "Your thought will be remembered after "
+                                             "you reply. Continue or finish."}})
+                    continue
                 if isinstance(call.root, FindMemory):
                     assert memory is not None
                     try:
@@ -331,6 +440,8 @@ async def collect_reads(
                 result = await tools.execute(CompanionReadCall.model_validate(call.model_dump()))
                 check_epoch()
                 records.append({"operation": call.root.op, **result.model_dump(mode="json")})
+                if call.root.op == "list_windows":
+                    operations.discard("list_windows")  # once per turn, as for the seed
                 operation_label = call.root.op + (
                     f" ({call.root.view})" if isinstance(call.root, InspectWindow) else ""
                 )
@@ -375,4 +486,9 @@ async def collect_reads(
         memory_target,
         supplied,
         move_window,
+        view_window,
+        thought,
+        offered,
+        tuple(chosen),
+        remember,
     )

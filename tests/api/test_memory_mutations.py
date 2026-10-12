@@ -410,7 +410,7 @@ async def test_migration_ten_preserves_canonical_rows_and_adds_empty_receipts(
     )
     revision = await repository.revision()
     await db.initialize()
-    assert await db.schema_version() == 12 and await repository.revision() == revision
+    assert await db.schema_version() == 15 and await repository.revision() == revision
     assert (
         await repository.list_memories("owner-old", project_id=None, observed_at=datetime.now(UTC))
         == before

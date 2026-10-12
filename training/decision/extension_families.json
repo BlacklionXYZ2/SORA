@@ -1,0 +1,16 @@
+{
+  "held_out": [
+    "calendar",
+    "smart_home"
+  ],
+  "families": {
+    "media": "controlling music or video playback: play, pause, skip, volume",
+    "browser": "opening websites or searching the web in the browser",
+    "timer": "setting timers, alarms or reminders at a time",
+    "system": "changing this PC's settings: brightness, Wi-Fi, Bluetooth, power or display",
+    "email": "reading, writing or sending email",
+    "games": "launching or controlling games and game launchers",
+    "calendar": "reading or changing calendar events and appointments",
+    "smart_home": "controlling smart home devices: lights, plugs, heating, locks"
+  }
+}

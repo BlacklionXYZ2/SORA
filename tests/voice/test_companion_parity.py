@@ -258,7 +258,7 @@ async def test_local_spoken_reference_uses_static_access_without_attention_grant
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("mode", ["wave", "walk"])
+@pytest.mark.parametrize("mode", ["sit", "walk"])
 async def test_voice_motion_shares_dispatch_and_walk_uses_spoken_time(
     tmp_path: Path,
     mode: str,

@@ -9,6 +9,8 @@ from enum import StrEnum
 
 from sora.contracts.voice import VoiceEmotion, VoicePlaybackCommand
 
+from .vowels import VOWELS, vowel_weights
+
 
 class VoicePresentationResetReason(StrEnum):
     COMPLETED = "completed"
@@ -59,6 +61,8 @@ class VoicePresentationFrame:
     duration_ms: float
     mouth_open: float
     emotion: VoiceEmotion
+    # A, E, I, O, U shares of the mouth shape, summing to 1; all zero in silence.
+    vowels: tuple[float, ...] = (0.0,) * len(VOWELS)
 
 
 class VoicePresentationClock:
@@ -71,6 +75,7 @@ class VoicePresentationClock:
         gain: float = 3.5,
         attack: float = 0.72,
         release: float = 0.38,
+        vowel_blend: float = 0.6,
     ) -> None:
         if not 0 <= noise_floor < 1:
             raise ValueError("noise floor must be in [0, 1)")
@@ -82,12 +87,14 @@ class VoicePresentationClock:
         self.gain = gain
         self.attack = attack
         self.release = release
+        self.vowel_blend = vowel_blend
         self._playback_id: str | None = None
         self._output_epoch = 0
         self._emotion = VoiceEmotion.NEUTRAL
         self._next_sequence = 0
         self._position_ms = 0.0
         self._mouth_open = 0.0
+        self._vowels = (0.0,) * len(VOWELS)
 
     @property
     def active(self) -> bool:
@@ -108,6 +115,7 @@ class VoicePresentationClock:
         self._next_sequence = 0
         self._position_ms = 0.0
         self._mouth_open = 0.0
+        self._vowels = (0.0,) * len(VOWELS)
 
     def frame(
         self,
@@ -125,6 +133,15 @@ class VoicePresentationClock:
         target = min(1.0, max(0.0, (rms - self.noise_floor) * self.gain))
         blend = self.attack if target >= self._mouth_open else self.release
         self._mouth_open += (target - self._mouth_open) * blend
+        heard = vowel_weights(chunk.pcm_s16le, chunk.sample_rate, chunk.channels)
+        if any(heard):
+            # Smooth between chunks so the mouth glides between vowels instead of snapping.
+            mixed = [
+                old + (new - old) * self.vowel_blend if any(self._vowels) else new
+                for old, new in zip(self._vowels, heard, strict=True)
+            ]
+            total = sum(mixed)
+            self._vowels = tuple(value / total for value in mixed)
         frame = VoicePresentationFrame(
             playback_id=command.playback_id,
             output_epoch=command.output_epoch,
@@ -133,6 +150,7 @@ class VoicePresentationClock:
             duration_ms=chunk.duration_ms,
             mouth_open=min(1.0, max(0.0, self._mouth_open)),
             emotion=self._emotion,
+            vowels=self._vowels if any(heard) else (0.0,) * len(VOWELS),
         )
         self._next_sequence += 1
         self._position_ms += chunk.duration_ms
@@ -145,6 +163,7 @@ class VoicePresentationClock:
         self._next_sequence = 0
         self._position_ms = 0.0
         self._mouth_open = 0.0
+        self._vowels = (0.0,) * len(VOWELS)
         return identity
 
 

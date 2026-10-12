@@ -42,6 +42,27 @@ public sealed class P14VoicePresentationTests
         finally { UnityEngine.Object.DestroyImmediate(go); }
     }
     [Test]
+    public void FiveVowelSharesAreCarriedAndClearedWithPlayback()
+    {
+        var go = new GameObject("Five-vowel lip sync fixture");
+        try
+        {
+            var controller = go.AddComponent<AvatarVoicePresentationController>();
+            Assert.IsTrue(controller.Begin("vowels", 1, "neutral"));
+            Assert.IsTrue(controller.ApplyFrame(new VoicePresentationFrame(
+                "vowels", 1, 0, 0, 100, .6f, "neutral", new[] { 0f, .1f, .9f, 0f, 0f })));
+            Assert.AreEqual(.9f, controller.Vowels[2]);
+            Assert.Throws<ArgumentOutOfRangeException>(() => new VoicePresentationFrame(
+                "vowels", 1, 1, 100, 100, .6f, "neutral", new[] { 0f, 0f, 2f, 0f, 0f }));
+            Assert.AreEqual(0f, new VoicePresentationFrame(
+                "vowels", 1, 1, 100, 100, .6f, "neutral").Vowels[0]);
+            controller.ResetAll(VoicePresentationResetReason.Completed);
+            Assert.AreEqual(0f, controller.Vowels[2]);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
+    [Test]
     public void OrderedAudioClockDrivesBoundedMouthAndCoarseEmotion()
     {
         var go = new GameObject("P14 voice presentation fixture");

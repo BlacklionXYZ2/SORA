@@ -200,7 +200,8 @@ async def test_loop_repeat_invalid_and_deadline_are_bounded(
         check=lambda _: None,
         observe=AsyncMock(return_value=DesktopObservation(status="not_configured")),
     )
-    reader = Reader([call("list_windows"), call("list_windows")])
+    # The first repeat ends the reading; the earlier result stays in the observations.
+    reader = Reader([call("list_windows"), call("list_windows"), call("list_windows")])
     result = await collect_reads(
         "windows",
         provider=reader,
@@ -211,7 +212,9 @@ async def test_loop_repeat_invalid_and_deadline_are_bounded(
         timeout=1,
         budget=3000,
     )
-    assert len(result.sources) == 1 and "Repeated read stopped" in result.observations
+    assert len(result.sources) == 1
+    assert "Repeated read stopped" in result.observations
+    assert result.chosen == ("list_windows",) * 2
     reader.choose_read = AsyncMock(side_effect=DialogueProviderError("invalid"))  # type: ignore[method-assign]
     result = await collect_reads(
         "windows",
@@ -434,3 +437,85 @@ def test_inventory_text_contracts_redact_passwords() -> None:
                 ),
             ),
         )
+
+
+def test_trimming_keeps_the_window_inventory_over_background_context() -> None:
+    """Seen live 2026-10-08: the inventory was trimmed first, so E4B could not point at a control.
+
+    Desktop previews, the agent list and memory previews go before the window inventory.
+    """
+    import json
+
+    from sora.runtime.read_turn import bounded_observations
+
+    records = [
+        {"operation": "memory_context", "status": "ok", "data": {"items": ["m" * 300] * 5}},
+        {"operation": "agent_defaults", "status": "ok", "data": {"agents": ["a" * 300] * 5}},
+        {"operation": "list_windows", "status": "ok",
+         "data": {"windows": [{"target": "w1", "title": "Antigravity"}]}},
+        {"operation": "desktop_metadata", "status": "ok", "data": {"entries": ["d" * 300] * 5}},
+        {"operation": "inspect_window", "status": "ok", "data": {"nodes": []}},
+    ]
+    kept = {row["operation"]: row for row in json.loads(bounded_observations(records, 1200))}
+    assert kept["list_windows"]["data"]["windows"] == [{"target": "w1", "title": "Antigravity"}]
+    assert kept["desktop_metadata"]["data"] == {}
+    assert kept["desktop_metadata"]["context_clipped"]
+
+
+def test_a_repeated_window_list_names_the_window_the_owner_asked_about() -> None:
+    from sora.runtime.read_turn import named_windows
+
+    tools = CompanionReadTools(check=lambda _: None, observe=AsyncMock())
+    node = window()
+    tools.windows["w5"] = (node.model_copy(update={"name": "Antigravity - SORA"}), 0.0)
+    tools.windows["w6"] = (node.model_copy(update={"name": "Spotify"}), 0.0)
+    hint = named_windows("Look at the Close button on the Antigravity window.", tools)
+    assert "w5 (Antigravity - SORA)" in hint and "w6" not in hint
+    assert named_windows("What's the weather?", tools) == ""
+
+
+@pytest.mark.asyncio
+async def test_a_listed_window_turn_cannot_relist_and_names_the_requested_window() -> None:
+    """Seen live 2026-10-09 (spoken turns): E4B re-called list_windows after the seeded list,
+    hit the repeat stop and never moved. Once listed, list_windows is no longer offered, and the
+    window the owner named is pointed out up front."""
+    from sora.contracts.companion_call import CompanionCall
+    from sora.contracts.companion_read import CompanionReadResult
+
+    class Tools(CompanionReadTools):
+        async def execute(self, read: CompanionReadCall) -> CompanionReadResult:
+            node = window().model_copy(update={"name": "Claude"})
+            self.windows["w1"] = (node, 0.0)
+            return CompanionReadResult(
+                call_id="c1", status="ok", source="fixture", observed_at=datetime.now(UTC),
+                data={"windows": [{"target": "w1", "title": "Claude"}]})
+
+    class Chooser:
+        def __init__(self) -> None:
+            self.offered: list[frozenset[str]] = []
+            self.seen: list[str] = []
+
+        async def choose_call(
+            self, prompt: str, observations: str, operations: frozenset[str],
+        ) -> CompanionCall:
+            self.offered.append(operations)
+            self.seen.append(observations)
+            return CompanionCall.model_validate({"op": "finish"})
+
+    chooser = Chooser()
+    turn = await collect_reads(
+        "Could you walk to the Claude window?", provider=chooser,
+        tools=Tools(check=lambda _: None, observe=AsyncMock()), check_epoch=lambda: None,
+        file_read=False, desktop_read=True, timeout=5, budget=4000, seed_windows=True,
+        avatar_control=True)
+    assert "list_windows" not in chooser.offered[0] and "move" in chooser.offered[0]
+    assert "list_windows" in turn.offered  # the trace still shows what the turn offered
+    assert "w1 (Claude)" in chooser.seen[0]
+
+
+def test_her_abilities_are_described_from_what_the_turn_offered() -> None:
+    from sora.runtime.read_turn import abilities
+
+    line = abilities(("delegate", "finish", "move", "pose"))
+    assert "walk or run my avatar" in line and "agent colleagues" in line
+    assert "finish" not in line and abilities(("finish",)) == ""

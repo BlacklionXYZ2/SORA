@@ -420,6 +420,7 @@ class SoraRepository:
         provenance: str,
         evidence_refs: tuple[str, ...] = (),
         valid_until: datetime | None = None,
+        title: str | None = None,
     ) -> int:
         def write(db: sqlite3.Connection) -> int:
             db.execute(
@@ -437,6 +438,8 @@ class SoraRepository:
                     valid_until.isoformat() if valid_until else None,
                 ),
             )
+            if title is not None:  # migration 15; untitled inserts also work on older schemas
+                db.execute("UPDATE memories SET title=? WHERE memory_id=?", (title, memory_id))
             revision = self._next_revision(db)
             self._append_event(db, owner_id, revision, "memory.created", None, None)
             return revision
@@ -494,6 +497,22 @@ class SoraRepository:
             revision = self._next_revision(db)
             self._append_event(db, row["owner_id"], revision, "memory.deleted", None, None)
             return revision
+
+        return await self.database.write(write)
+
+    async def backfill_memory_dates(self, dates: dict[str, datetime]) -> int:
+        """Date memories stored before migration 13, from their captures. Never overwrites."""
+
+        def write(db: sqlite3.Connection) -> int:
+            changed = 0
+            for memory_id, created in dates.items():
+                stamp = created.astimezone(UTC).isoformat()
+                changed += db.execute(
+                    "UPDATE memories SET created_at=?, updated_at=COALESCE(updated_at, ?) "
+                    "WHERE memory_id=? AND created_at IS NULL",
+                    (stamp, stamp, memory_id),
+                ).rowcount
+            return changed
 
         return await self.database.write(write)
 
@@ -959,6 +978,12 @@ class SoraRepository:
     def _memory_from_row(row: sqlite3.Row, observed_at: datetime) -> StoredMemory:
         valid_until = datetime.fromisoformat(row["valid_until"]) if row["valid_until"] else None
         deleted_at = datetime.fromisoformat(row["deleted_at"]) if row["deleted_at"] else None
+        keys = row.keys()
+        created_at = (datetime.fromisoformat(row["created_at"])
+                      if "created_at" in keys and row["created_at"] else None)
+        updated_at = (datetime.fromisoformat(row["updated_at"])
+                      if "updated_at" in keys and row["updated_at"] else None)
+        title = row["title"] if "title" in keys else None
         if deleted_at is not None:
             state = MemoryState.DELETED
         elif row["superseded_by"] is not None:
@@ -982,6 +1007,9 @@ class SoraRepository:
             valid_until=valid_until,
             superseded_by=row["superseded_by"],
             deleted_at=deleted_at,
+            created_at=created_at,
+            updated_at=updated_at,
+            title=title,
         )
 
     @staticmethod

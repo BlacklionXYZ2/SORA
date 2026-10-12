@@ -1,12 +1,20 @@
 # How to use SORA (current state)
 
-**Last updated: 2026-10-06 12:21, Opus 5.5 (web Chat preview added).** This page describes what works *today* and how to use it.
+**Last updated: 2026-10-12 09:40, Opus 5.5 (Alice is her default avatar; Settings → Appearance chooses it; "wave" removed, walk instead).** This page describes what works *today* and how to use it.
 Every change that alters how SORA is started, set up or used must update this page in the same
 change (see [AGENTS.md](AGENTS.md)). If something here is wrong, it is a bug in this page.
 
 For where SORA is going, read [VISION.md](VISION.md). For what V1 still needs, read [V1.md](V1.md).
 
 ## Start and stop
+
+**Double-click SORA on your Desktop.** That starts her in full, with no console window: the
+avatar, the tray icon, her local model and screen awareness. It takes about 15 seconds after the
+first build. Opening it again while she runs shows her command menu. If something she needs is
+missing (for example her avatar has not been built), a message says what to run, and the details
+are in `.local\launch\`. To recreate the shortcut, run `.\scripts\install-shortcut.ps1`.
+
+From a terminal it is the same as:
 
 ```powershell
 cd C:\Users\oscar\Desktop\SORA
@@ -18,47 +26,168 @@ git pull                 # get the latest version
   Starting again while she is running opens her command menu instead of a second SORA.
 - **Open Chat:** press **Ctrl+Alt+Space** (you can change this in Appearance), or use the tray
   icon or command menu.
-- **Quit:** tray icon or command menu, then **Quit SORA**. This also stops the Core and the model
-  it started.
+- **Quit:** tray icon or command menu, then **Quit SORA**. Everything closes: Core (`sora.exe`),
+  her brain (`llama-server`), Laya, her avatar (`SORA.exe`), voice and the app (`SoraShell.exe`).
+  Core shuts down gracefully first; anything still running after that is stopped. Other
+  programs' `llama-server`s (Hermes, for example) are never touched.
 - **Without the avatar:** `.\Start-SORA.ps1 -NoAvatar`. **Headless (no app):** `.\Start-SORA.ps1 -NoClient`.
 - `.\Start-SORA.ps1 -Client Desktop` opens the older full app. It still works but is frozen (no
   new features).
 
 ## First-time setup
 
-1. **Choose her brain model.** Open **Settings**, then **Models** in the list on the left.
-   - Under **Brain (local model)**, click **…** beside **Brain model file (GGUF)** and pick the
-     model. The planned brain is
+1. **Choose her brain model.** Open **Settings** (tray icon or command menu). It opens on
+   **Models**.
+   - The card at the top shows the model she is using now and whether it is loaded.
+   - Click **Change model** and pick the GGUF file. The planned brain is
      `Models\Unsloth\gemma-4-E4B-it-Q4_K_M-GGUF\gemma-4-E4B-it-Q4_K_M.gguf`.
-   - Its **vision projector file** is found automatically beside it.
-   - Click **Save settings**, then **Reload model**.
-   - Ignore **External server** unless you set Settings → General → Model source to an external
-     server such as LM Studio.
-2. **Let her see your screen.** Settings → **Vision** → perception mode **image-on-prompt**. Your
-   screen is then sent with every message you type or say. Settings created before 2026-10-05
-   keep their old mode until you change it.
+   - Its **vision projector** is found automatically beside it.
+   - Click **Save and reload model** in the bar at the bottom. The card says **Loaded** when
+     she is ready.
+   - Other settings work the same way: change them, then **Save** (or Ctrl+S). The bar says if a
+     change needs the model to reload or SORA to restart. **Discard** undoes unsaved changes.
+   - Ignore **External server** unless you set General → **Model source** to an external server
+     such as LM Studio.
+2. **Let her see your screen.** Settings → **Vision** → perception mode **image-on-prompt**.
+   - Every message you type or say then includes a picture of your **whole desktop, both
+     monitors**, scaled down. She calls it your screen or desktop, never "the image you sent".
+   - Small text can be blurry at that size. When she needs detail ("what does this error say?",
+     "look closer"), she takes a full-size picture of one window: the one you name, or else the
+     one you are using or used last before switching to SORA. Chat shows "Looked at the desktop"
+     and "Looked closer at a window".
+   - **Vision detail** (top of Settings → Vision): **Low**, **Medium** (the default) or **High**.
+     It sets how many tokens each image may use in her model (280, 1,024 or 2,048), with a
+     matching batch and context length. Higher detail means slower replies and more context and
+     GPU memory, but she reads your screen more reliably and guesses less. Saving reloads the
+     model. Measured with E4B on this PC, one desktop picture took 3.6 s at Low, 4.1 s at Medium
+     and 6.5 s at High.
+   - Changing the image token budget, physical batch (Performance) or context length (Models)
+     by hand shows **Custom**. Move the slider to use a level again. Settings saved before
+     2026-10-08 with untouched defaults move to Medium; hand-tuned ones become Custom.
+   - Her own Chat window and avatar can appear in the desktop picture.
+   - Pictures are saved only when she remembers a moment (with that memory, on this PC; see
+     "Her character, goals and memories"). **Pause** in Settings → Vision stops them.
+   - Settings created before 2026-10-05 keep their old mode until you change it.
 3. **Voice (once):** run `.\scripts\setup-local-voice.ps1`, or start with `.\Start-SORA.ps1 -SetupVoice`.
-4. **Free the GPU** before starting SORA. Unload LM Studio's model, for example. SORA's brain and
+   It now also downloads the **fast voice model** (325 MB, once). On this PC she starts speaking
+   about ten times sooner than with the old int8 model, so run it again even if voice already
+   works. `-NoFastVoiceModel` skips the download.
+4. **Rebuild her avatar (once, and after a `git pull` that changes the avatar):** quit SORA, then
+   run `.\scripts\build-embodiment.ps1`. The avatar program is not rebuilt by `Start-SORA.ps1`, so
+   an old build keeps running without newer moves and mouth shapes. Afterwards she walks, runs
+   and sits on request, and her mouth forms A, E, I, O and U shapes from her voice.
+
+   **Her look:** she wears **Alice** by default (from 2026-10-11). Credit: "Alice", Zenless Zone
+   Zero; original model by miHoYo, VRM by Niko on VRoid Hub.
+   - The file is `.local\avatars\Alice.vrm`. It is kept out of git because her licence forbids
+     sharing or editing the file, so on another PC copy it there yourself.
+   - **To change her avatar:** Settings → **Appearance** → **Avatar model (VRM)**. Pick a `.vrm`
+     file (VRM 0.x or 1.0), **Save**, then quit SORA and start it again. No rebuild is needed.
+   - Clear the box to use the built-in Seed-san. She also uses Seed-san if the file is missing.
+5. **Decision layer (once, optional):** run `.\scripts\setup-decision-layer.ps1`. It downloads
+   Laya (about 430 MB) and its GPU runner (18 MB) into `.local\decision`. Laya is a small, fast
+   model that picks which kinds of tools her brain sees for each message (about 20 ms on the
+   GPU). Settings → **Models** → **Decision layer**:
+   - **shadow** (default) logs its choices for later training but changes nothing;
+   - **enforce** offers her only the kinds it chose, which should make tool use more reliable;
+   - **off**.
+
+   If its files are missing or it fails, she simply sees every tool, as before. To train it on
+   your own messages later, follow [docs/runbooks/TRAINING_LAYA.md](docs/runbooks/TRAINING_LAYA.md).
+6. **Free the GPU** before starting SORA. Unload LM Studio's model, for example. SORA's brain and
    LM Studio's model do not both fit comfortably in 16 GB.
 
 ## Talking to her
 
 - **Typing:** type in Chat and press **Enter** to send. **Shift+Enter** adds a new line, and
   **Stop** cancels her reply.
-- **Voice:** open **Voice / microphone** (from Chat, the tray or the command menu), click
-  **Start voice** and wait for **Ready**. Then **hold Hold to talk** (or Space) while speaking,
-  and release to send. She answers out loud with her mouth moving. Holding again interrupts her.
-- **Poses:** "wave", "sit down", "lean", "climb", "stand up".
+- **Voice:** in Chat, click the **microphone** once to start voice. A small dot shows its state:
+  amber while loading, green when ready.
+  - **Hold the microphone** (mouse, or Space when it is selected) while you speak, and let go to
+    send. It turns red while it is listening.
+  - Switching to another window while holding throws the recording away.
+  - **Talk without the button (always-on listening, the default):** voice starts with SORA and
+    Chat's microphone is blue: she is listening. (Settings → **Audio** → **Listening** →
+    **press** brings back hold-to-talk.) Say her name anywhere in a sentence ("Sora, what's this?", "what do you think,
+    Sora?"). For about 8 seconds after she replies you can keep talking without her name
+    (**Keep listening after she replies**). Saying her name while she talks interrupts her.
+    - **To make her stop talking,** say "stop", "Sora, stop", "be quiet", "hold on" or "never
+      mind". She goes quiet without starting a new reply. ("Stop it" or "cancel it" stops a
+      running agent task instead.)
+    - She is told to expect her agents' names (Claude, Cody, Hermes, Aggie and your custom
+      agents' nicknames), so "Claude" isn't heard as "cloud".
+    - Speech not meant for her is heard and ignored; nothing is sent or saved. A recording is
+      saved only with a moment she chooses to remember.
+    - **Click the blue microphone to stop listening**; the microphone closes until you click it
+      again or restart SORA. Turning **Enable voice features** off in Settings stops it starting.
+    - If she mishears her name, add spellings under **Names she answers to** (for example
+      `sora, zora`).
+    - With speakers rather than a headset she hears her own voice; she ignores it unless it
+      contains her name in words she isn't saying herself. A headset works best.
+  - **She hears your voice itself** on Gemma 4 E2B and E4B (their vision projector also has
+    an audio encoder), not only the transcript, so tone and mis-transcribed words reach her.
+    Settings → Audio → **Voice to the brain** → **transcribe** sends only the text.
+  - The older **Voice / microphone** window still works (right-click the microphone, or use the
+    tray). Hold **Hold to talk** there in the same way. She answers out loud with her mouth moving. Holding again interrupts her.
+  She starts speaking her first sentence while she is still thinking up the rest, usually
+  about 2 seconds after you let go. Spoken answers are kept short (one to three sentences);
+  ask "tell me more" for detail.
+- **Poses:** "sit down", "lean", "climb", "stand up". She has **no wave**. What used to be
+  called "wave" only walked her on the spot, so it was removed; ask her to walk instead.
 - **Walking and running:** she can walk or run to your pointer ("come here"), to the ground
   beneath a window ("go over to Spotify"), or to the left, centre or right of your main monitor,
   the monitor your pointer is on, or the other monitor. She can also take a pose when she
-  arrives ("run to the right of the screen and wave"). She picks the destination and Core works
+  arrives ("run to the right of the screen and sit down"). She picks the destination and Core works
   out the exact spot, so she never guesses coordinates. Moving never clicks or changes a window.
 - **Looking and pointing:** "look at the play button", "point at it". She looks at or points to
   a control she has inspected in a window.
 - She cannot yet press buttons or type in other apps from chat.
 - **Memory:** she remembers things you tell her across restarts. Browse or correct what she
   remembers in **Memory / browse**.
+
+## Her character, goals and memories
+
+- **Her character** is yours to write: copy `identity\character.template.md` to
+  `identity\character.md` and answer its questions in your own words, then restart SORA. She
+  can't change it. Until you write it, her identity is only the short policy files.
+- **Things you ask her to always or never do** ("from now on keep answers short", "call me
+  Oz") are kept as standing instructions and shown to her on every turn, not only when relevant.
+  If she doesn't choose to remember something herself, a quick second check after her reply
+  catches most facts she missed.
+- **How she remembers:** when you tell or show her something worth keeping, she writes a short title
+  and a description of the fact ("Favourite colour": "The owner's favourite colour is now green, not
+  teal."). The memory keeps the whole moment with it: your exact words, her reply, what she read,
+  the pictures she saw (the desktop, a closer window, images you attached) and, when you spoke, your
+  voice recording. Pictures and recordings that turn out not to relate to the memory are deleted
+  rather than kept. The rest are stored in `.local\manual-test\memory\entries\` on this PC.
+  **Forgetting a memory in Memory deletes its pictures and recording too.**
+- **Her memories** carry the date they were made. Besides what you tell her, she can keep her
+  own thoughts ("I enjoyed planning the trip"); they are ordinary memories, shown to her as *her*
+  earlier thoughts, never as things you said, and appear in Memory like any other.
+- **Her goals** are hers. She changes them when she **reflects**: she looks at what she has
+  remembered since last time, notes progress on her goals, and may add, reword, achieve or drop
+  one (with a reason; nothing is erased). To ask her to reflect now:
+  `.\scripts\reflect.ps1` while SORA runs. Read her goals, with start and end dates and
+  progress, in `.local\manual-test\self\goals.md`. Reflection isn't automatic yet.
+- **The memory manager** (Settings → Memory → **Memory manager**) uses a small embedding model
+  (EmbeddingGemma 2, about 0.75 GB of video memory with pictures and voice; it starts with
+  SORA) to read each
+  memory and its pictures and voice. She can then find
+  memories by meaning, link related ones, and notice repeats and updates ("my favourite colour
+  is now green"). It starts with SORA, a few seconds after the brain.
+  - **on** (the default): her replies see the memories most relevant to what you said ("is
+    there anything I should avoid eating?" finds your peanut allergy), and recent ones fill any
+    spare places. **shadow**: her replies see memories that share words with your message and
+    your most recent ones, and what recall by meaning would have chosen is recorded for
+    comparison. **off**: not used. Without the embedding model, memories sharing words with
+    your message still come first.
+  - It never deletes a memory or marks one replaced by itself. It records those suggestions
+    until the Memory window lets you review them.
+  - Its decisions are logged for training in `.local\manual-test\memory\decisions\` (memory
+    IDs and numbers, never the text). To see whether there is enough to train its small
+    layers: `uv run python scripts/memory/train_layers.py`. Nothing is trained until you add
+    `--train`. Guide: [docs/runbooks/TRAINING_MEMORY_LAYERS.md](docs/runbooks/TRAINING_MEMORY_LAYERS.md).
+  - Setup, once, if the model files are missing: `.\scripts\setup-memory-embedder.ps1`.
 
 ## Her agent colleagues
 
@@ -75,35 +204,59 @@ SORA hands harder work to hosted agents and keeps chatting while they work:
   clearest. If you name two, she asks which one you mean.
 - **When an agent finishes, fails or is cancelled, she tells you in Chat.** The line in
   brackets underneath is Core's own record of what happened.
-- **Follow or cancel work** in **Activity**, or say "cancel Cody's task". Cancelling stops the
-  agent completely.
+- **Follow or cancel work** in **Activity** (tray icon or command menu, or click a task chip in
+  Chat), or type or say "cancel that task" or "cancel Pip's task". With one task running, "that"
+  means it; with several, she asks which agent.
+  - Activity lists the agents' work on the left.
+  - For each task it shows your request, SORA's brief to the agent and the agent's own report:
+    files changed, commands run, warnings, and anything that failed.
+  - **Cancel task** stops the agent completely, after you confirm.
+  - **Send instruction** tells a running agent something more.
 - **Project work:** Cody, Aggie and Claude work directly in the project folder you select.
   Claude and Aggie run without permission prompts, by your decision.
 - **Custom agents:** Settings → **Models** → **Agents · Custom agent 1–4**. Enable a slot and give
   it a nickname, spoken aliases (for example "pip, pippa"), a protocol and either a port
   (OpenAI-compatible, such as LM Studio on 1234) or a command (Agent Client Protocol). Restart
-  SORA, then ask for it by nickname. Chat-only custom agents cannot work in a project folder.
+  SORA, then ask for it by nickname ("ask Pip to …"). Chat-only custom agents cannot work in a
+  project folder; they always use the model you configured for them.
 
-## Trying the new web Chat (preview)
+## The new glass windows (Chat, Settings and Activity)
 
-SORA's windows are being rebuilt with web technology (WebView2) to match the concept images.
-The first piece is a new Chat window. It is **opt-in**; the normal Chat is unchanged.
+Chat, Settings and Activity are the new see-through windows that match the concept images. The
+other windows (Voice, Agents, Memory, Appearance) are still the older style for now.
 
-1. Quit SORA if she is running (tray → **Quit SORA**). The option only applies to a fresh start.
-2. `.\Start-SORA.ps1 -WebPanels`, then open Chat as usual (Ctrl+Alt+Space).
-3. To compare the two blur styles, quit and start again with `-PanelBackdrop Accent`
-   (the default is `System`, Windows 11's own acrylic; `None` is solid glass).
-4. To save a screenshot beside the concept image: `.\scripts\capture-panel.ps1`. Files go to
-   `.local\panels-review\`.
+- **Chat:**
+  - Enter sends, and Shift+Enter adds a new line. **Stop** cancels her reply.
+  - The paperclip attaches up to three files. The microphone starts voice, and then you hold it
+    to talk (see Talking to her). Right-click it for the Voice window.
+  - Her lists, **bold** words and code are formatted.
+  - Small chips under her reply show what Core recorded for that turn:
+    - "Looked at the window" or "Read 2 sources": click to see the detail;
+    - "Used 1 memory": click to see which memories, with a link to open Memory;
+    - "Asked Cody · Working": the agent task this message started, with its current state;
+      click to open Activity on that exact task.
+- **Settings:** categories on the left. **Models** is described under First-time setup.
+  **Appearance** chooses her avatar; its **Window style, Chat shortcut and placement…** button
+  opens the older Appearance window.
+  - **Change model** opens the file picker in the current model's folder.
+  - If you try to quit SORA with unsaved changes in Settings, she asks before throwing them away.
+- **See-through glass** needs Windows' **Transparency effects** on (Settings → Personalisation
+  → Colours). When it is off, the windows use solid dark glass.
+- **Blur style:** to compare, start with `-PanelBackdrop Accent`. The default is `System`,
+  Windows 11's own acrylic, and `None` is solid glass.
+- **The old windows:** to go back for one run, quit SORA and start it with
+  `.\Start-SORA.ps1 -ClassicPanels`. Please say what made you go back.
+- **Screenshots** beside the concept image: run `.\scripts\capture-panel.ps1` (Chat), or
+  `.\scripts\capture-panel.ps1 -Title "SORA · Settings" -Concept 05-settings.jpg`. Files go to
+  `.local\panels-review\`.
 
-What it does today: your conversation, sending (Enter; Shift+Enter for a new line), Stop, the
-microphone button (opens the existing Voice window), dragging, resizing, minimise/maximise, and
-a clear message when Core is not running. Not yet: attachments, activity chips, memory chips and
-the new-messages anchor of the old Chat. Settings is still the existing window.
+Memory chips only appear for messages typed in this Chat. Spoken turns show their reply, but not
+which memories it used.
 
-To preview the panels in an ordinary browser instead (no glass, for design review):
+To preview the pages in an ordinary browser (no glass, for design review):
 `uv run python scripts\panels-dev-server.py --token-file .local\manual-test\private\sora-api-token`,
-then open <http://127.0.0.1:8790/chat/> or <http://127.0.0.1:8790/gallery/>.
+then open <http://127.0.0.1:8790/chat/>, <http://127.0.0.1:8790/settings/> or
+<http://127.0.0.1:8790/gallery/>.
 
 ## Known limits right now
 
@@ -112,14 +265,16 @@ then open <http://127.0.0.1:8790/chat/> or <http://127.0.0.1:8790/gallery/>.
   [V1 acceptance test](V1.md#how-to-run-the-acceptance-test).
 - **Task routing misses "not".** "Don't edit files" can be read as a request to edit files,
   so phrase requests positively for now.
-- **Not built yet:** pressing or typing in other apps from chat, Automations, the memory graph,
-  desktop notes and pings, the decision layer, and the learned motion model.
+- **Not built yet:** pressing or typing in other apps from chat, Automations, the memory graph
+  view, keeping images and audio with memories, desktop notes and pings, and the learned motion
+  model.
 
 ## When something goes wrong
 
 | You see | Do this |
 |---|---|
-| "Model load failed (OSError)" in Settings | Another program may hold the model port, or the GPU is full. Close other model apps and click **Reload model** |
+| Every SORA window says Core is unreachable, or "Core returned 404" | Something else is using SORA's port. The launcher now picks a free one (8766–8775) and remembers it, but a SORA started before this fix keeps the old address: **Quit SORA** from the tray and start it again |
+| "Model load failed (OSError)" in Settings | The GPU is probably full. Close other model apps and click **Reload model**. A busy model port is no longer a cause: SORA moves to the next free port (18771–18790) by itself |
 | "Could not rebuild … (is it open?)" while starting | Harmless. An old SORA window was open, and SORA starts anyway |
 | Start fails with "Build the 3D companion…" | Run `.\scripts\build-embodiment.ps1`, or start with `-NoAvatar` |
 | SORA says "Which project?" | Set the agent's project folder in Settings → **Tools**, or choose one when delegating |

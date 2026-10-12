@@ -40,14 +40,11 @@ public sealed class P15AdvancedBehaviorTests
     public void AdvancedStatesProduceDistinctBoundedPoseAndReset()
     {
         using var fixture = new Fixture();
-        foreach (var state in new[] { "waving", "sitting", "leaning", "climbing" })
+        foreach (var state in new[] { "sitting", "leaning", "climbing" })
         {
             var profile = fixture.Presentation.SetState(state);
             Assert.That(profile.ProfileId, Does.StartWith("state."));
             fixture.Pose.ApplyPose(0.25f);
-            if (state == "waving")
-                Assert.Greater(Quaternion.Angle(Quaternion.identity,
-                    fixture.RightArm.localRotation), 65);
             if (state == "sitting")
                 Assert.Greater(Quaternion.Angle(Quaternion.identity,
                     fixture.LeftLeg.localRotation), 50);
@@ -76,7 +73,7 @@ public sealed class P15AdvancedBehaviorTests
         fixture.Pose.ConfigureBehavior(AvatarProactivityMode.Ambient, 0);
         fixture.Pose.ApplyPose(1);
         Assert.Less(Quaternion.Angle(quiet, fixture.LeftArm.localRotation), 0.01f);
-        fixture.Presentation.SetState("waving");
+        fixture.Presentation.SetState("climbing");
         fixture.Pose.ApplyPose(1);
         Assert.Greater(Quaternion.Angle(quiet, fixture.RightArm.localRotation), 40);
         Assert.Throws<ArgumentOutOfRangeException>(() =>

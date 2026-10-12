@@ -134,3 +134,9 @@ def compact_captures(root: Path, *, now: datetime, retention_days: int) -> dict[
         else:
             kept += 1
     return {"marked": marked, "pruned": pruned, "kept": kept}
+
+
+def capture_dates(root: Path) -> dict[str, datetime]:
+    """When each captured memory was made: dates memories stored before they carried dates."""
+    return {record.memory_id: record.created_at for _, record in list_captures(root)
+            if record.memory_id}

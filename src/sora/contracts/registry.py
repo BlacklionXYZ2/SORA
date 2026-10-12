@@ -112,6 +112,7 @@ from sora.contracts.voice import (
     VoiceReferenceResolution,
     VoiceSessionSnapshot,
     VoiceSessionStartRequest,
+    VoiceSpeechPreview,
     VoiceTranscriptEvent,
     VoiceTurnResult,
 )
@@ -264,6 +265,7 @@ PUBLIC_CONTRACTS: dict[str, type[BaseModel]] = {
     "voice-reference-resolution": VoiceReferenceResolution,
     "voice-session-snapshot": VoiceSessionSnapshot,
     "voice-session-start-request": VoiceSessionStartRequest,
+    "voice-speech-preview": VoiceSpeechPreview,
     "voice-transcript-event": VoiceTranscriptEvent,
     "voice-turn-result": VoiceTurnResult,
 }

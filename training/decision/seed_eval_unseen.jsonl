@@ -1,0 +1,16 @@
+# Families never seen in training (calendar, smart_home): does Laya handle a new plugin family?
+{"message": "What's on my calendar tomorrow?", "families": ["calendar"], "source": "seed"}
+{"message": "Add a dentist appointment on Friday at 3", "families": ["calendar"], "source": "seed"}
+{"message": "Move my meeting to next week", "families": ["calendar"], "source": "seed"}
+{"message": "Am I free on Saturday evening?", "families": ["calendar"], "source": "seed"}
+{"message": "Cancel lunch with Jo", "families": ["calendar"], "source": "seed"}
+{"message": "When is my next meeting?", "families": ["calendar"], "source": "seed"}
+{"message": "Turn off the living room lights", "families": ["smart_home"], "source": "seed"}
+{"message": "Set the heating to 21 degrees", "families": ["smart_home"], "source": "seed"}
+{"message": "Is the front door locked?", "families": ["smart_home"], "source": "seed"}
+{"message": "Dim the bedroom lights", "families": ["smart_home"], "source": "seed"}
+{"message": "Switch off the kettle plug", "families": ["smart_home"], "source": "seed"}
+{"message": "Turn the fan on", "families": ["smart_home"], "source": "seed"}
+{"message": "Tell me about Paris", "families": [], "source": "seed"}
+{"message": "Wave at me", "families": ["motion"], "source": "seed"}
+{"message": "Do you remember my dog's name?", "families": ["memory"], "source": "seed"}

@@ -75,7 +75,8 @@ def runtime_for(tmp_path: Path, caller: Caller) -> tuple[SoraRuntime, CatalogueP
     "value",
     [
         {"op": "shell", "command": "dir"},
-        {"op": "pose", "name": "wave", "authorized_by": "owner"},
+        {"op": "pose", "name": "sit", "authorized_by": "owner"},
+        {"op": "pose", "name": "wave"},  # removed 2026-10-12: it only walked on the spot
         {"op": "move", "target": "pointer", "x": 4},
         {"op": "move", "target": "window"},
         {"op": "delegate", "task": "x", "provider": "invented"},
@@ -101,9 +102,9 @@ async def test_provider_requests_enabled_schema_and_validates_disabled_reply(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     provider = OpenAICompatibleDialogueProvider(base_url="http://127.0.0.1:1234/v1", model="2b")
-    post = AsyncMock(return_value={"content": '{"op":"pose","name":"wave"}'})
+    post = AsyncMock(return_value={"content": '{"op":"pose","name":"sit"}'})
     monkeypatch.setattr(provider, "_post_message", post)
-    assert (await provider.choose_call("Wave", "[]", frozenset({"pose"}))).root.op == "pose"
+    assert (await provider.choose_call("Sit", "[]", frozenset({"pose"}))).root.op == "pose"
     body = post.call_args.args[0]
     assert body["max_tokens"] == 1024 and body["temperature"] == 0
     assert body["response_format"]["schema"] == call_schema({"pose"})
@@ -137,9 +138,11 @@ async def test_catalogue_uses_cache_known_exposed_refs_and_no_inference() -> Non
     selected = refs.select(Delegate(op="delegate", task="x", model=page["models"][1]["ref"]))
     assert selected.provider == "codex" and selected.model == "opaque/provider:model"
     assert provider.calls == calls and not provider.started_runs
-    for fields in ({"model": "invented"}, {"project": "C:/owner"}, {"provider": "hermes"}):
+    for fields in ({"model": "invented"}, {"provider": "hermes"}):
         with pytest.raises(ValueError):
             refs.select(Delegate.model_validate({"op": "delegate", "task": "x", **fields}))
+    # No project folder is configured, so an invented project can only mean "none".
+    assert refs.select(Delegate(op="delegate", task="x", project="p1")).project is None
     with pytest.raises(ValueError, match="cursor"):
         refs.list_agents(ListAgents(op="list_agents", cursor="stale"))
 
@@ -255,7 +258,6 @@ async def test_chat_delegation_keeps_original_authority_not_brief_or_prior_deskt
     [
         {"provider": "hermes"},
         {"model": "invented"},
-        {"project": "invented"},
     ],
 )
 async def test_bad_selection_does_not_queue_or_fall_back(tmp_path: Path, fields: Any) -> None:
@@ -393,7 +395,7 @@ async def test_finish_never_falls_back_to_second_motion_selector(
     queue = runtime.register_embodiment_queue()
     try:
         with owner_local_scope():
-            await runtime.dialogue("Do not wave")
+            await runtime.dialogue("Do not sit down")
         assert "pose" not in caller.operations[0] and "move" not in caller.operations[0]
         fallback.assert_not_awaited()
         assert queue.empty()
@@ -405,7 +407,7 @@ async def test_finish_never_falls_back_to_second_motion_selector(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "action", [{"op": "pose", "name": "wave"}, {"op": "move", "target": "pointer"}]
+    "action", [{"op": "pose", "name": "sit"}, {"op": "move", "target": "pointer"}]
 )
 async def test_unified_motion_uses_existing_dispatch_not_passive_image_selection(
     tmp_path: Path,
@@ -441,10 +443,10 @@ async def test_unified_motion_uses_existing_dispatch_not_passive_image_selection
     monkeypatch.setattr("sora.runtime.service.capture_application", capture)
     try:
         with owner_local_scope():
-            answer = await runtime.dialogue("Wave" if action["op"] == "pose" else "Come here")
+            answer = await runtime.dialogue("Sit" if action["op"] == "pose" else "Come here")
         command = queue.get_nowait()
         if action["op"] == "pose":
-            assert command.state is not None and command.state.value == "waving"
+            assert command.state is not None and command.state.value == "sitting"
             assert "not that the animation has finished" in answer
         else:
             assert command.verb is EmbodimentVerb.MOVE_TO and command.target_point is not None

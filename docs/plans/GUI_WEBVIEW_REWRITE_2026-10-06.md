@@ -1,9 +1,20 @@
 # GUI rewrite on WebView2 — plan
 
 Prepared by **Opus 5.5**, 2026-10-06, after the owner's decision: "We are absolutely going with
-WebView." Status: **W0 spike and W1 foundation built and component-tested (2026-10-06 12:21,
-Opus 5.5); the W0 gate needs the owner's machine** — see the
-[W0 check list](../gui/W0_OWNER_CHECKS_2026-10-06.md). The WinForms state before the rewrite is
+WebView." Status (2026-10-07, Opus 5.5):
+- **W0 and W1** are built. On the owner's machine there is real blur behind the glass; the
+  owner's own look review is still open ([W0 check list](../gui/W0_OWNER_CHECKS_2026-10-06.md)).
+- **W2 Chat** is built: formatting, evidence chips, attachments, task and memory chips, and
+  talking by holding the microphone. It was checked natively in an isolated profile.
+- **W3 Settings** is built, generated from Core's field list with the Models card, and was
+  checked natively in an isolated profile.
+- **W4:** the web Chat and Settings are now the **default**, and `-ClassicPanels` opens the old
+  windows. W4's gate (a week of daily use) is open.
+- **W5:** Activity is built as a web window, opened from Chat's task chips on the exact task. It
+  was checked natively, and a [captioned test video](../../.local/videos/SORA_GUI_test_2026-10-07.mp4)
+  (local only) shows Chat, Activity and Settings working. Voice, Agents, Paths, Memory and
+  Appearance are still WinForms.
+- Details: [changelog](../../changelog/2026-10-07T130000+0100_GUI-WEB-SETTINGS-CHAT_Opus-5.5.md). The WinForms state before the rewrite is
 kept on branch `snapshot/winforms-gui-2026-10-06`. It serves [VISION.md](../../VISION.md) and
 [V1.md](../../V1.md). The approved visual baseline is unchanged: the
 [concept images and design v0.1](../gui/reference/README.md).
@@ -36,8 +47,9 @@ SoraShell.exe (existing C# host)                    SORA Core (unchanged)
 
 - **The host stays.** Lifecycle, tray, single instance, managed Core, shortcut, panel placement
   and UI preferences are already built and verified. Only the window *contents* change.
-- **Pages are served offline** from `clients/panels/` through WebView2's folder-to-virtual-host
-  mapping, so a panel still opens when Core or the model is down. That keeps the roadmap's
+- **Pages are served offline** from `clients/panels/` by SoraShell itself (`PanelFiles.cs`; a
+  WebView2 folder mapping would swallow the `/api/` calls), so a panel still opens when Core or
+  the model is down. That keeps the roadmap's
   model-independent recovery.
 - **Data:** pages call Core's existing API with `fetch`, reusing the PWA's `api-client.js` and
   `sync.js` (reconnect and replay). The host injects the `Authorization` header in

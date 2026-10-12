@@ -291,6 +291,8 @@ namespace Sora.Embodiment.Network
         [JsonProperty("position_ms")] public double PositionMs { get; set; }
         [JsonProperty("duration_ms")] public double DurationMs { get; set; }
         [JsonProperty("mouth_open")] public float MouthOpen { get; set; }
+        // A, E, I, O, U shares of the mouth shape from the audio; null or all zero = Aa only.
+        [JsonProperty("vowels")] public float[]? Vowels { get; set; }
         [JsonProperty("reason")] public string Reason { get; set; } = "disconnected";
     }
 
@@ -311,7 +313,7 @@ namespace Sora.Embodiment.Network
         private static readonly HashSet<string> PresentationStates = new HashSet<string>(StringComparer.Ordinal)
         {
             "idle", "thinking", "listening", "speaking", "waiting_for_agent", "reading", "typing",
-            "waving", "sitting", "leaning", "climbing"
+            "sitting", "leaning", "climbing"
         };
         private static readonly HashSet<string> SemanticActions = new HashSet<string>(StringComparer.Ordinal)
         {

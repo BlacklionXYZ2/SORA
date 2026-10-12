@@ -128,7 +128,6 @@ class EmbodimentPresentationState(StrEnum):
     WAITING_FOR_AGENT = "waiting_for_agent"
     READING = "reading"
     TYPING = "typing"
-    WAVING = "waving"
     SITTING = "sitting"
     LEANING = "leaning"
     CLIMBING = "climbing"

@@ -12,7 +12,7 @@ namespace Sora.DesktopShell;
 //   none    Solid glass; what the page uses when Windows has transparency turned off.
 public enum PanelBackdrop { System, Accent, None }
 
-// One web panel window (W0: Chat). Content is clients/panels/<panel>/ served from a virtual
+// One web panel window (Chat, Settings). Content is clients/panels/<panel>/ served from a virtual
 // host; Core calls go through PanelApiProxy so the owner token never reaches page code.
 internal sealed class WebPanelForm : Form
 {
@@ -22,12 +22,18 @@ internal sealed class WebPanelForm : Form
     private readonly string panelsFolder;
     private readonly PanelApiProxy proxy;
     private readonly string userDataFolder;
-    private readonly Action<string> openPanel;
+    private readonly Action<string, string?> openPanel;
+    private string? pendingSelect;
+    private bool pageReady;
+
+    /// <summary>The page reports unsaved edits (Settings drafts), so Quit can ask first.</summary>
+    public bool HasUnsavedChanges { get; private set; }
+    public string PanelName => panel;
     private PanelBackdrop applied = PanelBackdrop.None;
     private bool hostShutdown;
 
     public WebPanelForm(string panel, string panelsFolder, PanelApiProxy proxy, string stateRoot,
-        Action<string> openPanel)
+        Action<string, string?> openPanel, Size? size = null)
     {
         this.panel = panel; this.panelsFolder = panelsFolder; this.proxy = proxy; this.openPanel = openPanel;
         userDataFolder = Path.Combine(stateRoot, "webview2");
@@ -36,8 +42,8 @@ internal sealed class WebPanelForm : Form
         FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.CenterScreen;
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(480, 520);
-        MinimumSize = new Size(360, 320);
+        ClientSize = size ?? new Size(480, 520);
+        MinimumSize = new Size(Math.Min(ClientSize.Width, 360), 320);
         BackColor = Color.Black; // Black is "show the backdrop" once DWM owns the client area.
         ShowInTaskbar = true;
         Controls.Add(view);
@@ -87,10 +93,10 @@ internal sealed class WebPanelForm : Form
         settings.IsZoomControlEnabled = false;
         settings.IsGeneralAutofillEnabled = false;
         settings.IsPasswordAutosaveEnabled = false;
-        core.SetVirtualHostNameToFolderMapping(PanelApiProxy.Host, panelsFolder,
-            CoreWebView2HostResourceAccessKind.Deny);
-        core.AddWebResourceRequestedFilter($"https://{PanelApiProxy.Host}/api/*", CoreWebView2WebResourceContext.All);
-        core.WebResourceRequested += OnApiRequest;
+        // SoraShell answers the whole panel host itself: files from panels\ and /api/ calls via
+        // PanelApiProxy. A folder mapping for this host would swallow the /api/ requests.
+        core.AddWebResourceRequestedFilter($"https://{PanelApiProxy.Host}/*", CoreWebView2WebResourceContext.All);
+        core.WebResourceRequested += OnRequest;
         core.WebMessageReceived += OnMessage;
         core.NavigationStarting += (_, args) => {
             // Panels never leave their own origin.
@@ -100,8 +106,21 @@ internal sealed class WebPanelForm : Form
         core.Navigate($"https://{PanelApiProxy.Host}/{panel}/index.html");
     }
 
-    private async void OnApiRequest(object? sender, CoreWebView2WebResourceRequestedEventArgs args)
+    private async void OnRequest(object? sender, CoreWebView2WebResourceRequestedEventArgs args)
     {
+        var uri = args.Request.Uri;
+        if (PanelApiProxy.CorePath(args.Request.Method, uri) is null)
+        {
+            // Not an allowed Core call: serve the panel's own file, or refuse.
+            var file = PanelFiles.Resolve(panelsFolder, args.Request.Method, uri);
+            args.Response = file is { } found
+                ? view.CoreWebView2.Environment.CreateWebResourceResponse(
+                    new MemoryStream(File.ReadAllBytes(found.Path)), 200, "OK",
+                    $"Content-Type: {found.ContentType}\r\nCache-Control: no-cache")
+                : view.CoreWebView2.Environment.CreateWebResourceResponse(
+                    new MemoryStream(), 404, "Not Found", "Content-Type: text/plain");
+            return;
+        }
         using var deferral = args.GetDeferral();
         try
         {
@@ -138,14 +157,48 @@ internal sealed class WebPanelForm : Form
                 break;
             case PanelCommandKind.Drag: WindowGlass.BeginNativeMove(Handle, 2); break;
             case PanelCommandKind.Resize: WindowGlass.BeginNativeMove(Handle, PanelBridge.HitTest(command.Edge!)); break;
-            case PanelCommandKind.OpenPanel: openPanel(command.Panel!); break;
+            case PanelCommandKind.OpenPanel: openPanel(command.Panel!, command.Select); break;
+            case PanelCommandKind.Dirty: HasUnsavedChanges = command.Dirty; break;
+            case PanelCommandKind.PickFile: PickFile(command.PickKind!, command.RequestId!, command.StartFolder); break;
             case PanelCommandKind.Ready:
+                pageReady = true;
+                if (pendingSelect is { } waiting) { pendingSelect = null; Select(waiting); }
                 var radius = applied == PanelBackdrop.System ? 8 : 22;
                 view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new {
                     type = "host.backdrop", kind = applied.ToString().ToLowerInvariant(), cornerRadius = radius,
                 }));
                 break;
         }
+    }
+
+    // Native open dialog for a page; the page only ever receives the chosen path.
+    private void PickFile(string kind, string requestId, string? startFolder)
+    {
+        string? path = null;
+        if (PanelBridge.Filter(kind) is { } filter)
+        {
+            using var dialog = new OpenFileDialog { Filter = filter, CheckFileExists = true, Multiselect = false,
+                Title = kind == "attachment" ? "Attach a file for SORA" : "Choose a file" };
+            if (startFolder is not null) dialog.InitialDirectory = startFolder;
+            if (dialog.ShowDialog(this) == DialogResult.OK) path = dialog.FileName;
+        }
+        else
+        {
+            using var dialog = new FolderBrowserDialog { ShowNewFolderButton = false, UseDescriptionForTitle = true,
+                Description = "Choose a folder" };
+            if (startFolder is not null) dialog.InitialDirectory = startFolder;
+            if (dialog.ShowDialog(this) == DialogResult.OK) path = dialog.SelectedPath;
+        }
+        view.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(new { type = "host.file", requestId, path }));
+    }
+
+    /// <summary>Asks the page to select an exact item (for Activity, a task ID).</summary>
+    public void Select(string id)
+    {
+        if (!PanelBridge.ValidItemId(id)) return;
+        // Until the page has said it is ready, its message listener may not exist yet.
+        if (!pageReady || view.CoreWebView2 is null) { pendingSelect = id; return; }
+        view.CoreWebView2.PostWebMessageAsJson(JsonSerializer.Serialize(new { type = "host.select", id }));
     }
 
     public void CloseForHostShutdown() { hostShutdown = true; Close(); }

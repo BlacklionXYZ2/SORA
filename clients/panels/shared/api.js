@@ -49,11 +49,46 @@ export class CoreApi {
 
   messages(limit = 100) { return this.request(`/api/v1/messages?limit=${limit}`); }
   status() { return this.request("/api/v1/status"); }
-  dialogue(content, requestId, signal) {
-    return this.request("/api/v1/dialogue",
-      { method: "POST", body: { content, request_id: requestId }, signal });
+  dialogue(content, requestId, signal, filePaths = []) {
+    const body = { content, request_id: requestId };
+    if (filePaths.length) body.file_paths = filePaths;
+    return this.request("/api/v1/dialogue", { method: "POST", body, signal });
   }
   cancelDialogue(requestId) {
     return this.request("/api/v1/dialogue/cancel", { method: "POST", body: { request_id: requestId } });
+  }
+
+  // Event feed and the records it points at (tasks, memories).
+  events(since, limit = 100) {
+    return this.request(`/api/v1/events?since_sequence=${since}&limit=${limit}`);
+  }
+  voice() { return this.request("/api/v1/voice/local"); }
+  voiceAction(action) {
+    return this.request("/api/v1/voice/local", { method: "POST", body: { action } });
+  }
+  task(taskId) { return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}`); }
+  agents() { return this.request("/api/v1/agents/catalogue"); }
+  tasks(limit = 50) { return this.request(`/api/v1/tasks?limit=${limit}`); }
+  taskEvidence(taskId) {
+    return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/evidence`);
+  }
+  cancelTask(taskId) {
+    return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/cancel`, { method: "POST", body: {} });
+  }
+  steerTask(taskId, instruction) {
+    return this.request(`/api/v1/tasks/${encodeURIComponent(taskId)}/steer`,
+      { method: "POST", body: { instruction } });
+  }
+  memory(memoryId) { return this.request(`/api/v1/memories/${encodeURIComponent(memoryId)}`); }
+
+  // Settings (owner-local; Core checks the revision so a stale page cannot overwrite).
+  settings() { return this.request("/api/v1/projections/settings"); }
+  saveSettings(edit) { return this.request("/api/v1/settings", { method: "POST", body: edit }); }
+  reloadModel(revision) {
+    return this.request("/api/v1/model/reload", { method: "POST", body: { expected_revision: revision } });
+  }
+  refreshSettings() { return this.request("/api/v1/settings/refresh", { method: "POST", body: {} }); }
+  projectors(modelPath) {
+    return this.request("/api/v1/models/projectors", { method: "POST", body: { model_path: modelPath } });
   }
 }

@@ -81,7 +81,7 @@ def test_all_preferences_have_controls_and_tiers() -> None:
 
 def test_gui_categories_cover_every_v10_preference_once_without_new_authority() -> None:
     keys = [key for group in SETTINGS_CATEGORY_KEYS.values() for key in group]
-    assert len(keys) == len(set(keys)) == len(FIELDS) == 129
+    assert len(keys) == len(set(keys)) == len(FIELDS) == 145
     assert set(keys) == set(TIERS)
     assert SETTINGS_ADVANCED_KEYS <= set(keys)
     assert len(SETTINGS_CATEGORIES) == 10
@@ -91,8 +91,12 @@ def test_gui_categories_cover_every_v10_preference_once_without_new_authority() 
         assert field["advanced"] == (field["key"] in SETTINGS_ADVANCED_KEYS)
         assert field["tier"] == TIERS[field["key"]]
         assert field["editable"] is True
-    # These need real services/UI-only preferences, not invented canonical knobs.
-    assert not {f["category"] for f in FIELDS} & {"Memory", "Automation", "Appearance"}
+    # These need real services/UI-only preferences, not invented canonical knobs. Memory has
+    # one since 2026-10-09 (the memory manager), Appearance since 2026-10-11 (the avatar).
+    assert not {f["category"] for f in FIELDS} & {"Automation"}
+    assert [f["key"] for f in FIELDS if f["category"] == "Appearance"] == ["avatar.vrm_path"]
+    assert {f["key"] for f in FIELDS if f["category"] == "Memory"} == {
+        "memory.mode", "memory.device", "memory.server", "memory.model_path"}
     assert next(f for f in FIELDS if f["key"] == "local_companion.file_read")["category"] == "Tools"
     capture = next(f for f in FIELDS if f["key"] == "local_companion.desktop_capture")
     assert capture["category"] == "Vision"
@@ -148,7 +152,7 @@ async def test_launch_details_distinguish_capture_reload_and_next_start(
         assert reload_args[reload_args.index("--port") + 1] == "18771"
         assert start_args[start_args.index("--port") + 1] == "18779"
         assert reload_args[reload_args.index("--ctx-size") + 1] == "4096"
-        assert captured[captured.index("--ctx-size") + 1] == "8192"
+        assert captured[captured.index("--ctx-size") + 1] == "12288"  # medium vision detail
         assert controller.server.api_key not in json.dumps(details)
         controller.server.process = cast(asyncio.subprocess.Process, Mock(returncode=1))
         assert controller.launch_details()["active"]["argv"] is None
@@ -193,7 +197,7 @@ async def test_reload_failure_restores_old_model_and_keeps_failed_edit_pending(
     assert controller.task is not None
     await controller.task
     assert controller.model_state == "ready" and controller.rollback_applied
-    assert controller.active.llama.context_size == 8192
+    assert controller.active.llama.context_size == 12288  # medium vision detail
     assert controller.projection()["model_reload_required"]
     await controller.close()
     # Failed saved model at next boot still recovers, without replacing the requested settings.

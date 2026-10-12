@@ -164,9 +164,6 @@ namespace Sora.Embodiment.Presentation
                 gazeWeight: 0.9f, bodyLeanDegrees: 4));
             registry.RegisterState("typing", new PresentationProfile("state.typing",
                 gazeWeight: 0.85f, bodyLeanDegrees: 6, pulseDegrees: 1.5f, pulseHz: 2));
-            registry.RegisterState("waving", new PresentationProfile("state.waving",
-                gazeWeight: 0.7f, rightArmPitchDegrees: -55, limbPulseDegrees: 24,
-                limbPulseHz: 1.7f));
             registry.RegisterState("sitting", new PresentationProfile("state.sitting",
                 gazeWeight: 0.4f, bodyLeanDegrees: 12, leftLegPitchDegrees: -65,
                 rightLegPitchDegrees: -65));

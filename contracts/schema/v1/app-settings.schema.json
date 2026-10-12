@@ -140,6 +140,19 @@
       "title": "AgentPreferences",
       "type": "object"
     },
+    "AvatarSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "vrm_path": {
+          "default": ".local/avatars/Alice.vrm",
+          "maxLength": 4096,
+          "title": "Vrm Path",
+          "type": "string"
+        }
+      },
+      "title": "AvatarSettings",
+      "type": "object"
+    },
     "CustomEndpoint": {
       "additionalProperties": false,
       "description": "An owner-added agent: an OpenAI-compatible API on this machine, or an ACP command.",
@@ -204,6 +217,52 @@
         }
       },
       "title": "CustomEndpoint",
+      "type": "object"
+    },
+    "DecisionSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "vulkan",
+            "cpu"
+          ],
+          "title": "Device",
+          "type": "string"
+        },
+        "executable": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Executable",
+          "type": "string"
+        },
+        "mode": {
+          "default": "shadow",
+          "enum": [
+            "off",
+            "shadow",
+            "enforce"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "model_path": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Model Path",
+          "type": "string"
+        },
+        "threshold": {
+          "default": 0.25,
+          "maximum": 0.95,
+          "minimum": 0.05,
+          "title": "Threshold",
+          "type": "number"
+        }
+      },
+      "title": "DecisionSettings",
       "type": "object"
     },
     "DialogueSettings": {
@@ -306,7 +365,7 @@
           "type": "string"
         },
         "context_size": {
-          "default": 8192,
+          "default": 12288,
           "maximum": 131072,
           "minimum": 2048,
           "title": "Context Size",
@@ -347,6 +406,13 @@
           ],
           "default": "auto",
           "title": "Gpu Layers"
+        },
+        "image_max_tokens": {
+          "default": 1024,
+          "maximum": 4096,
+          "minimum": 70,
+          "title": "Image Max Tokens",
+          "type": "integer"
         },
         "load_mode": {
           "default": "auto",
@@ -442,11 +508,22 @@
           "type": "string"
         },
         "ubatch_size": {
-          "default": 512,
+          "default": 1024,
           "maximum": 131072,
           "minimum": 1,
           "title": "Ubatch Size",
           "type": "integer"
+        },
+        "vision_detail": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "custom"
+          ],
+          "title": "Vision Detail",
+          "type": "string"
         }
       },
       "title": "LlamaOptions",
@@ -497,6 +574,44 @@
         }
       },
       "title": "LocalCompanionPolicy",
+      "type": "object"
+    },
+    "MemoryManagerSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "device": {
+          "default": "gpu",
+          "enum": [
+            "gpu",
+            "cpu"
+          ],
+          "title": "Device",
+          "type": "string"
+        },
+        "mode": {
+          "default": "on",
+          "enum": [
+            "off",
+            "shadow",
+            "on"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "model_path": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Model Path",
+          "type": "string"
+        },
+        "server": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Server",
+          "type": "string"
+        }
+      },
+      "title": "MemoryManagerSettings",
       "type": "object"
     },
     "PerceptionSettings": {
@@ -647,10 +762,35 @@
     "VoiceSettings": {
       "additionalProperties": false,
       "properties": {
+        "audio_route": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "transcribe"
+          ],
+          "title": "Audio Route",
+          "type": "string"
+        },
+        "follow_on_seconds": {
+          "default": 8,
+          "maximum": 60,
+          "minimum": 0,
+          "title": "Follow On Seconds",
+          "type": "integer"
+        },
         "input_device": {
           "default": "",
           "maxLength": 512,
           "title": "Input Device",
+          "type": "string"
+        },
+        "listening": {
+          "default": "always",
+          "enum": [
+            "press",
+            "always"
+          ],
+          "title": "Listening",
           "type": "string"
         },
         "output_device": {
@@ -702,6 +842,14 @@
           "maxLength": 4096,
           "title": "Voices Path",
           "type": "string"
+        },
+        "wake_words": {
+          "default": "sora",
+          "maxLength": 200,
+          "minLength": 1,
+          "pattern": "^[A-Za-z][A-Za-z ,'-]*$",
+          "title": "Wake Words",
+          "type": "string"
         }
       },
       "title": "VoiceSettings",
@@ -734,6 +882,12 @@
     "agents": {
       "$ref": "#/$defs/AgentPreferences"
     },
+    "avatar": {
+      "$ref": "#/$defs/AvatarSettings"
+    },
+    "decision": {
+      "$ref": "#/$defs/DecisionSettings"
+    },
     "delegation_epoch": {
       "default": 0,
       "minimum": 0,
@@ -751,6 +905,9 @@
     },
     "local_companion": {
       "$ref": "#/$defs/LocalCompanionPolicy"
+    },
+    "memory": {
+      "$ref": "#/$defs/MemoryManagerSettings"
     },
     "perception": {
       "$ref": "#/$defs/PerceptionSettings"

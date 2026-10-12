@@ -6,6 +6,12 @@ implemented yet.** It fixes the boundary that [VISION.md](../../VISION.md) says 
 before the owner's learned motion model is built: "its interface must be fixed before it is
 built, so it can replace the deterministic layer without changes upstream".
 
+> **2026-10-11:** the learned model is now built by agents, starting now rather than after A
+> Levels, under the [motion core roadmap](MOTION-CORE-ROADMAP_2026-10-11.md). There, this
+> contract is built right after V1 (the M8 prerequisite), with trace logging. The open questions
+> below are its decisions 7 (emotion labels) and 8 (audio fields, to settle before the contract
+> is built).
+
 ## The rule
 
 Language models never drive joints. Core publishes **what SORA means** (intent, emotion,

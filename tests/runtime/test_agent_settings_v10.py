@@ -129,3 +129,38 @@ async def test_disabled_custom_agent_is_not_offered() -> None:
     assert references.preview()["agents"] == []
     with pytest.raises(ValueError, match="disabled or unavailable"):
         references.select(Delegate(op="delegate", task="x", provider="custom-3"))
+
+
+@pytest.mark.asyncio
+async def test_agent_roster_and_project_references_survive_small_model_mistakes() -> None:
+    agents = AgentPreferences()
+    agents = agents.model_copy(update={"custom_1": agents.custom_1.model_copy(update={
+        "enabled": True, "nickname": "Pip", "protocol": "openai-compatible", "port": 18995,
+        "purpose": "Quick local checks.",
+    })})
+    providers: dict[str, Any] = {"custom-1": FakeAgent("custom-1")}
+    catalogue = AgentCatalogue(providers, preferences=lambda: agents, agent_names=agents.directory)
+    references = DelegationCatalogue(await catalogue.snapshot())
+    # The roster names the nickname and its provider ID, outside the trimmed observations.
+    assert "Pip = provider custom-1: Quick local checks." in references.roster()
+    # A chat-only custom agent ignores any project, invented or not.
+    assert references.select(Delegate(op="delegate", task="x", provider="custom-1",
+                                      project="weekend-trip")).project is None
+    # ...and an invented model reference falls back to its configured default.
+    assert references.select(Delegate(op="delegate", task="x", provider="custom-1",
+                                      model="pip-large")).model is None
+    # The agent's own name in the model field selects that agent with its default model.
+    chosen = references.select(Delegate(op="delegate", task="x", model="Pip"))
+    assert (chosen.provider, chosen.model) == ("custom-1", None)
+    with pytest.raises(ValueError, match="Unknown or stale model"):
+        references.select(Delegate(op="delegate", task="x", model="pip-large"))
+    # With no project folder anywhere, an invented reference means "no project" (live,
+    # 2026-10-10)...
+    assert references.select(Delegate(op="delegate", task="x",
+                                      project="weekend-trip")).project is None
+    # ...but once projects exist, a reference Core never issued is still refused.
+    references.projects["p1"] = ("C:/projects/sora", "direct")
+    with pytest.raises(ValueError, match="stale project reference"):
+        references.select(Delegate(op="delegate", task="x", project="weekend-trip"))
+    assert references.select(Delegate(op="delegate", task="x", project="p1")).project == (
+        "C:/projects/sora")

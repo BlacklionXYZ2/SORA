@@ -51,7 +51,6 @@ test scope and the remaining real-model, native-application and visible-animatio
 Restart SORA with `./Start-SORA.ps1` so Core loads the updated Python code. Keep the 3D companion
 enabled and use your local managed llama.cpp model. In the normal Chat tab, send one of:
 
-- `Wave to me with your avatar.`
 - `Could you sit down please?`
 - `Lean your avatar to one side.`
 - `Show your climbing pose.`
@@ -60,6 +59,9 @@ enabled and use your local managed llama.cpp model. In the normal Chat tab, send
 - `What can you see on my screen right now?` (one-shot screen look; needs the capture helper and a
   vision-capable dialogue model)
 
+She has no wave: the `wave` keyword only walked her on the spot and was removed on 2026-10-12
+at the owner's request. To make her walk, ask her to walk or come here.
+
 No manual pose-button click is needed. Core responds that it sent the pose request, not that the
 animation finished. The 3D companion tab reports the renderer's state. Sitting/climbing are poses,
 not seat contact or physical traversal. Stand/reset returns the avatar to idle.
@@ -67,12 +69,11 @@ not seat contact or physical traversal. Stand/reset returns the avatar to idle.
 ## The entire model-facing call
 
 ```json
-{"motion":"wave"}
+{"motion":"sit"}
 ```
 
 | Keyword | Existing renderer state |
 |---|---|
-| `wave` | `waving` |
 | `sit` | `sitting` |
 | `lean` | `leaning` |
 | `climb` | `climbing` |

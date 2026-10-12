@@ -1,0 +1,36 @@
+# message -> tool families it needs (empty = plain conversation). See docs/runbooks/TRAINING_LAYA.md
+{"message": "Do you remember where I parked?", "families": ["memory"], "source": "seed"}
+{"message": "What's my favourite food?", "families": ["memory"], "source": "seed"}
+{"message": "Show me what you remember about my job", "families": ["memory"], "source": "seed"}
+{"message": "Come over to my cursor", "families": ["motion"], "source": "seed"}
+{"message": "Run to the left and sit", "families": ["motion"], "source": "seed"}
+{"message": "Give me a wave", "families": [], "source": "seed"}
+{"message": "Walk to the Chrome window", "families": ["motion"], "source": "seed"}
+{"message": "Point at the pause button", "families": ["indicate"], "source": "seed"}
+{"message": "Look at the volume slider", "families": ["indicate"], "source": "seed"}
+{"message": "What tabs do I have open?", "families": ["windows"], "source": "seed"}
+{"message": "What's highlighted in Word?", "families": ["windows"], "source": "seed"}
+{"message": "Which window is in front?", "families": ["windows"], "source": "seed"}
+{"message": "What's on my desktop folder?", "families": ["files"], "source": "seed"}
+{"message": "Read todo.md in Documents", "families": ["files"], "source": "seed"}
+{"message": "Find my CV", "families": ["files"], "source": "seed"}
+{"message": "Ask Cody to add tests", "families": ["delegate"], "source": "seed"}
+{"message": "Have Hermes find cheap hotels in Rome", "families": ["delegate"], "source": "seed"}
+{"message": "Write me a script to back up my saves", "families": ["delegate"], "source": "seed"}
+{"message": "Ask Pip to check the weather plan", "families": ["delegate"], "source": "seed"}
+{"message": "Read the error popup for me", "families": ["view_window"], "source": "seed"}
+{"message": "Can you look closely at this graph?", "families": ["view_window"], "source": "seed"}
+{"message": "Hello!", "families": [], "source": "seed"}
+{"message": "How's your day?", "families": [], "source": "seed"}
+{"message": "What's the tallest mountain?", "families": [], "source": "seed"}
+{"message": "Thank you", "families": [], "source": "seed"}
+{"message": "Describe my screen", "families": [], "source": "seed"}
+{"message": "Tell me something interesting", "families": [], "source": "seed"}
+{"message": "Sing me a song", "families": [], "source": "seed"}
+{"message": "I don't want you to move right now", "families": [], "source": "seed"}
+{"message": "Mute YouTube", "families": ["media"], "source": "seed"}
+{"message": "Google how to tie a tie", "families": ["browser"], "source": "seed"}
+{"message": "Remind me in an hour to stretch", "families": ["timer"], "source": "seed"}
+{"message": "Switch my display to dark mode", "families": ["system"], "source": "seed"}
+{"message": "Send the report to Alex", "families": ["email"], "source": "seed"}
+{"message": "What games did I play this week on Steam?", "families": ["games"], "source": "seed"}

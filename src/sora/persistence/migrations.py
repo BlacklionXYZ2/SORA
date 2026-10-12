@@ -145,4 +145,72 @@ MIGRATIONS += (
     ),
 )
 
+MIGRATIONS += (
+    # 2026-10-09: memories carry their own dates (owner: every memory and goal is tagged with
+    # when it was made and last changed). Triggers stamp them on every write path, so no insert
+    # can forget; rows from before this migration are dated from their capture files at startup
+    # (MemoryDates.backfill) or stay undated rather than invented.
+    # SORA's goals: her own, changeable at will, with start and end dates and a full history of
+    # additions, revisions, closings and progress notes (goal_events).
+    Migration(
+        13,
+        (
+            "ALTER TABLE memories ADD COLUMN created_at TEXT",
+            "ALTER TABLE memories ADD COLUMN updated_at TEXT",
+            "CREATE TRIGGER memories_dated AFTER INSERT ON memories WHEN NEW.created_at IS NULL "
+            "BEGIN UPDATE memories SET created_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+            "WHERE memory_id=NEW.memory_id; END",
+            "CREATE TRIGGER memories_changed AFTER UPDATE OF content, superseded_by, deleted_at, "
+            "valid_until, retention, sensitivity, scope ON memories "
+            "BEGIN UPDATE memories SET updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE memory_id=NEW.memory_id; END",
+            "CREATE TABLE goals (goal_id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES "
+            "owners(owner_id), text TEXT NOT NULL, why TEXT NOT NULL, origin TEXT NOT NULL CHECK("
+            "origin IN ('sora','owner')), status TEXT NOT NULL CHECK(status IN ('active',"
+            "'achieved','dropped')), created_at TEXT NOT NULL, updated_at TEXT NOT NULL, "
+            "closed_at TEXT, close_reason TEXT, entity_version INTEGER NOT NULL CHECK("
+            "entity_version>=1))",
+            "CREATE INDEX goals_owner_idx ON goals(owner_id, status)",
+            "CREATE TABLE goal_events (event_id TEXT PRIMARY KEY, goal_id TEXT NOT NULL REFERENCES "
+            "goals(goal_id), kind TEXT NOT NULL CHECK(kind IN ('added','revised','progress',"
+            "'achieved','dropped','reopened')), text TEXT NOT NULL, reason TEXT NOT NULL, "
+            "actor TEXT NOT NULL CHECK(actor IN ('sora','owner')), memory_ids TEXT NOT NULL, "
+            "occurred_at TEXT NOT NULL)",
+            "CREATE INDEX goal_events_goal_idx ON goal_events(goal_id, occurred_at)",
+        ),
+    ),
+)
+
+MIGRATIONS += (
+    # 2026-10-09: the memory manager (MEMORY_MANAGER_2026-10-08 §3.6-3.7, §5). Vectors are stored
+    # per memory part and embedder, so swapping the embedder re-embeds without losing the old
+    # ones. Links are the memory network; recalls record what was recalled for which turn (and,
+    # later, whether the answer used it), which trains recall and the forgetting score.
+    Migration(
+        14,
+        (
+            "CREATE TABLE memory_vectors (memory_id TEXT NOT NULL REFERENCES memories(memory_id), "
+            "part TEXT NOT NULL, embedder TEXT NOT NULL, dims INTEGER NOT NULL CHECK(dims>0), "
+            "vector BLOB NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY(memory_id, part, embedder))",
+            "CREATE INDEX memory_vectors_embedder_idx ON memory_vectors(embedder, part)",
+            "CREATE TABLE memory_links (source_id TEXT NOT NULL REFERENCES memories(memory_id), "
+            "target_id TEXT NOT NULL REFERENCES memories(memory_id), kind TEXT NOT NULL CHECK("
+            "kind IN ('same_subject','update','related')), score REAL NOT NULL, decided_by TEXT "
+            "NOT NULL, created_at TEXT NOT NULL, PRIMARY KEY(source_id, target_id, kind))",
+            "CREATE INDEX memory_links_target_idx ON memory_links(target_id)",
+            "CREATE TABLE memory_recalls (recall_id TEXT PRIMARY KEY, memory_id TEXT NOT NULL "
+            "REFERENCES memories(memory_id), correlation_id TEXT NOT NULL, mode TEXT NOT NULL "
+            "CHECK(mode IN ('recency','meaning','shadow')), rank INTEGER NOT NULL, relevance REAL, "
+            "used INTEGER, recalled_at TEXT NOT NULL)",
+            "CREATE INDEX memory_recalls_memory_idx ON memory_recalls(memory_id, recalled_at)",
+        ),
+    ),
+)
+
+MIGRATIONS += (
+    # 2026-10-10: memories made with the remember tool carry her short title; the description
+    # is the content, and the turn's data (the owner's exact words, images, voice) is stored in
+    # <state>/memory/entries/<memory_id>/.
+    Migration(15, ("ALTER TABLE memories ADD COLUMN title TEXT",)),
+)
+
 CURRENT_SCHEMA_VERSION = MIGRATIONS[-1].version

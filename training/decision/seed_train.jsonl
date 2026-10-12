@@ -1,0 +1,124 @@
+# message -> tool families it needs (empty = plain conversation). See docs/runbooks/TRAINING_LAYA.md
+{"message": "What's my favourite colour?", "families": ["memory"], "source": "seed"}
+{"message": "Do you remember what I told you about my trip?", "families": ["memory"], "source": "seed"}
+{"message": "What did I say my sister's name was?", "families": ["memory"], "source": "seed"}
+{"message": "Remind me what I said about the project deadline", "families": ["memory"], "source": "seed"}
+{"message": "Show me the memory about my holiday plans", "families": ["memory"], "source": "seed"}
+{"message": "What do you know about my music taste?", "families": ["memory"], "source": "seed"}
+{"message": "Did I mention which laptop I bought?", "families": ["memory"], "source": "seed"}
+{"message": "What was the name of that restaurant I liked?", "families": ["memory"], "source": "seed"}
+{"message": "Open the memory where I talked about Beat Saber", "families": ["memory"], "source": "seed"}
+{"message": "Have I told you what I do for work?", "families": ["memory"], "source": "seed"}
+{"message": "What's my cat called again?", "families": ["memory"], "source": "seed"}
+{"message": "Do you remember my birthday?", "families": ["memory"], "source": "seed"}
+{"message": "Wave to me!", "families": ["motion"], "source": "seed"}
+{"message": "Come here please", "families": ["motion"], "source": "seed"}
+{"message": "Run over to the left side of the screen and sit down", "families": ["motion"], "source": "seed"}
+{"message": "Sit down for a bit", "families": ["motion"], "source": "seed"}
+{"message": "Walk to the middle of my main screen", "families": ["motion"], "source": "seed"}
+{"message": "Can you lean on the taskbar?", "families": ["motion"], "source": "seed"}
+{"message": "Stand up again", "families": ["motion"], "source": "seed"}
+{"message": "Go to the other monitor", "families": ["motion"], "source": "seed"}
+{"message": "Hurry over to the right and wave", "families": ["motion"], "source": "seed"}
+{"message": "Climb up there", "families": ["motion"], "source": "seed"}
+{"message": "Say hi with a wave", "families": [], "source": "seed"}
+{"message": "Walk over here next to my mouse", "families": ["motion"], "source": "seed"}
+{"message": "Point at the minimize button on Antigravity", "families": ["indicate"], "source": "seed"}
+{"message": "Look at the close button", "families": ["indicate"], "source": "seed"}
+{"message": "Show me where the save button is", "families": ["indicate"], "source": "seed"}
+{"message": "Point to the search box in Spotify", "families": ["indicate"], "source": "seed"}
+{"message": "Look at the play button", "families": ["indicate"], "source": "seed"}
+{"message": "Which button do I press to export? Point at it", "families": ["indicate"], "source": "seed"}
+{"message": "Turn your head towards the settings icon", "families": ["indicate"], "source": "seed"}
+{"message": "Point at the send button in Discord", "families": ["indicate"], "source": "seed"}
+{"message": "What windows do I have open?", "families": ["windows"], "source": "seed"}
+{"message": "What's selected in my editor?", "families": ["windows"], "source": "seed"}
+{"message": "Read the text in my Notepad window", "families": ["windows"], "source": "seed"}
+{"message": "Which app am I using right now?", "families": ["windows"], "source": "seed"}
+{"message": "What song is playing in Spotify?", "families": ["windows"], "source": "seed"}
+{"message": "What does the title of my browser tab say?", "families": ["windows"], "source": "seed"}
+{"message": "Is Discord open?", "families": ["windows"], "source": "seed"}
+{"message": "Read me the highlighted paragraph", "families": ["windows"], "source": "seed"}
+{"message": "What's in the document I have open?", "families": ["windows"], "source": "seed"}
+{"message": "What controls are in the settings window?", "families": ["windows"], "source": "seed"}
+{"message": "What's in my Downloads folder?", "families": ["files"], "source": "seed"}
+{"message": "Read notes.txt on my desktop", "families": ["files"], "source": "seed"}
+{"message": "Find the file with my tax receipts", "families": ["files"], "source": "seed"}
+{"message": "Search my Documents for anything about the lease", "families": ["files"], "source": "seed"}
+{"message": "List the files on my desktop", "families": ["files"], "source": "seed"}
+{"message": "Open the README in my SORA folder and summarise it", "families": ["files"], "source": "seed"}
+{"message": "How big is my videos folder?", "families": ["files"], "source": "seed"}
+{"message": "Is there a file called budget.xlsx anywhere in Documents?", "families": ["files"], "source": "seed"}
+{"message": "Read the last few lines of my log file", "families": ["files"], "source": "seed"}
+{"message": "Which photos did I save yesterday?", "families": ["files"], "source": "seed"}
+{"message": "Ask Cody to fix the failing test in SORA", "families": ["delegate"], "source": "seed"}
+{"message": "Could Hermes research flights to Tokyo?", "families": ["delegate"], "source": "seed"}
+{"message": "Write a Python script that renames my photos", "families": ["delegate"], "source": "seed"}
+{"message": "Ask Claude to review my pull request", "families": ["delegate"], "source": "seed"}
+{"message": "Get Aggie to refactor the settings page", "families": ["delegate"], "source": "seed"}
+{"message": "Have an agent update the documentation", "families": ["delegate"], "source": "seed"}
+{"message": "Can Cody add a dark mode to my website?", "families": ["delegate"], "source": "seed"}
+{"message": "Ask Hermes to summarise today's AI news", "families": ["delegate"], "source": "seed"}
+{"message": "Create a new file with my shopping list", "families": ["delegate"], "source": "seed"}
+{"message": "Build me a small web page for my portfolio", "families": ["delegate"], "source": "seed"}
+{"message": "What does this error say?", "families": ["view_window"], "source": "seed"}
+{"message": "Look closer at my code, is there a bug?", "families": ["view_window"], "source": "seed"}
+{"message": "Can you read the small text in that dialog?", "families": ["view_window"], "source": "seed"}
+{"message": "Zoom in on my spreadsheet and check the totals", "families": ["view_window"], "source": "seed"}
+{"message": "What does the warning in my terminal say?", "families": ["view_window"], "source": "seed"}
+{"message": "Look closely at the chart, what's the trend?", "families": ["view_window"], "source": "seed"}
+{"message": "Go over to the Spotify window", "families": ["motion"], "source": "seed"}
+{"message": "Walk to Discord and wave", "families": ["motion"], "source": "seed"}
+{"message": "What does the error in my terminal say and what should I do?", "families": ["view_window"], "source": "seed"}
+{"message": "Ask Cody to fix the bug shown in my editor", "families": ["delegate", "windows"], "source": "seed"}
+{"message": "Read my notes file and remind me what I said about it before", "families": ["files", "memory"], "source": "seed"}
+{"message": "Point at the button you mentioned and tell me what it does", "families": ["indicate"], "source": "seed"}
+{"message": "How are you today?", "families": [], "source": "seed"}
+{"message": "Tell me a joke", "families": [], "source": "seed"}
+{"message": "What's the capital of France?", "families": [], "source": "seed"}
+{"message": "Thanks, that's all", "families": [], "source": "seed"}
+{"message": "Good morning Sora!", "families": [], "source": "seed"}
+{"message": "What am I looking at?", "families": [], "source": "seed"}
+{"message": "What do you think of this game?", "families": [], "source": "seed"}
+{"message": "I'm tired today", "families": [], "source": "seed"}
+{"message": "Explain how rainbows form", "families": [], "source": "seed"}
+{"message": "What's 17 times 23?", "families": [], "source": "seed"}
+{"message": "Can you point at things?", "families": [], "source": "seed"}
+{"message": "Don't wave, I'm on a call", "families": [], "source": "seed"}
+{"message": "What would you do if you could walk?", "families": [], "source": "seed"}
+{"message": "Haha, nice one", "families": [], "source": "seed"}
+{"message": "Goodnight!", "families": [], "source": "seed"}
+{"message": "What colour is the sky on Mars?", "families": [], "source": "seed"}
+{"message": "Recommend me a movie", "families": [], "source": "seed"}
+{"message": "Is it going to rain? I can see the weather widget on screen", "families": [], "source": "seed"}
+{"message": "Who made you?", "families": [], "source": "seed"}
+{"message": "I just finished my exam!", "families": [], "source": "seed"}
+{"message": "Pause the music", "families": ["media"], "source": "seed"}
+{"message": "Skip this song", "families": ["media"], "source": "seed"}
+{"message": "Turn the volume down a bit", "families": ["media"], "source": "seed"}
+{"message": "Play my liked songs on Spotify", "families": ["media"], "source": "seed"}
+{"message": "Resume the video", "families": ["media"], "source": "seed"}
+{"message": "What's this song? Then skip it", "families": ["media"], "source": "seed"}
+{"message": "Open YouTube", "families": ["browser"], "source": "seed"}
+{"message": "Search the web for cheap flights to Rome", "families": ["browser"], "source": "seed"}
+{"message": "Go to github.com", "families": ["browser"], "source": "seed"}
+{"message": "Look up the weather forecast online", "families": ["browser"], "source": "seed"}
+{"message": "Open a new tab with my email", "families": ["browser"], "source": "seed"}
+{"message": "Set a timer for ten minutes", "families": ["timer"], "source": "seed"}
+{"message": "Remind me at 6pm to call mum", "families": ["timer"], "source": "seed"}
+{"message": "Wake me up at 7 tomorrow", "families": ["timer"], "source": "seed"}
+{"message": "Start a 25 minute pomodoro", "families": ["timer"], "source": "seed"}
+{"message": "Cancel my alarm", "families": ["timer"], "source": "seed"}
+{"message": "Turn the brightness up", "families": ["system"], "source": "seed"}
+{"message": "Switch on Bluetooth", "families": ["system"], "source": "seed"}
+{"message": "Put the PC to sleep", "families": ["system"], "source": "seed"}
+{"message": "Turn on night light", "families": ["system"], "source": "seed"}
+{"message": "Disconnect from Wi-Fi", "families": ["system"], "source": "seed"}
+{"message": "Do I have any new emails?", "families": ["email"], "source": "seed"}
+{"message": "Reply to Sam saying I'll be late", "families": ["email"], "source": "seed"}
+{"message": "Write an email to my landlord about the boiler", "families": ["email"], "source": "seed"}
+{"message": "Read my latest message from work", "families": ["email"], "source": "seed"}
+{"message": "Launch Beat Saber", "families": ["games"], "source": "seed"}
+{"message": "Open Steam", "families": ["games"], "source": "seed"}
+{"message": "Start Minecraft", "families": ["games"], "source": "seed"}
+{"message": "Close the game", "families": ["games"], "source": "seed"}

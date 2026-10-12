@@ -11,12 +11,20 @@ import subprocess
 import sys
 import threading
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import httpx
 from pydantic import Field, field_validator, model_validator
 
+from sora import helper_processes
 from sora.contracts.base import StrictModel
+from sora.providers.vision_detail import (
+    DEFAULT_VISION_DETAIL,
+    VISION_ARGUMENTS,
+    VisionDetail,
+    fill_missing,
+    matches_preset,
+)
 
 CacheType = Literal["f32", "f16", "bf16", "q8_0", "q4_0", "q4_1", "iq4_nl", "q5_0", "q5_1"]
 GpuLayers = int | Literal["auto", "all"]
@@ -49,14 +57,17 @@ class LlamaOptions(StrictModel):
     model_path: Path | None = None
     mmproj_path: Path | None = None
     port: int = Field(default=18771, ge=1024, le=65535)
-    context_size: int = Field(default=8192, ge=2048, le=131072)
+    # Defaults are the medium vision detail level; see sora.providers.vision_detail.
+    vision_detail: VisionDetail = DEFAULT_VISION_DETAIL
+    image_max_tokens: int = Field(default=1024, ge=70, le=4096)
+    context_size: int = Field(default=12288, ge=2048, le=131072)
     gpu_layers: GpuLayers = "auto"
     startup_timeout: float = Field(default=180, ge=1, le=600)
     flash_attn: Literal["auto", "on", "off"] = "auto"
     cache_type_k: CacheType = "f16"
     cache_type_v: CacheType = "f16"
     batch_size: int = Field(default=2048, ge=1, le=131072)
-    ubatch_size: int = Field(default=512, ge=1, le=131072)
+    ubatch_size: int = Field(default=1024, ge=1, le=131072)
     split_mode: Literal["none", "layer", "row", "tensor"] = "layer"
     tensor_split: str = Field(default="", max_length=256, pattern=r"^([0-9.]+(,[0-9.]+)*)?$")
     main_gpu: int = Field(default=0, ge=0, le=63)
@@ -66,12 +77,27 @@ class LlamaOptions(StrictModel):
     swa_full: bool = False
     speculative: SpeculativeOptions = Field(default_factory=SpeculativeOptions)
 
+    @model_validator(mode="before")
+    @classmethod
+    def fill_vision_detail(cls, data: Any) -> Any:
+        return fill_missing(data) if isinstance(data, dict) else data
+
     @model_validator(mode="after")
     def validate_options(self) -> LlamaOptions:
         if isinstance(self.gpu_layers, int) and not 0 <= self.gpu_layers <= 999:
             raise ValueError("GPU layers must be 0..999, auto, or all")
         if self.ubatch_size > self.batch_size:
             raise ValueError("Physical batch cannot exceed batch size")
+        if self.ubatch_size < self.image_max_tokens:
+            raise ValueError(
+                "Physical batch (ubatch) must be at least the image token budget, "
+                "or llama.cpp cannot encode an image"
+            )
+        if self.vision_detail != "custom" and not matches_preset(
+            self.vision_detail, self.model_dump(include=set(VISION_ARGUMENTS)),
+        ):
+            # Hand-edited arguments no longer match the chosen level.
+            object.__setattr__(self, "vision_detail", "custom")
         if self.flash_attn == "off" and self.cache_type_v not in {"f32", "f16", "bf16"}:
             raise ValueError("Quantized V cache requires flash attention; choose on or auto")
         if self.tensor_split:
@@ -142,6 +168,7 @@ def llama_arguments(options: LlamaOptions) -> list[str]:
         "--mmproj", str(options.mmproj_path), "--host", "127.0.0.1",
         "--port", str(options.port), "--alias", "sora-local",
         "--ctx-size", str(options.context_size), "--parallel", "1",
+        "--image-max-tokens", str(options.image_max_tokens),
         "--gpu-layers", str(options.gpu_layers), "--no-webui",
     ]
     for field, flag in {
@@ -181,6 +208,7 @@ def public_llama_arguments(arguments: tuple[str, ...] | list[str]) -> list[str] 
         return None
     pairs = {
         "--model", "--mmproj", "--host", "--port", "--alias", "--ctx-size", "--parallel",
+        "--image-max-tokens",
         "--gpu-layers", "--flash-attn", "--cache-type-k", "--cache-type-v", "--batch-size",
         "--ubatch-size", "--split-mode", "--main-gpu", "--load-mode", "--tensor-split",
         "--n-cpu-moe", "--spec-type", "--spec-draft-model", "--spec-draft-ngl",
@@ -218,6 +246,21 @@ def child_environment(api_key: str) -> dict[str, str]:
     return env
 
 
+PORT_SEARCH_SPAN = 20
+
+
+def free_local_port(preferred: int, span: int = PORT_SEARCH_SPAN) -> int:
+    """Return the first loopback port from ``preferred`` that this process can bind."""
+    for port in range(preferred, min(preferred + span, 65536)):
+        with socket.socket() as probe:
+            try:
+                probe.bind(("127.0.0.1", port))
+            except OSError:
+                continue
+            return port
+    raise OSError(f"Ports {preferred}-{preferred + span - 1} are all in use")
+
+
 class ManagedLlamaServer:
     def __init__(self, config: LlamaServerConfig, root: Path):
         self.config = config
@@ -253,9 +296,12 @@ class ManagedLlamaServer:
         return "Requested flags are advertised; model compatibility still requires loading."
 
     async def start(self) -> None:
-        # Reject occupied ports, even if the other service happens to report healthy.
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", self.config.port))
+        # Never attach to a server on an occupied port, even if it reports healthy. Another
+        # SORA profile may hold the saved port, so this run moves to the next free one.
+        port = free_local_port(self.config.port)
+        if port != self.config.port:
+            self.config = self.config.model_copy(update={"port": port})
+            self.base_url = f"http://127.0.0.1:{port}/v1"
         log = self.root / "logs" / "llama-server.log"
         log.parent.mkdir(parents=True, exist_ok=True)
         env = child_environment(self.api_key)
@@ -315,6 +361,7 @@ def _worker() -> int:
         config.command(), stdin=subprocess.DEVNULL,
         creationflags=0x08000000 if os.name == "nt" else 0,
     )
+    helper_processes.record("llama-server", child.pid)
 
     def stop_on_eof() -> None:
         sys.stdin.buffer.read()

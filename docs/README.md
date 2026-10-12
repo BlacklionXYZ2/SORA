@@ -35,9 +35,9 @@ decides how you may edit it.
 | [`gui/ROADMAP_CHECKPOINTS.md`](gui/ROADMAP_CHECKPOINTS.md) | History, append-only | Roadmap §4.3–§4.33 dated checkpoints, original numbering. Add new checkpoints at the end (§4.34 onward) |
 | [`gui/ROADMAP_REVISION_HISTORY.md`](gui/ROADMAP_REVISION_HISTORY.md) | History, append-only | Roadmap revision entries, newest first |
 | [`adr/`](adr/) | Record | Architecture decision records 0001–0012 |
-| [`plans/`](plans/) | Living or record | Focused plans: vision alignment, native perception, motion, settings, memory/changelogs, earlier GUI draft |
+| [`plans/`](plans/) | Living or record | Focused plans: vision alignment, native perception, motion, settings, memory/changelogs, the post-V1 [memory manager](plans/MEMORY_MANAGER_2026-10-08.md) and [always-on listening](plans/ALWAYS_ON_LISTENING_2026-10-08.md), the [decision layer](plans/DECISION_LAYER_2026-10-08.md), [character and goals](plans/CHARACTER_AND_GOALS_2026-10-09.md), [motion core roadmap](plans/MOTION-CORE-ROADMAP_2026-10-11.md), [body self-awareness](plans/BODY_SELF_AWARENESS_2026-10-09.md) (after the motion core), earlier GUI draft |
 | [`plans/archive/`](plans/archive/README.md) | History | Earlier implementation-plan snapshots and dated updates, plus superseded originals |
-| [`runbooks/`](runbooks/) | Living | How to run, configure, back up, install and update SORA |
+| [`runbooks/`](runbooks/) | Living | How to run, configure, back up, install and update SORA, [train the decision layer](runbooks/TRAINING_LAYA.md) and [train the memory layers](runbooks/TRAINING_MEMORY_LAYERS.md) |
 | [`verification/`](verification/README.md) | Record | Dated evidence per phase/stage, the owner's manual acceptance checklist and the independent-verification ledger |
 | [`history/`](history/) | History | [Previous README](history/README_PHASE_HISTORY_2026-10-03.md) (phase-by-phase summaries P03–P15.8) and the [plan's dated progress log](history/IMPLEMENTATION_PLAN_PROGRESS_LOG.md) |
 

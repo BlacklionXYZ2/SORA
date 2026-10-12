@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Activity</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./activity.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA activity">
+    <header class="titlebar"><span class="title">Activity</span><nav class="window-controls"></nav></header>
+    <div class="window-body activity-body">
+      <section class="task-list" aria-label="Agent tasks">
+        <div class="list-head">
+          <span>Agent work</span>
+          <button class="icon-btn" id="refresh" type="button" title="Refresh"></button>
+        </div>
+        <ol class="tasks" id="tasks"></ol>
+      </section>
+      <section class="task-detail selectable" id="detail" aria-live="polite"></section>
+    </div>
+  </main>
+  <script type="module" src="./activity.js"></script>
+</body>
+</html>

@@ -66,3 +66,65 @@
 }
 .composer textarea::placeholder { color: var(--ink-muted); }
 .composer-divider { width: 1px; height: 22px; margin: 6px 2px; background: var(--hairline-strong); }
+
+/* ---------- SORA's formatted replies ---------- */
+.message .text.rich { white-space: normal; }
+.text.rich p { margin: 0 0 6px; white-space: pre-wrap; }
+.text.rich p:last-child, .text.rich ul:last-child, .text.rich ol:last-child { margin-bottom: 0; }
+.text.rich ul, .text.rich ol { margin: 0 0 6px; padding-left: 20px; }
+.text.rich li { margin: 2px 0; }
+.text.rich code {
+  font: 0.92em var(--font-mono); padding: 1px 5px; border-radius: 6px;
+  background: rgba(8, 14, 28, 0.5); border: 1px solid var(--hairline);
+}
+.text.rich pre {
+  margin: 4px 0 8px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control);
+  background: rgba(8, 14, 28, 0.55); border: 1px solid var(--hairline);
+  font: var(--text-sm) / 1.45 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* ---------- Evidence chips (Core's record of what happened) ---------- */
+.evidence { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-2); }
+.evidence-chip { height: 28px; font-size: var(--text-xs); }
+.evidence-chip .icon:last-child { width: 14px; height: 14px; transition: transform var(--fast) var(--ease); }
+.evidence-chip[aria-expanded="true"] .icon:last-child { transform: rotate(180deg); }
+.evidence-chip.looked-failed { color: var(--warn); }
+.evidence-detail {
+  flex-basis: 100%; margin: 0; padding: var(--space-2) var(--space-3) var(--space-2) 26px;
+  border-radius: var(--radius-control); background: rgba(8, 14, 28, 0.35);
+  font-size: var(--text-xs); color: var(--ink-muted); overflow-wrap: anywhere;
+}
+.evidence-detail[hidden] { display: none; }
+
+/* ---------- Attachments ---------- */
+.attachments { display: flex; flex-wrap: wrap; gap: 6px; margin: var(--space-2) var(--space-4) 0; }
+.attachments[hidden] { display: none; }
+.chip.attachment { height: 28px; padding-right: 4px; font-size: var(--text-xs); max-width: 220px; }
+.chip.attachment span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip.attachment .remove { width: 22px; height: 22px; border: 0; border-radius: 50%;
+  background: transparent; color: var(--ink-muted); display: grid; place-items: center; }
+.chip.attachment .remove:hover { background: var(--glass-hover); color: var(--ink); }
+.chip.attachment .remove .icon { width: 12px; height: 12px; }
+#attach:disabled { opacity: 0.4; cursor: default; }
+
+/* ---------- Turn activity chips ---------- */
+.evidence-chip.task .icon:last-child { width: 13px; height: 13px; opacity: 0.7; }
+.evidence-chip.task.active { color: var(--accent-ink); border-color: rgba(95, 176, 255, 0.35); }
+.evidence-chip.task.ok { color: var(--ok); }
+.evidence-chip.task.bad { color: var(--warn); }
+.evidence-detail .link { border: 0; background: none; padding: 0; color: var(--accent-ink);
+  font-size: var(--text-xs); text-decoration: underline; }
+
+/* ---------- Voice state on the microphone ---------- */
+#voice { position: relative; }
+#voice[data-voice]:not([data-voice=""])::after {
+  content: ""; position: absolute; right: 5px; top: 5px; width: 7px; height: 7px; border-radius: 50%;
+}
+#voice[data-voice="ready"]::after { background: var(--ok); }
+#voice[data-voice="loading"]::after { background: var(--warn); }
+#voice[data-voice="error"]::after { background: var(--danger); }
+#voice[data-voice="live"] { color: #fff; background: rgba(255, 107, 107, 0.28); }
+#voice[data-voice="live"]::after { background: var(--danger); animation: pulse 1.2s var(--ease) infinite; }
+/* Always-on listening: a calm accent dot, not the red recording pulse. */
+#voice[data-voice="listening"] { color: #fff; background: rgba(46, 104, 196, 0.28); }
+#voice[data-voice="listening"]::after { background: var(--accent); }

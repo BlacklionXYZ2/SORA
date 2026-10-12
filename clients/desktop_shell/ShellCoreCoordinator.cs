@@ -33,6 +33,7 @@ public sealed class ShellCoreCoordinator : IDisposable
     private CancellationTokenSource startup = new();
     private Task? initialization;
     private OwnedCoreLaunch? launch;
+    private DateTime? launchedAt;
     private ManagedCoreLifecycleClient? control;
     private Task stdout = Task.CompletedTask, stderr = Task.CompletedTask;
     private string lastOutput = "";
@@ -129,6 +130,7 @@ public sealed class ShellCoreCoordinator : IDisposable
                 throw new IOException("Previous profile launcher is still running or unverifiable. No adoption/duplicate launch; recover the existing session.");
             if (launch is not null) { control?.Dispose(); control = null; launch.Dispose(); launch = null; }
             token.ThrowIfCancellationRequested();
+            launchedAt = DateTime.Now;
             launch = operations.Launch(Options.Managed.StartInfo(Options));
             stdout = PumpAsync(launch.Process.StandardOutput, launch);
             stderr = PumpAsync(launch.Process.StandardError, launch);
@@ -244,6 +246,22 @@ public sealed class ShellCoreCoordinator : IDisposable
                 " · Host/recovery retained. No force kill or duplicate launch. Retry Quit after startup/cleanup settles.");
             return false;
         }
+    }
+
+    // The owner's Quit closes every part this host launched, after Core's own graceful shutdown
+    // has had its chance: the recorded helpers (llama.cpp, Laya, avatar, voice, Core) and the
+    // launcher's process tree. An attached external Core is never touched.
+    public IReadOnlyList<string> CloseEverything()
+    {
+        if (launch is null || launchedAt is null || Options.StateRoot is null) return [];
+        var stopped = HelperCleanup.StopAll(Options.StateRoot, launchedAt.Value).ToList();
+        try
+        {
+            if (!launch.Process.HasExited) { launch.Process.Kill(entireProcessTree: true); stopped.Add("launcher"); }
+        }
+        catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception) { }
+        if (stopped.Count > 0) { Record("stopped"); Set("stopped", "Quit closed: " + string.Join(", ", stopped) + "."); }
+        return stopped;
     }
 
     public void Dispose()

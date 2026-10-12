@@ -178,7 +178,9 @@ try {
         "--windows-action", $actionHelper,
         "--windows-type", $typeHelper,
         "--serve", "--api-host", "127.0.0.1", "--api-port", "$Port",
-        "--api-token-file", $tokenFile
+        "--api-token-file", $tokenFile,
+        # Always-on listening starts with SORA when Settings allow it (Audio -> Listening).
+        "--listen-on-start"
     ) + $dialogueArguments
     if ($CodexModel) { $soraArguments += @("--codex-model", $CodexModel) }
     if ($AntigravityModel) { $soraArguments += @("--antigravity-model", $AntigravityModel) }

@@ -298,7 +298,7 @@ async def test_restore_receipts_new_epoch_and_original_rows_from_schema11(tmp_pa
     await repository.create_run(sample_run())
     revision = await repository.revision()
     await old.initialize()
-    assert await old.schema_version() == 12 and await repository.revision() == revision
+    assert await old.schema_version() == 15 and await repository.revision() == revision
     assert await repository.get_task("task-001") == sample_task()
     store = AutomationStore(repository, "owner-local", "project-sora", str(uuid.uuid4()))
     request = AutomationCreate.model_validate(command(store.instance))

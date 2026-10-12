@@ -10,7 +10,7 @@ public sealed record VoiceProjection(string State, string Message, bool Running,
     {
         if (data.ValueKind != JsonValueKind.Object) throw new InvalidDataException("Voice status is unavailable.");
         var state = TaskPresentation.Text(data, "state"); var message = TaskPresentation.Text(data, "message");
-        if (state is not ("stopped" or "loading" or "ready" or "recording" or "transcribing" or "thinking" or "speaking" or "error")
+        if (state is not ("stopped" or "loading" or "ready" or "listening" or "recording" or "transcribing" or "thinking" or "speaking" or "error")
             || message.Length > 1000 || !data.TryGetProperty("running", out var running) || running.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
             throw new InvalidDataException("Unknown/incomplete local voice status.");
         var allowed = data.TryGetProperty("enabled", out var flag) && flag.ValueKind is JsonValueKind.True or JsonValueKind.False
@@ -44,7 +44,8 @@ public sealed record VoiceProjection(string State, string Message, bool Running,
     };
     public string MicrophoneLabel(bool current) => !current ? MicrophoneOpen == true
         ? "Mic UNKNOWN · last reported recording" : "Mic status UNKNOWN"
-        : MicrophoneOpen == true ? "Mic ON · recording" : MicrophoneOpen == false ? "Mic closed · worker report" : "Mic status UNKNOWN";
+        : MicrophoneOpen == true ? (State == "listening" ? "Mic ON · listening for her name" : "Mic ON · recording")
+        : MicrophoneOpen == false ? "Mic closed · worker report" : "Mic status UNKNOWN";
 }
 
 // Release/loss intent is retained while Begin awaits its acknowledgement, never replaying Begin.

@@ -74,7 +74,7 @@ async def test_previous_schema_fixture_migrates_forward(tmp_path: Path) -> None:
             for row in connection.execute("PRAGMA table_info(desktop_action_attempts)")
         }
 
-    assert await current.schema_version() == CURRENT_SCHEMA_VERSION == 12
+    assert await current.schema_version() == CURRENT_SCHEMA_VERSION == 15
     assert "delivered_at" in await current.read(outbox_columns)
     assert {"attempt_id", "request_hash", "status", "payload"} <= await current.read(
         action_columns

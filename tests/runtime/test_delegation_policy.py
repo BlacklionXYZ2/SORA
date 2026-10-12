@@ -225,3 +225,51 @@ async def test_cancel_and_worker_admission_are_atomic(tmp_path: Path, cancel_fir
                 result_ref=None, now=now)
     finally:
         await runtime.close()
+
+
+class SlowStartProvider(HeldProvider):
+    """Starting takes a moment (like an npm-shimmed CLI); the work never ends on its own."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.starting = asyncio.Event()
+        self.go = asyncio.Event()
+        self.cancelled: list[str] = []
+        self.known: set[str] = set()
+
+    async def start(self, request: ProviderRequest) -> str:
+        self.starting.set()
+        await self.go.wait()
+        run_id = await super().start(request)
+        self.known.add(request.run_id)
+        return run_id
+
+    async def cancel(self, run_id: str) -> None:
+        if run_id not in self.known:
+            return  # like the Claude adapter: nothing to stop until the run has started
+        self.cancelled.append(run_id)
+        await super().cancel(run_id)
+
+
+@pytest.mark.asyncio
+async def test_cancel_while_the_agent_is_starting_stops_it(tmp_path: Path) -> None:
+    """Live 2026-10-10: "cancel that task" seconds after delegating left Claude running."""
+    provider = SlowStartProvider()
+    runtime = runtime_for(tmp_path, provider)
+    await runtime.start()
+    try:
+        with owner_local_scope():
+            receipt = await runtime.submit_task("Review every file in detail")
+        await asyncio.wait_for(provider.starting.wait(), 5)
+        assert await runtime.cancel(receipt.task.task_id)
+        provider.go.set()
+        async with asyncio.timeout(5):
+            while True:
+                task = await runtime.runtime_repository.get_task(receipt.task.task_id)
+                assert task is not None
+                if task.status is TaskStatus.CANCELLED:
+                    break
+                await asyncio.sleep(0.05)
+        assert provider.cancelled  # the agent itself was told to stop
+    finally:
+        await runtime.close()

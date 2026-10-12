@@ -61,6 +61,7 @@ from sora.desktop import DesktopTargetError
 from sora.desktop_objects import DesktopObjectAffordanceError
 from sora.desktop_objects.kanban import project_tasks_to_kanban
 from sora.editor import EditorContextError
+from sora.memory.entries import forget_entry
 from sora.persistence.records import MessageRecord
 from sora.providers.base import ProviderLaunchError
 from sora.providers.dialogue import DialogueProviderError, DialogueTimeoutError
@@ -508,6 +509,15 @@ class RouteHandler:
             if method == "POST" and path == "/api/v1/voice/sessions":
                 return await self._handle_start_voice_session(request)
 
+            if path.startswith("/api/v1/self/"):
+                if remote_scopes is not None:
+                    return HttpResponse.error(
+                        403, "SORA's self is owner-local only", code="FORBIDDEN"
+                    )
+                from sora.api.self_routes import handle_self
+
+                return await handle_self(self.runtime, request, path)
+
             if path == "/api/v1/voice/local" and method in {"GET", "POST"}:
                 if remote_scopes is not None:
                     return HttpResponse.error(
@@ -521,6 +531,8 @@ class RouteHandler:
                 session_id = parts[0]
                 if len(parts) == 1 and method == "GET":
                     return await self._handle_get_voice_session(session_id, request)
+                if len(parts) == 2 and method == "GET" and parts[1] == "speech":
+                    return await self._handle_voice_speech(session_id, request)
                 if len(parts) == 2 and method == "POST":
                     if parts[1] == "transcript":
                         return await self._handle_voice_transcript(session_id, request)
@@ -1352,6 +1364,9 @@ class RouteHandler:
                     instance=self.instance_id,
                     request=command,
                 )
+                if ack.action == "forget" and not ack.replayed:
+                    # Forgetting also deletes the moment's saved images and recording.
+                    forget_entry(self.runtime.memory_entries_root(), memory_id)
             return HttpResponse.json(ack.model_dump(mode="json"))
         except MemoryMutationConflict as error:
             return HttpResponse.json(
@@ -1717,6 +1732,26 @@ class RouteHandler:
         except RuntimeError as exc:
             return HttpResponse.error(409, str(exc), code="VOICE_SESSION_CLOSED")
         return HttpResponse.json(snapshot.model_dump(mode="json"))
+
+    async def _handle_voice_speech(self, session_id: str, request: HttpRequest) -> HttpResponse:
+        try:
+            utterance_id = (request.query_param("utterance_id") or "").strip()
+            after = int(request.query_param("after") or "0")
+            if not utterance_id or len(utterance_id) > 128 or not 0 <= after <= 100_000:
+                raise ValueError("Provide utterance_id and a valid after index")
+            preview = await self.runtime.wait_voice_speech(
+                session_id,
+                device_id=self._device_id(request),
+                utterance_id=utterance_id,
+                after=after,
+            )
+        except LookupError:
+            return HttpResponse.error(404, "Voice session not found", code="NOT_FOUND")
+        except (OperationAuthorizationError, PermissionError):
+            return HttpResponse.error(403, "Voice session access denied", code="FORBIDDEN")
+        except ValueError as exc:
+            return HttpResponse.error(400, str(exc), code="INVALID_INPUT")
+        return HttpResponse.json(preview.model_dump(mode="json"))
 
     async def _handle_voice_transcript(self, session_id: str, request: HttpRequest) -> HttpResponse:
         try:

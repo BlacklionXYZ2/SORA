@@ -19,6 +19,7 @@ from sora.providers.llama_server import (
     LlamaServerConfig,
     ManagedLlamaServer,
     child_environment,
+    free_local_port,
     llama_arguments,
     public_llama_arguments,
 )
@@ -212,9 +213,27 @@ async def test_occupied_port_never_attaches_to_existing_server(
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", config.port))
         listener.listen()
-        server = ManagedLlamaServer(config, tmp_path)
+        assert free_local_port(config.port) != config.port
         with pytest.raises(OSError):
+            free_local_port(config.port, span=1)
+
+
+@pytest.mark.asyncio
+async def test_occupied_port_moves_this_run_to_a_free_port(
+    config: LlamaServerConfig, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def refuse(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("launch stopped by test")
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", refuse)
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", config.port))
+        listener.listen()
+        server = ManagedLlamaServer(config, tmp_path)
+        with pytest.raises(RuntimeError):
             await server.start()
+        assert server.config.port != config.port
+        assert server.base_url == f"http://127.0.0.1:{server.config.port}/v1"
         assert server.process is None
 
 

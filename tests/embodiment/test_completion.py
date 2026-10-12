@@ -78,9 +78,9 @@ async def test_marker_requires_authority_and_stays_on_one_display(tmp_path: Path
         with pytest.raises(OperationAuthorizationError):
             await runtime.dispatch_embodiment_command(command)
         gesture = EmbodimentCommand(
-            command_id="gesture-wave",
+            command_id="gesture-sit",
             verb=EmbodimentVerb.SET_STATE,
-            state=EmbodimentPresentationState.WAVING,
+            state=EmbodimentPresentationState.SITTING,
             created_at=datetime.now(UTC),
         )
         with pytest.raises(OperationAuthorizationError):
@@ -88,7 +88,7 @@ async def test_marker_requires_authority_and_stays_on_one_display(tmp_path: Path
         await persist_operation_grant(runtime, "embodiment.command", grant_id="grant-marker")
         args = {"grant_id": "grant-marker", "device_id": "device-local"}
         await runtime.dispatch_embodiment_command(gesture, **args)
-        assert queue.get_nowait().state is EmbodimentPresentationState.WAVING
+        assert queue.get_nowait().state is EmbodimentPresentationState.SITTING
         await runtime.dispatch_embodiment_command(command, **args)
         assert queue.get_nowait().target_id == "fixture-target"
         with pytest.raises(ValueError, match="rectangle"):

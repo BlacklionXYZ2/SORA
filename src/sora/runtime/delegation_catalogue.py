@@ -68,6 +68,21 @@ class DelegationCatalogue:
     async def create(cls, catalogue: AgentCatalogue) -> DelegationCatalogue:
         return cls(await catalogue.snapshot())  # Never refresh/infer just because chat opened.
 
+    def roster(self) -> str:
+        """One line per enabled agent, kept outside the trimmed observations.
+
+        Window and file observations can fill the budget, and trimming drops the oldest records
+        first. Without this line a model may never learn the owner's nicknames (for example
+        "Pip") and refuse to delegate to them.
+        """
+        def flat(value: Any, limit: int) -> str:  # one line: it shares the observations header
+            return " ".join(str(value).split())[:limit]
+
+        return "; ".join(
+            f"{flat(row['name'], 40)} = provider {row['provider']}: {flat(row['purpose'], 120)}"
+            for row in self.rows.values()
+        )
+
     def preview(self) -> dict[str, Any]:
         self.exposed_models.update(
             item["ref"] for row in self.rows.values() for item in row["models"] if item["default"]
@@ -110,21 +125,41 @@ class DelegationCatalogue:
         model = None
         if provider is not None and provider not in self.rows:
             raise ValueError("The selected specialist is disabled or unavailable")
-        if call.model is not None:
+        # A small model under a JSON grammar sometimes fills optional references with invented
+        # text. For a chat-only custom agent that cannot mean anything: its model is the owner's
+        # configured default and it has no project folder (HOW_TO_USE.md), so an unknown
+        # reference falls back to that default. For every other agent an unknown reference still
+        # refuses: never guess which model or folder the owner meant.
+        known_model = call.model is not None and call.model in self.models \
+            and call.model in self.exposed_models
+        if call.model is not None and not known_model:
+            # Small models put the agent's name where the model goes ("model": "Pip"). An exact
+            # agent name or provider ID there selects that agent with its configured default.
+            named = [row["provider"] for row in self.rows.values()
+                     if call.model.strip().casefold() in {str(row["name"]).casefold(),
+                                                          str(row["provider"]).casefold()}]
+            if len(named) == 1 and provider in {None, named[0]}:
+                provider = named[0]
+                call = call.model_copy(update={"model": None})
+        chat_only = provider is not None and provider in CUSTOM_SLOTS
+        if call.model is not None and (known_model or not chat_only):
             pair = self.models.get(call.model)
-            if pair is None or call.model not in self.exposed_models:
+            if pair is None or not known_model:
                 raise ValueError("Unknown or stale model reference")
             if provider is not None and provider != pair[0]:
                 raise ValueError("The selected model belongs to another specialist")
             provider, model = pair
         project, mode = None, None
-        if call.project is not None:
+        if call.project is not None and not chat_only and self.projects:
             pair_project = self.projects.get(call.project)
             if pair_project is None:
                 raise ValueError(
                     "Unknown or stale project reference; select the project in Settings",
                 )
             project, mode = pair_project
+        # With no project folder configured at all, a reference can only be invented (live,
+        # 2026-10-10: E4B sent "p1" and the task was refused). It means "no project", which
+        # guesses nothing; a task that would write files is still asked "Which project?".
         return DelegationSelection(provider, model, project, mode)
 
 

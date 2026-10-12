@@ -1,0 +1,144 @@
+{
+  "$defs": {
+    "ContractVersion": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "Identifier": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$",
+      "type": "string"
+    },
+    "NonEmptyText": {
+      "maxLength": 16384,
+      "minLength": 1,
+      "type": "string"
+    },
+    "VoiceEmotion": {
+      "description": "Coarse utterance intent; never a per-frame animation instruction.",
+      "enum": [
+        "neutral",
+        "warm",
+        "cheerful",
+        "concerned",
+        "focused"
+      ],
+      "title": "VoiceEmotion",
+      "type": "string"
+    },
+    "VoicePlaybackCommand": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "device_generation": {
+          "minimum": 1,
+          "title": "Device Generation",
+          "type": "integer"
+        },
+        "emotion": {
+          "$ref": "#/$defs/VoiceEmotion",
+          "default": "warm"
+        },
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "output_device_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "output_epoch": {
+          "minimum": 0,
+          "title": "Output Epoch",
+          "type": "integer"
+        },
+        "playback_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "schema_version": {
+          "$ref": "#/$defs/ContractVersion",
+          "default": "1.0"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "text": {
+          "$ref": "#/$defs/NonEmptyText"
+        },
+        "utterance_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "voice_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      },
+      "required": [
+        "playback_id",
+        "session_id",
+        "utterance_id",
+        "output_device_id",
+        "device_generation",
+        "output_epoch",
+        "voice_id",
+        "text",
+        "created_at",
+        "expires_at"
+      ],
+      "title": "VoicePlaybackCommand",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Sentences of a voice reply that the model is still writing.\n\nCore opens the playback at the first finished sentence so the audio worker can start\nspeaking before the turn commits. The worker polls with ``after`` and gets sentences from\nthat index; ``finished`` means the model's reply text is complete.",
+  "properties": {
+    "finished": {
+      "default": false,
+      "title": "Finished",
+      "type": "boolean"
+    },
+    "next_index": {
+      "maximum": 100000,
+      "minimum": 0,
+      "title": "Next Index",
+      "type": "integer"
+    },
+    "playback": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/VoicePlaybackCommand"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "schema_version": {
+      "$ref": "#/$defs/ContractVersion",
+      "default": "1.0"
+    },
+    "sentences": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/NonEmptyText"
+      },
+      "maxItems": 256,
+      "title": "Sentences",
+      "type": "array"
+    },
+    "session_id": {
+      "$ref": "#/$defs/Identifier"
+    }
+  },
+  "required": [
+    "session_id",
+    "next_index"
+  ],
+  "title": "VoiceSpeechPreview",
+  "type": "object"
+}

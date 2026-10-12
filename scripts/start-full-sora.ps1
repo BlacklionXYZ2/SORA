@@ -4,7 +4,7 @@
 # helpers, so desktop observation, capture, vision, targets, press and type are all
 # reachable on a normal start (they answer "not_configured" without these flags).
 #
-# Chat features reachable from this launch: pose keywords (wave/sit/lean/climb/stand),
+# Chat features reachable from this launch: pose keywords (sit/lean/climb/stand),
 # walking the companion to your pointer ("come here", "walk to me"), and looking at
 # the current screen when asked ("what can you see?"), which captures the display
 # under the cursor for the selected vision-capable dialogue model.

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Settings</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./settings.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA settings">
+    <header class="titlebar"><span class="title">Settings</span><nav class="window-controls"></nav></header>
+    <div class="window-body settings-body">
+      <nav class="rail" id="rail" aria-label="Settings categories"></nav>
+      <section class="pane" id="pane" aria-live="polite">
+        <div class="banner" id="banner" role="status" hidden></div>
+        <div class="pane-scroll selectable" id="content"></div>
+        <footer class="savebar" id="savebar" hidden>
+          <span class="savebar-text" id="savebar-text"></span>
+          <button class="btn" id="discard" type="button">Discard</button>
+          <button class="btn primary" id="save" type="button">Save</button>
+        </footer>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./settings.js"></script>
+</body>
+</html>

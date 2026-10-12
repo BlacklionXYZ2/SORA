@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     # Window title of the panel to capture, as SoraShell sets it.
-    [string]$Title = "SORA · Chat",
+    # ASCII-only on purpose: Windows PowerShell 5.1 misreads non-ASCII in BOM-less scripts.
+    [string]$Title = "SORA $([char]0x00B7) Chat",
     # Concept image to place beside it for review (docs/gui/reference).
     [string]$Concept = "02-chat.jpg",
     [string]$OutputRoot
@@ -27,7 +28,8 @@ public static class SoraCaptureNative {
 }
 "@
 [void][SoraCaptureNative]::SetProcessDPIAware()
-$window = [SoraCaptureNative]::FindWindow($null, $Title)
+# PowerShell passes $null to a .NET string as "", which FindWindow treats as a class name.
+$window = [SoraCaptureNative]::FindWindow([NullString]::Value, $Title)
 if ($window -eq [IntPtr]::Zero) { throw "No open window titled '$Title'. Open the panel first." }
 [void][SoraCaptureNative]::SetForegroundWindow($window)
 Start-Sleep -Milliseconds 400

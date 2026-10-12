@@ -203,6 +203,27 @@ async def test_inspect_resolve_revalidate_dispatch_is_one_terminal_call(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("prompt,chosen,expected", [
+    # Seen live on E4B (2026-10-08): "look at" answered with point; the owner's verb wins.
+    ("Look at the Pause control", "point", EmbodimentVerb.LOOK_AT),
+    ("Point at the Pause control", "look", EmbodimentVerb.INTERACTION_START),
+])
+async def test_the_owners_verb_decides_look_or_point(
+    tmp_path: Path, prompt: str, chosen: str, expected: EmbodimentVerb,
+) -> None:
+    caller = PresentationCaller(chosen)
+    runtime, _, queue = await ready_runtime(tmp_path, caller)
+    try:
+        with owner_local_scope():
+            reply = await runtime.dialogue(prompt, request_id="verb-" + chosen)
+        assert not queue.empty(), reply
+        assert queue.get_nowait().verb is expected
+    finally:
+        runtime.unregister_embodiment_queue(queue)
+        await runtime.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("reference", ["guessed", "w1", "f1", "desktop-target-old"])
 async def test_wrong_kind_unknown_or_previous_turn_locator_never_dispatches(
     tmp_path: Path, reference: str,
@@ -384,7 +405,7 @@ async def test_disabled_or_remote_native_vocabulary_is_absent(tmp_path: Path) ->
 
 @pytest.mark.asyncio
 async def test_terminal_presentation_does_not_repair_into_second_effect() -> None:
-    caller = Caller({"op": "point", "target": "missing"}, {"op": "pose", "name": "wave"})
+    caller = Caller({"op": "point", "target": "missing"}, {"op": "pose", "name": "sit"})
     result = await collect_reads("Point", provider=caller,
         tools=CompanionReadTools(check=lambda _: None, observe=AsyncMock()),
         check_epoch=lambda: None, file_read=False, desktop_read=True,

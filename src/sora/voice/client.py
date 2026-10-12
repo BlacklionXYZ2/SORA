@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from collections.abc import AsyncIterable, AsyncIterator
+from collections import deque
+from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Protocol
@@ -23,6 +24,7 @@ from sora.contracts.voice import (
     VoiceSessionSnapshot,
     VoiceSessionStartRequest,
     VoiceSessionStatus,
+    VoiceSpeechPreview,
     VoiceTranscriptEvent,
     VoiceTranscriptKind,
     VoiceTurnResult,
@@ -60,6 +62,8 @@ class TranscriptHypothesis:
     confidence: float
     final: bool
     reference_spoken_at: datetime | None = None
+    # The utterance as a base64 WAV, for brains that hear audio natively (Gemma 4 E2B/E4B).
+    audio_wav_base64: str | None = None
 
 
 class VadAdapter(Protocol):
@@ -78,6 +82,19 @@ class SttAdapter(Protocol):
 
 class TtsAdapter(Protocol):
     def synthesize(self, text: str, *, voice_id: str) -> AsyncIterator[SynthesizedAudioChunk]: ...
+
+
+class StreamingTtsAdapter(Protocol):
+    """Optional: speak text that arrives sentence by sentence."""
+
+    def synthesize_stream(
+        self, texts: AsyncIterator[str], *, voice_id: str
+    ) -> AsyncIterator[SynthesizedAudioChunk]: ...
+
+
+type SpeechPoll = Callable[[str, str, int], Awaitable[dict[str, Any]]]
+# After Core answers, how long to wait for the last sentences of a reply already being spoken.
+SPEECH_SETTLE_SECONDS = 5.0
 
 
 class PlaybackSink(Protocol):
@@ -180,6 +197,8 @@ class StreamingVoiceClient:
         self._presentation = VoicePresentationClock()
         self._cancel_reset_reason = VoicePresentationResetReason.INTERRUPTED
         self._pending_speech_interruption = False
+        self._spoken_playback_id: str | None = None
+        self._recent_speech: deque[str] = deque(maxlen=20)
 
     async def start(self, request: VoiceSessionStartRequest, *, grant_id: str) -> None:
         payload = await self.transport.start_voice_session(
@@ -216,6 +235,39 @@ class StreamingVoiceClient:
             return None
         if hypothesis.final != decision.utterance_ended:
             raise ValueError("STT finality does not match VAD utterance boundary")
+        return await self._send_hypothesis(hypothesis, frame.captured_at)
+
+    async def submit_utterance(
+        self, hypothesis: TranscriptHypothesis, *, started_at: datetime, ended_at: datetime,
+    ) -> VoiceTurnResult:
+        """Send speech that was already found and transcribed (always-on listening).
+
+        Speaking over an active reply interrupts it, exactly as press-to-talk does.
+        """
+        if not hypothesis.final:
+            raise ValueError("Always-on listening submits complete utterances only")
+        self._active()
+        if self._utterance_id is None:
+            if self._has_active_response():
+                await self._stop_local_output(VoicePresentationResetReason.INTERRUPTED)
+                self._pending_speech_interruption = True
+            self._utterance_id = f"utterance-{uuid.uuid4()}"
+            self._utterance_sequence = 0
+            self._speech_started_at = started_at
+        return await self._send_hypothesis(hypothesis, ended_at)
+
+    def her_recent_words(self) -> tuple[str, ...]:
+        """What she said recently, so her own voice through the speakers is not taken as the
+        owner's (sora.voice.listening.Addressee)."""
+        return tuple(self._recent_speech)
+
+    async def _send_hypothesis(
+        self, hypothesis: TranscriptHypothesis, captured_at: datetime,
+    ) -> VoiceTurnResult:
+        request, snapshot = self._active()
+        utterance_id = self._utterance_id
+        if utterance_id is None:
+            raise RuntimeError("No utterance is open")
         if self._pending_speech_interruption:
             interruption_kind = (
                 VoiceInterruptionKind.STOP_SPEAKING
@@ -229,35 +281,83 @@ class StreamingVoiceClient:
         event = VoiceTranscriptEvent(
             event_id=f"voice-event-{uuid.uuid4()}",
             session_id=request.session_id,
-            utterance_id=self._utterance_id,
+            utterance_id=utterance_id,
             sequence=self._utterance_sequence,
             kind=(VoiceTranscriptKind.FINAL if hypothesis.final else VoiceTranscriptKind.PARTIAL),
             text=hypothesis.text,
             confidence=hypothesis.confidence,
             device_generation=snapshot.input_generation,
-            speech_started_at=self._speech_started_at or frame.captured_at,
-            speech_ended_at=frame.captured_at if hypothesis.final else None,
+            speech_started_at=self._speech_started_at or captured_at,
+            speech_ended_at=captured_at if hypothesis.final else None,
             reference_spoken_at=hypothesis.reference_spoken_at,
-            captured_at=frame.captured_at,
+            captured_at=captured_at,
+            audio_wav_base64=hypothesis.audio_wav_base64 if hypothesis.final else None,
         )
+        follow: asyncio.Task[None] | None = None
         if hypothesis.final:
             self._reset_utterance()
             self._response_in_flight = True
+            self._spoken_playback_id = None
+            poll: SpeechPoll | None = getattr(self.transport, "poll_voice_speech", None)
+            if poll is not None:
+                # Start speaking while Core is still writing the reply.
+                follow = asyncio.create_task(
+                    self._follow_speech(poll, request.session_id, event.utterance_id),
+                    name=f"sora-speech-{event.utterance_id}",
+                )
         try:
             payload = await self.transport.send_voice_transcript(
                 request.session_id,
                 event.model_dump(mode="json"),
                 attention_grant_id=self.attention_grant_id,
             )
+        except BaseException:
+            if follow is not None:
+                follow.cancel()
+                await asyncio.gather(follow, return_exceptions=True)
+            raise
         finally:
             if hypothesis.final:
                 self._response_in_flight = False
         result = VoiceTurnResult.model_validate(payload)
         self.snapshot = result.session
         if hypothesis.final:
-            if result.playback is not None:
+            if follow is not None:
+                try:
+                    await asyncio.wait_for(asyncio.shield(follow), SPEECH_SETTLE_SECONDS)
+                except TimeoutError:
+                    follow.cancel()
+                await asyncio.gather(follow, return_exceptions=True)
+            if (
+                result.playback is not None
+                and result.playback.playback_id != self._spoken_playback_id
+            ):
                 self._start_output(result.playback)
         return result
+
+    async def _follow_speech(self, poll: SpeechPoll, session_id: str, utterance_id: str) -> None:
+        """Long-poll Core for sentences of the reply and feed them to the speaker in order."""
+        sentences: asyncio.Queue[str | None] | None = None
+        after = 0
+        try:
+            while True:
+                preview = VoiceSpeechPreview.model_validate(
+                    await poll(session_id, utterance_id, after)
+                )
+                if preview.playback is not None and sentences is None:
+                    sentences = asyncio.Queue()
+                    self._start_output(preview.playback, sentences=sentences)
+                    self._spoken_playback_id = preview.playback.playback_id
+                if sentences is not None:
+                    for sentence in preview.sentences:
+                        sentences.put_nowait(sentence)
+                        self._recent_speech.append(sentence)
+                after = preview.next_index
+                if preview.finished:
+                    return
+        finally:
+            if sentences is not None:
+                sentences.put_nowait(None)
 
     async def barge_in(self) -> VoiceInterruptionResult:
         """Immediately silence local output and request cancellation of the active response."""
@@ -362,15 +462,45 @@ class StreamingVoiceClient:
         self.snapshot = result.session
         return result
 
-    def _start_output(self, command: VoicePlaybackCommand) -> None:
+    def _start_output(
+        self,
+        command: VoicePlaybackCommand,
+        *,
+        sentences: asyncio.Queue[str | None] | None = None,
+    ) -> None:
         if self.snapshot is None or command.output_epoch != self.snapshot.output_epoch:
             return
         if self._playback_task is not None and not self._playback_task.done():
             raise RuntimeError("voice client already has active output")
+        if sentences is None:
+            self._recent_speech.append(command.text)
         self._playback_task = asyncio.create_task(
-            self._synthesize_and_play(command),
+            self._synthesize_and_play(command, sentences),
             name=f"sora-{command.playback_id}",
         )
+
+    def _speech(
+        self,
+        command: VoicePlaybackCommand,
+        sentences: asyncio.Queue[str | None] | None,
+    ) -> AsyncIterator[SynthesizedAudioChunk]:
+        if sentences is None:
+            return self.tts.synthesize(command.text, voice_id=command.voice_id)
+
+        async def arriving() -> AsyncIterator[str]:
+            while (sentence := await sentences.get()) is not None:
+                yield sentence
+
+        stream = getattr(self.tts, "synthesize_stream", None)
+        if stream is not None:
+            return stream(arriving(), voice_id=command.voice_id)  # type: ignore[no-any-return]
+
+        async def whole() -> AsyncIterator[SynthesizedAudioChunk]:
+            text = " ".join([sentence async for sentence in arriving()])
+            async for chunk in self.tts.synthesize(text, voice_id=command.voice_id):
+                yield chunk
+
+        return whole()
 
     async def _stop_local_output(
         self,
@@ -406,11 +536,16 @@ class StreamingVoiceClient:
             )
         )
 
-    async def _synthesize_and_play(self, command: VoicePlaybackCommand) -> None:
+    async def _synthesize_and_play(
+        self,
+        command: VoicePlaybackCommand,
+        sentences: asyncio.Queue[str | None] | None = None,
+    ) -> None:
         first_chunk = True
         sequence = 0
+        stream = self._speech(command, sentences)
         try:
-            async for chunk in self.tts.synthesize(command.text, voice_id=command.voice_id):
+            async for chunk in stream:
                 if first_chunk:
                     await self.playback.start(
                         command.playback_id,
@@ -446,6 +581,11 @@ class StreamingVoiceClient:
             await self._reset_presentation(VoicePresentationResetReason.FAILED, force=True)
             await self._playback_event(command, sequence=sequence, state=VoicePlaybackState.FAILED)
             raise
+        finally:
+            # Stop prefetching later sentences as soon as she is interrupted.
+            close = getattr(stream, "aclose", None)
+            if close is not None:
+                await close()
 
     async def _reset_presentation(
         self,

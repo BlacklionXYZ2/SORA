@@ -6,10 +6,15 @@ import re
 
 from sora.contracts.voice import VoiceConversationIntent
 
+# The whole utterance must be the request, so "wait, what about X?" stays dialogue. Bare "stop"
+# is the most natural interruption with always-on listening. "Stop it" is left to task
+# cancellation below, as before.
 _STOP_SPEAKING = re.compile(
-    r"^\s*(?:(?:hey\s+)?sora[,:]?\s+)?(?:please\s+)?"
-    r"(?:stop\s+(?:speaking|talking)|be\s+quiet|quiet\s+please|silence(?:\s+yourself)?)"
-    r"[.!?\s]*$",
+    r"^\s*(?:(?:hey|okay|ok)[,.]?\s+)?(?:sora[,.!:]?\s*)?(?:(?:okay|ok)[,.]?\s+)?"
+    r"(?:please\s+)?"
+    r"(?:stop(?:\s+(?:speaking|talking))?|be\s+quiet|quiet|silence(?:\s+yourself)?|shush|"
+    r"shh+|hush|wait|hold\s+on|enough|that'?s\s+enough|never\s*mind|shut\s+up)"
+    r"(?:[,.]?\s+please)?(?:[,.]?\s+sora)?[.!?\s]*$",
     re.IGNORECASE,
 )
 _CANCEL_TASK = re.compile(

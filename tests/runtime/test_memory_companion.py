@@ -159,7 +159,9 @@ async def test_real_http_conversation_finds_old_memory_waits_for_host_and_links_
         and "confirmed Memory selection" in response["response"]
         and "memory-editor" in response["response"]
     )
-    assert caller.responses == 0 and len(caller.inputs) == 2
+    # The old memory shares "editor" with the message, so it is already in her context and
+    # she presents it without searching first (shared-words recall, 2026-10-10).
+    assert caller.responses == 0 and len(caller.inputs) == 1
     events = await public_events(runtime)
     selected = next(event for event in events if event["event_type"] == "ui.memory.presented")
     assert selected["payload"]["dialogue_request_id"] == "memory-turn-1"

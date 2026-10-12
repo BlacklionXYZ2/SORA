@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, model_validator
 
@@ -24,6 +24,10 @@ class LocalPresentationPacket(StrictModel):
     position_ms: float = Field(default=0, ge=0, le=86_400_000, allow_inf_nan=False)
     duration_ms: float = Field(default=100, gt=0, le=1000, allow_inf_nan=False)
     mouth_open: float = Field(default=0, ge=0, le=1, allow_inf_nan=False)
+    # A, E, I, O, U mouth-shape shares from the audio; all zero means "use mouth_open alone".
+    vowels: list[Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]] = Field(
+        default_factory=lambda: [0.0] * 5, min_length=5, max_length=5
+    )
     reason: VoicePresentationResetReason = VoicePresentationResetReason.DISCONNECTED
     emitted_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

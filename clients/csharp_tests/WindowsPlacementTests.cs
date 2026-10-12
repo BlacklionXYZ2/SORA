@@ -26,6 +26,22 @@ public class WindowsPlacementTests
     }
 
     [Fact]
+    public void FirstAppearanceStandsOnThePrimaryTaskbarNotTheTopLeft()
+    {
+        // The owner's layout: a 4K primary with a bottom taskbar, and a smaller monitor to its left.
+        var primary = new MonitorDescriptor("DISPLAY1", true, new ScreenRect(0, 0, 3840, 2160), 1.5f,
+            workArea: new ScreenRect(0, 0, 3840, 2088));
+        var side = new MonitorDescriptor("DISPLAY6", false, new ScreenRect(-1280, 813, 1280, 1024), 1f,
+            workArea: new ScreenRect(-1280, 813, 1280, 976));
+        var topology = new DisplayTopology(new ScreenRect(-1280, 0, 5120, 2160), new[] { side, primary });
+        var home = OverlayPlacement.HomeAnchor(topology);
+        Assert.Equal((3840 - 1 - 3840 / 5, 2087), home);
+        Assert.True(primary.WorkArea.Contains(home.X - 90, home.Y - 300));
+        // Before the fix, clamping the default origin gave (90, 300): high on the top-left.
+        Assert.Equal((90, 300), OverlayPlacement.SafeAnchor(topology, 0, 0));
+    }
+
+    [Fact]
     public void HotUnplugAndTinyDisplayRemainBounded()
     {
         var rect = new ScreenRect(-200, -100, 100, 80);

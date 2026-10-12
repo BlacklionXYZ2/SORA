@@ -97,11 +97,11 @@ async def test_core_resolves_semantic_destinations(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_run_to_screen_place_then_wave_end_to_end(
+async def test_run_to_screen_place_then_sit_end_to_end(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     action: dict[str, Any] = {"op": "move", "target": "screen", "monitor": "primary",
-                              "place": "right", "pace": "run", "then": "wave"}
+                              "place": "right", "pace": "run", "then": "sit"}
     caller = Caller(action)
     runtime, _ = runtime_for(tmp_path, caller)
     await runtime.start()
@@ -117,15 +117,15 @@ async def test_run_to_screen_place_then_wave_end_to_end(
                         AsyncMock(side_effect=AssertionError("Moving must not capture")))
     try:
         with owner_local_scope():
-            answer = await runtime.dialogue("Run to the right of the screen and wave")
+            answer = await runtime.dialogue("Run to the right of the screen and sit down")
         command = queue.get_nowait()
         assert command.verb is EmbodimentVerb.MOVE_TO and command.target_point is not None
         assert (command.target_point.x, command.target_point.y) == (1632, 1039)
         assert command.speed_px_per_sec >= RUNNING_GAIT_PX_PER_SEC
         assert await runtime.validate_embodiment_delivery(command)
         # The pose waits for arrival: it becomes the resting state the watch loop restores.
-        assert session._resting_state == "waving"
-        assert "run request" in answer and "then wave on arrival" in answer
+        assert session._resting_state == "sitting"
+        assert "run request" in answer and "then sit on arrival" in answer
         assert "not arrival" in answer
     finally:
         await session.close()

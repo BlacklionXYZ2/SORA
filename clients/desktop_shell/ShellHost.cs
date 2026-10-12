@@ -23,9 +23,12 @@ internal sealed class ShellHost : ApplicationContext
     private readonly Dictionary<string, PanelPreferencesBinding> bindings = [];
     private ShellShortcut registeredShortcut;
     private ShellForm? chat;
-    // WebView2 GUI rewrite (W0): opt in with SORA_PANELS=web; the WinForms Chat stays the default.
-    private static readonly bool WebPanels = Environment.GetEnvironmentVariable("SORA_PANELS") == "web";
-    private WebPanelForm? webChat;
+    // WebView2 GUI rewrite (W4): panels listed here open as web pages from clients/panels/ unless
+    // SORA_PANELS=classic; the rest keep their WinForms windows until their pages exist.
+    private static readonly bool WebPanels = Environment.GetEnvironmentVariable("SORA_PANELS") != "classic";
+    private static readonly IReadOnlyDictionary<string, Size> WebPages = new Dictionary<string, Size>
+        { ["chat"] = new(480, 560), ["settings"] = new(980, 680), ["activity"] = new(960, 660) };
+    private readonly Dictionary<string, WebPanelForm> webPanels = [];
     private PanelApiProxy? panelProxy;
     private SettingsForm? settings;
     private CommandMenuForm? commands;
@@ -67,7 +70,7 @@ internal sealed class ShellHost : ApplicationContext
         menu.Items.Add("Command menu", null, (_, _) => ShowPanel("menu"));
         menu.Items.Add("Reconnect / retry startup", null, async (_, _) => await RetryCoreAsync());
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Quit SORA (owned services only)", null, (_, _) => QueueNativeQuit());
+        menu.Items.Add("Quit SORA", null, (_, _) => QueueNativeQuit());
         tray = new NotifyIcon { Icon = SystemIcons.Application, Visible = true,
             Text = "SORA · Core connecting · attached profile", ContextMenuStrip = menu };
         tray.DoubleClick += (_, _) => ShowPanel("chat");
@@ -97,7 +100,8 @@ internal sealed class ShellHost : ApplicationContext
                     // Managed Quit needs a foreground consequence decision, not
                     // a modal spawned by a bounded secondary IPC request.
                     if (quitPending || core.HasOwnedLaunch || core.Options.Managed is not null && core.Phase == "starting"
-                        || session.Sending || session.MutationBusy || PendingSecondaryWork || appearance?.HasUnsavedChanges == true || settings?.HasUnsavedChanges == true || memory?.HasUnsavedChanges == true)
+                        || session.Sending || session.MutationBusy || PendingSecondaryWork || appearance?.HasUnsavedChanges == true || settings?.HasUnsavedChanges == true || memory?.HasUnsavedChanges == true
+                        || webPanels.Values.Any(web => !web.IsDisposed && web.HasUnsavedChanges))
                     { result.TrySetResult(false); return; }
                     settings?.SetShutdownPending(true); delayedQuit.Start(); result.TrySetResult(true); return;
                 }
@@ -108,21 +112,25 @@ internal sealed class ShellHost : ApplicationContext
         { result.TrySetResult(false); }
         return result.Task.WaitAsync(lifetime.Token);
     }
-    private void ShowPanel(string panel)
+    private void ShowPanel(string panel) => ShowPanel(panel, null);
+
+    private void ShowPanel(string panel, string? select)
     {
         if (quitting || panel == "none") return;
-        if (panel == "chat" && WebPanels)
+        if (WebPanels && WebPages.TryGetValue(panel, out var size))
         {
-            if (webChat is null || webChat.IsDisposed)
+            if (!webPanels.TryGetValue(panel, out var web) || web.IsDisposed)
             {
                 var options = core.Options;
                 panelProxy ??= new PanelApiProxy(options.CoreUrl, options.TokenFile, () => session.CoreInstanceId);
-                webChat = new WebPanelForm("chat", Path.Combine(AppContext.BaseDirectory, "panels"), panelProxy,
-                    options.StateRoot!, next => ShowPanel(next));
-                Bind(webChat, "chat");
+                web = new WebPanelForm(panel, Path.Combine(AppContext.BaseDirectory, "panels"), panelProxy,
+                    options.StateRoot!, (next, chosen) => ShowPanel(next, chosen), size);
+                webPanels[panel] = web;
+                Bind(web, panel);
             }
-            if (webChat.WindowState == FormWindowState.Minimized) webChat.WindowState = FormWindowState.Normal;
-            webChat.Show(); webChat.Activate();
+            if (web.WindowState == FormWindowState.Minimized) web.WindowState = FormWindowState.Normal;
+            web.Show(); web.Activate();
+            if (select is not null) web.Select(select);
         }
         else if (panel == "chat")
         {
@@ -267,6 +275,13 @@ internal sealed class ShellHost : ApplicationContext
         }
         if (appearance is not null && !appearance.CanCloseForHostShutdown()) return false;
         if (memory is not null && !memory.CanCloseForHostShutdown()) { ShowPanel("memory"); return false; }
+        foreach (var web in webPanels.Values.Where(item => !item.IsDisposed && item.HasUnsavedChanges).ToArray())
+        {
+            ShowPanel(web.PanelName);
+            if (MessageBox.Show(web, "Settings has changes you have not saved. Quit anyway and lose them?",
+                "SORA · Unsaved changes", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2) != DialogResult.Yes) return false;
+        }
         if (PendingSecondaryWork) { ShowPendingSecondary(); return false; }
         if (session.MutationBusy) { ShowPanel(session.VoiceBusy ? "voice" : "activity"); return false; }
         if (session.Sending)
@@ -276,9 +291,9 @@ internal sealed class ShellHost : ApplicationContext
             return false;
         }
         if ((core.Options.Managed is not null || core.HasOwnedLaunch) && MessageBox.Show(commands is { IsDisposed: false } ? commands : settings,
-            "Quit this managed SORA session? External Core stays running. Only a Core this host launched " +
-            "and its voice/avatar services will be closed. Existing tasks follow Core's graceful cleanup; this is not task cancellation. " +
-            "If startup/cleanup cannot be confirmed, the host will remain available without force-killing services.",
+            "Quit SORA? Her brain (llama.cpp), Laya, her avatar, voice and Core all close. Running agent " +
+            "tasks get Core's graceful cleanup first; anything still running after that is stopped. " +
+            "A Core this host did not start is left running.",
             "SORA · Quit owned session", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
             MessageBoxDefaultButton.Button2) != DialogResult.Yes) return false;
         settings?.SetShutdownPending(true); delayedQuit.Start(); return true;
@@ -370,12 +385,15 @@ internal sealed class ShellHost : ApplicationContext
         if (memory is not null && !memory.CanCloseForHostShutdown()) { ShowPanel("memory"); return; }
         settings?.SetShutdownPending(true);
         quitPending = true;
-        if (!await core.QuitAsync(lifetime.Token))
-        { quitPending = false; settings?.SetShutdownPending(false); ShowPanel("settings"); return; }
+        // Graceful first; then anything this host launched that is still running is closed, so
+        // Quit always ends llama.cpp, Laya, the avatar, voice and Core (owner request 2026-10-09).
+        await core.QuitAsync(lifetime.Token);
+        core.CloseEverything();
         quitting = true; refresh.Stop(); lifetime.Cancel();
         commands?.Close(); appearance?.Close(); settings?.CloseForHostShutdown(); agents?.CloseForHostShutdown(); paths?.CloseForHostShutdown();
         board?.CloseForHostShutdown(); content?.CloseForHostShutdown(); integrations?.CloseForHostShutdown(); memory?.CloseForHostShutdown();
-        voice?.CloseForHostShutdown(); activity?.CloseForHostShutdown(); chat?.CloseForHostShutdown(); webChat?.CloseForHostShutdown();
+        voice?.CloseForHostShutdown(); activity?.CloseForHostShutdown(); chat?.CloseForHostShutdown();
+        foreach (var web in webPanels.Values) web.CloseForHostShutdown();
         panelProxy?.Dispose(); tray.Visible = false;
         ExitThread();
     }

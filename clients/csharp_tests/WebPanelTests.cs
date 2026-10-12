@@ -49,7 +49,53 @@ public sealed class WebPanelTests
     [InlineData("[\"window.hide\"]")]
     [InlineData("\"window.hide\"")]
     [InlineData("not json")]
+    [InlineData("{\"type\":\"file.pick\",\"kind\":\"script\",\"requestId\":\"pick-1\"}")]
+    [InlineData("{\"type\":\"file.pick\",\"kind\":\"gguf\",\"requestId\":\"bad id!\"}")]
+    [InlineData("{\"type\":\"file.pick\",\"kind\":\"gguf\"}")]
     public void BridgeDropsAnythingElse(string json) => Assert.Null(PanelBridge.Parse(json));
+
+    [Fact]
+    public void BridgeFilePickStartsOnlyInAnExistingLocalFolder()
+    {
+        var folder = Path.GetTempPath();
+        var json = "{\"type\":\"file.pick\",\"kind\":\"gguf\",\"requestId\":\"pick-1\",\"start\":"
+            + System.Text.Json.JsonSerializer.Serialize(folder) + "}";
+        Assert.Equal(Path.GetFullPath(folder), PanelBridge.Parse(json)!.StartFolder);
+        Assert.Null(PanelBridge.StartFolder(@"\server\share"));
+        Assert.Null(PanelBridge.StartFolder("relative\folder"));
+        Assert.Null(PanelBridge.StartFolder(Path.Combine(folder, "no-such-folder-" + Guid.NewGuid())));
+        Assert.Null(PanelBridge.Parse("{\"type\":\"file.pick\",\"kind\":\"gguf\",\"requestId\":\"pick-1\",\"start\":5}"));
+    }
+
+    [Fact]
+    public void BridgeDirtyReportsAreBooleansOnly()
+    {
+        Assert.True(PanelBridge.Parse("{\"type\":\"panel.dirty\",\"dirty\":true}")!.Dirty);
+        Assert.False(PanelBridge.Parse("{\"type\":\"panel.dirty\",\"dirty\":false}")!.Dirty);
+        Assert.Null(PanelBridge.Parse("{\"type\":\"panel.dirty\",\"dirty\":\"yes\"}"));
+        Assert.Null(PanelBridge.Parse("{\"type\":\"panel.dirty\"}"));
+    }
+
+    [Fact]
+    public void BridgePanelOpenCarriesOnlyAnExactSelection()
+    {
+        var command = PanelBridge.Parse("{\"type\":\"panel.open\",\"panel\":\"activity\",\"select\":\"task-1\"}");
+        Assert.Equal(("activity", "task-1"), (command!.Panel, command.Select));
+        Assert.Null(PanelBridge.Parse("{\"type\":\"panel.open\",\"panel\":\"activity\"}")!.Select);
+        Assert.Null(PanelBridge.Parse("{\"type\":\"panel.open\",\"panel\":\"activity\",\"select\":\"../x\"}"));
+        Assert.Null(PanelBridge.Parse("{\"type\":\"panel.open\",\"panel\":\"activity\",\"select\":7}"));
+    }
+
+    [Fact]
+    public void BridgeFilePicksCarryAKnownKindAndSafeRequestId()
+    {
+        var command = PanelBridge.Parse("{\"type\":\"file.pick\",\"kind\":\"gguf\",\"requestId\":\"pick-1\"}");
+        Assert.Equal(PanelCommandKind.PickFile, command!.Kind);
+        Assert.Equal(("gguf", "pick-1"), (command.PickKind, command.RequestId));
+        Assert.Equal("GGUF model (*.gguf)|*.gguf", PanelBridge.Filter("gguf"));
+        Assert.Null(PanelBridge.Filter("dir"));
+        Assert.Null(PanelBridge.Parse("{\"type\":\"file.pick\",\"kind\":\"gguf\",\"requestId\":\"" + new string('a', 65) + "\"}"));
+    }
 
     [Fact]
     public void BridgeResizeEdgesMapToWindowsHitTests()
@@ -131,4 +177,37 @@ public sealed class WebPanelTests
     [Fact]
     public void ProxyOnlyTalksToLoopbackCore() =>
         Assert.Throws<ArgumentException>(() => new PanelApiProxy(new Uri("http://192.168.1.5:8765"), "token", () => null));
+
+    [Fact]
+    public void PanelFilesServeOnlyShippedPanelFiles()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "sora-panels-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "chat"));
+        File.WriteAllText(Path.Combine(root, "chat", "index.html"), "<html></html>");
+        File.WriteAllText(Path.Combine(root, "chat", "notes.txt"), "not a panel type");
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(root)!, "secret.html"), "outside");
+        try
+        {
+            var page = PanelFiles.Resolve(root, "GET", "https://panels.sora.example/chat/index.html?v=1");
+            Assert.NotNull(page);
+            Assert.Equal("text/html; charset=utf-8", page!.Value.ContentType);
+            foreach (var (method, uri) in new[]
+            {
+                ("POST", "https://panels.sora.example/chat/index.html"),
+                ("GET", "https://panels.sora.example/api/v1/status"),
+                ("GET", "https://other.example/chat/index.html"),
+                ("GET", "http://panels.sora.example/chat/index.html"),
+                ("GET", "https://panels.sora.example/../secret.html"),
+                ("GET", "https://panels.sora.example/%2e%2e/secret.html"),
+                ("GET", "https://panels.sora.example/chat/notes.txt"),
+                ("GET", "https://panels.sora.example/chat/missing.html"),
+            })
+                Assert.Null(PanelFiles.Resolve(root, method, uri));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+            File.Delete(Path.Combine(Path.GetDirectoryName(root)!, "secret.html"));
+        }
+    }
 }

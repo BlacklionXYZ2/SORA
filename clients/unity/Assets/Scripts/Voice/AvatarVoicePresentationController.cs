@@ -30,9 +30,12 @@ namespace Sora.Embodiment.Voice
         public double DurationMs { get; }
         public float MouthOpen { get; }
         public string Emotion { get; }
+        /// <summary>A, E, I, O, U shares of the mouth shape; all zero means Aa only.</summary>
+        public float[] Vowels { get; }
 
         public VoicePresentationFrame(string playbackId, long outputEpoch, int sequence,
-            double positionMs, double durationMs, float mouthOpen, string emotion)
+            double positionMs, double durationMs, float mouthOpen, string emotion,
+            float[]? vowels = null)
         {
             if (string.IsNullOrWhiteSpace(playbackId))
                 throw new ArgumentException("Playback identity is required", nameof(playbackId));
@@ -52,6 +55,15 @@ namespace Sora.Embodiment.Voice
             PositionMs = positionMs;
             DurationMs = durationMs;
             MouthOpen = mouthOpen;
+            Vowels = new float[5];
+            if (vowels != null && vowels.Length == 5)
+                for (int i = 0; i < 5; i++)
+                {
+                    float share = vowels[i];
+                    if (share < 0 || share > 1 || float.IsNaN(share) || float.IsInfinity(share))
+                        throw new ArgumentOutOfRangeException(nameof(vowels));
+                    Vowels[i] = share;
+                }
         }
 
         internal static string NormalizeEmotion(string emotion)
@@ -83,6 +95,7 @@ namespace Sora.Embodiment.Voice
         public string? ActivePlaybackId { get; private set; }
         public long ActiveOutputEpoch { get; private set; } = -1;
         public float MouthOpen { get; private set; }
+        public float[] Vowels { get; } = new float[5];
         public string Emotion { get; private set; } = "neutral";
         public VoicePresentationResetReason? LastResetReason { get; private set; }
 
@@ -105,6 +118,7 @@ namespace Sora.Embodiment.Voice
             _nextPositionMs = 0;
             _lastFrameTime = Time.realtimeSinceStartup;
             MouthOpen = 0;
+            Array.Clear(Vowels, 0, 5);
             Emotion = normalized;
             LastResetReason = null;
             ApplyExpressions();
@@ -120,6 +134,7 @@ namespace Sora.Embodiment.Voice
                 return false;
             if (frame.Emotion != Emotion) return false;
             MouthOpen = frame.MouthOpen;
+            Array.Copy(frame.Vowels, Vowels, 5);
             _lastFrameTime = Time.realtimeSinceStartup;
             _nextSequence++;
             _nextPositionMs = frame.PositionMs + frame.DurationMs;
@@ -142,6 +157,7 @@ namespace Sora.Embodiment.Voice
             _nextSequence = 0;
             _nextPositionMs = 0;
             MouthOpen = 0;
+            Array.Clear(Vowels, 0, 5);
             Emotion = "neutral";
             LastResetReason = reason;
             ApplyExpressions();
@@ -157,14 +173,23 @@ namespace Sora.Embodiment.Voice
         {
             // Gaps in synthesis, transport stalls and worker crashes must not freeze an open mouth.
             if (MouthOpen > 0 && Time.realtimeSinceStartup - _lastFrameTime > 0.35f)
-            { MouthOpen = 0; ApplyExpressions(); }
+            { MouthOpen = 0; Array.Clear(Vowels, 0, 5); ApplyExpressions(); }
         }
 
         private void ApplyExpressions()
         {
             if (_avatar == null) return;
             var expressions = _avatar.Runtime.Expression;
-            expressions.SetWeight(ExpressionKey.Aa, MouthOpen);
+            // The loudest vowel opens fully with the audio; the others blend in proportionally.
+            float strongest = Math.Max(Math.Max(Math.Max(Vowels[0], Vowels[1]),
+                Math.Max(Vowels[2], Vowels[3])), Vowels[4]);
+            ExpressionKey[] shapes = { ExpressionKey.Aa, ExpressionKey.Ee, ExpressionKey.Ih,
+                ExpressionKey.Oh, ExpressionKey.Ou };
+            for (int i = 0; i < shapes.Length; i++)
+            {
+                float share = strongest > 0 ? Vowels[i] / strongest : (i == 0 ? 1 : 0);
+                expressions.SetWeight(shapes[i], MouthOpen * share * share);
+            }
             expressions.SetWeight(ExpressionKey.Happy, Emotion == "cheerful" ? 0.35f : 0);
             expressions.SetWeight(ExpressionKey.Relaxed, Emotion == "warm" ? 0.25f : 0);
             expressions.SetWeight(ExpressionKey.Sad, Emotion == "concerned" ? 0.2f : 0);

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import hashlib
+import math
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -16,6 +17,7 @@ from pydantic import Field, StrictBool
 
 from sora.contracts.base import StrictModel
 from sora.contracts.capture import DesktopCaptureSource, DesktopCaptureStatus
+from sora.contracts.embodiment import MonitorDescriptor, ScreenRect
 from sora.desktop.capture import WindowsCaptureBridge, WindowsCaptureRequest
 from sora.desktop.foreground import ForegroundIdentity
 from sora.vision.capture import validate_png_dimensions
@@ -274,4 +276,98 @@ async def capture_application(
         captured_at=reply.captured_at,
         data_url="data:image/png;base64," + reply.png_base64,
         sha256=hashlib.sha256(raw).hexdigest(),
+    )
+
+
+OVERVIEW_MAX_EDGE = 1920  # when the model's image token budget is unknown (external servers)
+PIXELS_PER_IMAGE_TOKEN = 2304  # Gemma 4: one image token covers about 48x48 source pixels
+
+
+def overview_edge(bounds: ScreenRect, image_tokens: int) -> int:
+    """The longest edge at which the overview just fills the model's image token budget.
+
+    A larger image is scaled down again by llama.cpp, so capturing more only costs time.
+    """
+    pixels = image_tokens * PIXELS_PER_IMAGE_TOKEN
+    long_side, short_side = max(bounds.width, bounds.height), min(bounds.width, bounds.height)
+    edge = math.isqrt(pixels * long_side // short_side)  # rounded down: stay within budget
+    return max(256, min(4096, long_side, edge))
+
+
+@dataclass(frozen=True)
+class DesktopOverview:
+    image: PromptImage
+    layout: str  # where each monitor sits in the image, for the model
+
+
+def desktop_bounds(monitors: tuple[MonitorDescriptor, ...]) -> ScreenRect:
+    left = min(monitor.rect.x for monitor in monitors)
+    top = min(monitor.rect.y for monitor in monitors)
+    right = max(monitor.rect.x + monitor.rect.width for monitor in monitors)
+    bottom = max(monitor.rect.y + monitor.rect.height for monitor in monitors)
+    return ScreenRect(x=left, y=top, width=right - left, height=bottom - top)
+
+
+def describe_layout(monitors: tuple[MonitorDescriptor, ...], bounds: ScreenRect) -> str:
+    """Say where each monitor sits in the overview, so the model can tell the screens apart."""
+    parts = []
+    for monitor in sorted(monitors, key=lambda item: (item.rect.x, item.rect.y)):
+        start = round(100 * (monitor.rect.x - bounds.x) / bounds.width)
+        end = round(100 * (monitor.rect.x + monitor.rect.width - bounds.x) / bounds.width)
+        parts.append(
+            f"{'primary' if monitor.primary else 'secondary'} monitor "
+            f"{monitor.rect.width}x{monitor.rect.height} ({start}-{end}% of the width)"
+        )
+    if len(monitors) == 1:
+        return "1 monitor: " + parts[0]
+    return (
+        f"{len(monitors)} monitors, left to right: " + ", ".join(parts)
+        + "; black areas are outside every monitor"
+    )
+
+
+async def capture_desktop_overview(
+    monitors: tuple[MonitorDescriptor, ...],
+    bridge: WindowsCaptureBridge,
+    check: Callable[[], None],
+    *,
+    max_edge: int = OVERVIEW_MAX_EDGE,
+) -> DesktopOverview:
+    """Capture every monitor as one reduced image; nothing is stored."""
+    check()
+    bounds = desktop_bounds(monitors)
+    started = datetime.now(UTC)
+    request = WindowsCaptureRequest(
+        capture_id=f"overview-{uuid.uuid4()}",
+        source=DesktopCaptureSource.REGION,
+        region=bounds,
+        output_max_edge=max_edge,
+    )
+    reply = await bridge.capture(request)
+    check()
+    if reply.status is not DesktopCaptureStatus.OK:
+        raise ValueError(f"Desktop image unavailable ({reply.status.value})")
+    if reply.region != bounds or reply.image_width is None or reply.image_height is None:
+        raise ValueError("Desktop image does not match the requested monitors")
+    if max(reply.image_width, reply.image_height) > max_edge or (
+        reply.image_width * reply.image_height > request.max_pixels
+    ):
+        raise ValueError("Desktop image exceeds the pixel budget")
+    if reply.captured_at is None or not started - timedelta(seconds=1) <= (
+        reply.captured_at
+    ) <= datetime.now(UTC) + timedelta(seconds=1):
+        raise ValueError("Desktop image timestamp is invalid")
+    raw = base64.b64decode(reply.png_base64, validate=True)
+    if len(raw) > request.max_bytes:
+        raise ValueError("Desktop image exceeds the byte budget")
+    validate_png_dimensions(raw, reply.image_width, reply.image_height)
+    check()
+    return DesktopOverview(
+        image=PromptImage(
+            capture_id=request.capture_id,
+            captured_at=reply.captured_at,
+            data_url="data:image/png;base64," + reply.png_base64,
+            sha256=hashlib.sha256(raw).hexdigest(),
+        ),
+        layout=describe_layout(monitors, bounds),
     )

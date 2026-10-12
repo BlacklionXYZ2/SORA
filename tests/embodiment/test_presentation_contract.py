@@ -38,7 +38,6 @@ def test_semantic_states_and_optional_style_are_presentation_only() -> None:
         EmbodimentPresentationState.WAITING_FOR_AGENT,
         EmbodimentPresentationState.READING,
         EmbodimentPresentationState.TYPING,
-        EmbodimentPresentationState.WAVING,
         EmbodimentPresentationState.SITTING,
         EmbodimentPresentationState.LEANING,
         EmbodimentPresentationState.CLIMBING,

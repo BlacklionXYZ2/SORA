@@ -22,6 +22,16 @@ changelogs mention the original root paths as plain text; look those paths up in
 | `SORA_IMPLEMENTATION_PLAN_UPDATE_SETTINGS_2026-09-28.md` | GPT-6 Astra, 2026-09-28 18:21:38 | Dated settings editor / model-reload update |
 | `SORA_IMPLEMENTATION_PLAN_UPDATE_MOTION_KEYWORDS_2026-09-29.md` | GPT-6 Astra, 2026-09-29 08:27:38 | Dated motion-keyword update |
 
+## Added 2026-10-11 (Opus 5.5)
+
+Superseded by the [motion core roadmap of 2026-10-11](../MOTION-CORE-ROADMAP_2026-10-11.md). The
+wording is unchanged; only relative link paths were adjusted so they resolve from this folder.
+
+| File | Contributor and date | What it is |
+|---|---|---|
+| [MOTION-CORE-ROADMAP_2026-09-28.md](MOTION-CORE-ROADMAP_2026-09-28.md) | DeepSeek Flash, 2026-09-28 | The first motion core roadmap (never signed off), moved from `docs/plans/` |
+| [MOTION-CORE-ROADMAP_2026-10-11_GROK-ORIGINAL.md](MOTION-CORE-ROADMAP_2026-10-11_GROK-ORIGINAL.md) | Grok Bot, 2026-10-11 | Grok's rationalisation draft, which the current roadmap builds on (supplied by the owner) |
+
 ## Already here
 
 | File | What it is |

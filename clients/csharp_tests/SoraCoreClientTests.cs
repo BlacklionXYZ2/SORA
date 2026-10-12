@@ -62,7 +62,7 @@ namespace Sora.Embodiment.Tests
                 topology_revision = 3, created_at = DateTime.UtcNow
             }));
             client.ProcessIncomingMessage(Envelope(new {
-                command_id = "waving", verb = "set_state", state = "waving",
+                command_id = "sitting", verb = "set_state", state = "sitting",
                 topology_revision = 3, created_at = DateTime.UtcNow
             }));
             client.ProcessIncomingMessage(Envelope(new {
@@ -82,7 +82,7 @@ namespace Sora.Embodiment.Tests
 
             Assert.Collection(accepted,
                 state => { Assert.Equal("thinking", state.State); Assert.Equal("focused", state.PresentationStyle); },
-                state => Assert.Equal("waving", state.State),
+                state => Assert.Equal("sitting", state.State),
                 action => { Assert.Equal("point", action.SemanticAction); Assert.Equal("reach", action.SemanticPhase); });
         }
     }

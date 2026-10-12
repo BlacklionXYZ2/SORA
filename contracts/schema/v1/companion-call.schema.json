@@ -1,5 +1,74 @@
 {
   "$defs": {
+    "AddGoal": {
+      "additionalProperties": false,
+      "description": "Reflection: start one of HER OWN goals.",
+      "properties": {
+        "op": {
+          "const": "add_goal",
+          "title": "Op",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 200,
+          "minLength": 3,
+          "title": "Text",
+          "type": "string"
+        },
+        "why": {
+          "maxLength": 300,
+          "minLength": 3,
+          "title": "Why",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "text",
+        "why"
+      ],
+      "title": "AddGoal",
+      "type": "object"
+    },
+    "CloseGoal": {
+      "additionalProperties": false,
+      "description": "Goals end rather than vanish: achieved or dropped, with a reason; history is kept.",
+      "properties": {
+        "op": {
+          "const": "close_goal",
+          "title": "Op",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "achieved",
+            "dropped"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 300,
+          "minLength": 3,
+          "title": "Reason",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "outcome",
+        "reason"
+      ],
+      "title": "CloseGoal",
+      "type": "object"
+    },
     "Delegate": {
       "additionalProperties": false,
       "properties": {
@@ -326,7 +395,6 @@
           "anyOf": [
             {
               "enum": [
-                "wave",
                 "sit",
                 "lean",
                 "climb",
@@ -362,6 +430,46 @@
       "title": "Move",
       "type": "object"
     },
+    "NoteGoal": {
+      "additionalProperties": false,
+      "description": "Progress towards a goal, drawn from issued memory references (m1, m2, ...).",
+      "properties": {
+        "memories": {
+          "items": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 8,
+          "title": "Memories",
+          "type": "array"
+        },
+        "op": {
+          "const": "note_goal",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 300,
+          "minLength": 3,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "text"
+      ],
+      "title": "NoteGoal",
+      "type": "object"
+    },
     "Point": {
       "additionalProperties": false,
       "properties": {
@@ -389,7 +497,6 @@
       "properties": {
         "name": {
           "enum": [
-            "wave",
             "sit",
             "lean",
             "climb",
@@ -483,6 +590,100 @@
       "title": "ReadFile",
       "type": "object"
     },
+    "Remember": {
+      "additionalProperties": false,
+      "description": "SORA remembers this moment: a short title and a description written as a lasting fact.\n\nCore stores the memory with the whole turn: the owner's exact words, her reply, what was\nread, the images the brain saw and the owner's voice recording when there is one. The\ntitle and description are her note about it; the owner's words are kept verbatim beside it.",
+      "properties": {
+        "description": {
+          "maxLength": 500,
+          "minLength": 5,
+          "title": "Description",
+          "type": "string"
+        },
+        "op": {
+          "const": "remember",
+          "title": "Op",
+          "type": "string"
+        },
+        "standing": {
+          "default": false,
+          "title": "Standing",
+          "type": "boolean"
+        },
+        "title": {
+          "maxLength": 80,
+          "minLength": 2,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "title",
+        "description"
+      ],
+      "title": "Remember",
+      "type": "object"
+    },
+    "RememberThought": {
+      "additionalProperties": false,
+      "description": "SORA keeps one of her own thoughts: an ordinary memory whose author is SORA.\n\nCore stores it after the reply, in her words, labelled as her thought (never as something\nthe owner said). The owner's own statements are remembered by Core separately.",
+      "properties": {
+        "op": {
+          "const": "remember_thought",
+          "title": "Op",
+          "type": "string"
+        },
+        "thought": {
+          "maxLength": 300,
+          "minLength": 3,
+          "title": "Thought",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "thought"
+      ],
+      "title": "RememberThought",
+      "type": "object"
+    },
+    "ReviseGoal": {
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "revise_goal",
+          "title": "Op",
+          "type": "string"
+        },
+        "reason": {
+          "maxLength": 300,
+          "minLength": 3,
+          "title": "Reason",
+          "type": "string"
+        },
+        "target": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "text": {
+          "maxLength": 200,
+          "minLength": 3,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "op",
+        "target",
+        "text",
+        "reason"
+      ],
+      "title": "ReviseGoal",
+      "type": "object"
+    },
     "SearchFiles": {
       "additionalProperties": false,
       "properties": {
@@ -534,10 +735,42 @@
       ],
       "title": "SearchFiles",
       "type": "object"
+    },
+    "ViewWindow": {
+      "additionalProperties": false,
+      "description": "Look closer at one window: Core attaches a full-resolution image of it to the reply.\n\nEvery reply already sees a reduced image of the whole desktop. A null target means the\nwindow the owner is using, or used last before SORA.",
+      "properties": {
+        "op": {
+          "const": "view_window",
+          "title": "Op",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target"
+        }
+      },
+      "required": [
+        "op"
+      ],
+      "title": "ViewWindow",
+      "type": "object"
     }
   },
   "discriminator": {
     "mapping": {
+      "add_goal": "#/$defs/AddGoal",
+      "close_goal": "#/$defs/CloseGoal",
       "delegate": "#/$defs/Delegate",
       "find_memory": "#/$defs/FindMemory",
       "finish": "#/$defs/FinishRead",
@@ -547,11 +780,16 @@
       "list_windows": "#/$defs/ListWindows",
       "look": "#/$defs/Look",
       "move": "#/$defs/Move",
+      "note_goal": "#/$defs/NoteGoal",
       "point": "#/$defs/Point",
       "pose": "#/$defs/Pose",
       "present_memory": "#/$defs/PresentMemory",
       "read_file": "#/$defs/ReadFile",
-      "search_files": "#/$defs/SearchFiles"
+      "remember": "#/$defs/Remember",
+      "remember_thought": "#/$defs/RememberThought",
+      "revise_goal": "#/$defs/ReviseGoal",
+      "search_files": "#/$defs/SearchFiles",
+      "view_window": "#/$defs/ViewWindow"
     },
     "propertyName": "op"
   },
@@ -587,6 +825,9 @@
       "$ref": "#/$defs/Move"
     },
     {
+      "$ref": "#/$defs/ViewWindow"
+    },
+    {
       "$ref": "#/$defs/Look"
     },
     {
@@ -594,6 +835,24 @@
     },
     {
       "$ref": "#/$defs/FindMemory"
+    },
+    {
+      "$ref": "#/$defs/Remember"
+    },
+    {
+      "$ref": "#/$defs/RememberThought"
+    },
+    {
+      "$ref": "#/$defs/AddGoal"
+    },
+    {
+      "$ref": "#/$defs/ReviseGoal"
+    },
+    {
+      "$ref": "#/$defs/CloseGoal"
+    },
+    {
+      "$ref": "#/$defs/NoteGoal"
     },
     {
       "$ref": "#/$defs/PresentMemory"

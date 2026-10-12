@@ -37,8 +37,10 @@
     <Compile Include="..\desktop_shell\ManagedCoreOptions.cs" Link="ManagedCoreOptions.cs" />
     <Compile Include="..\desktop_shell\CoreDescriptor.cs" Link="CoreDescriptor.cs" />
     <Compile Include="..\desktop_shell\ShellCoreCoordinator.cs" Link="ShellCoreCoordinator.cs" />
+    <Compile Include="..\desktop_shell\HelperCleanup.cs" Link="HelperCleanup.cs" />
     <Compile Include="..\desktop_shell\PanelBridge.cs" Link="PanelBridge.cs" />
     <Compile Include="..\desktop_shell\PanelApiProxy.cs" Link="PanelApiProxy.cs" />
+    <Compile Include="..\desktop_shell\PanelFiles.cs" Link="PanelFiles.cs" />
   </ItemGroup>
 
   <ItemGroup>

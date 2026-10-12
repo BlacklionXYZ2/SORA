@@ -267,6 +267,7 @@ class RuntimeRepository:
         max_active_tasks: int | None = None,
         local_delegation_epoch: int | None = None,
         companion_brief: str | None = None,
+        agent_name: str | None = None,
         admission_check: Callable[[], None] | None = None,
         admission_guard: Callable[[sqlite3.Connection], None] | None = None,
         admission_commit: Callable[[sqlite3.Connection, SubmissionReceipt], None] | None = None,
@@ -359,12 +360,14 @@ class RuntimeRepository:
                 "after a validated result is stored."
             )
             if companion_brief is not None:
+                # She says who she asked (V1 step 6), by the name the owner uses.
                 acknowledgement_text = (
-                    f"I queued specialist task {task_id} with {provider}. "
-                    f"Model: {requested_model or 'saved/configured default'}. "
-                    f"Project: {working_directory or 'no project selected'}; "
-                    f"mode: {workspace_mode or 'configured specialist'}. "
-                    "Queued is not completed. Check Activity for progress and the final evidence."
+                    f"I've asked {agent_name or provider} to take this on. It's queued, not "
+                    "completed yet: I'll tell you how it goes when they finish, and Activity "
+                    "shows progress. "
+                    f"(Task {task_id}; model: {requested_model or 'their default'}; "
+                    f"project: {working_directory or 'none'}"
+                    f"{'; mode: ' + workspace_mode if workspace_mode else ''}.)"
                 )
             task = TaskRecord(
                 task_id=task_id,

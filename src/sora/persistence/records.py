@@ -47,8 +47,11 @@ class StoredMemory(StrictModel):
     valid_until: datetime | None = None
     superseded_by: Identifier | None = None
     deleted_at: datetime | None = None
+    created_at: datetime | None = None  # None: from before memories were dated, no capture
+    title: str | None = None  # her short title, for memories made with the remember tool
+    updated_at: datetime | None = None
 
-    @field_validator("valid_until", "deleted_at")
+    @field_validator("valid_until", "deleted_at", "created_at", "updated_at")
     @classmethod
     def validate_optional_time(cls, value: datetime | None) -> datetime | None:
         return require_aware(value, "memory timestamp") if value is not None else None

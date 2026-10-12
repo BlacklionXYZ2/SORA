@@ -27,6 +27,15 @@ namespace Sora.Embodiment.Coordinates
             return (candidates.X, candidates.Y);
         }
 
+        /// <summary>Where she first appears: standing on the primary monitor's work-area floor,
+        /// a fifth of the way in from its right edge, clear of the tray icons.</summary>
+        public static (int X, int Y) HomeAnchor(DisplayTopology topology)
+        {
+            if (topology.Monitors.Count == 0) throw new ArgumentException("Active monitor required");
+            var work = (topology.Monitors.FirstOrDefault(m => m.Primary) ?? topology.Monitors[0]).WorkArea;
+            return SafeAnchor(topology, work.Right - 1 - work.Width / 5, work.Bottom - 1);
+        }
+
         private static bool FootprintCoveredByWorkAreas(DisplayTopology topology, int x, int y,
             int halfWidth, int height)
         {

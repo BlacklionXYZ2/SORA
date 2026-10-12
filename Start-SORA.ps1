@@ -29,7 +29,9 @@ param(
     [switch]$UnifiedSettingsOnly,
     # Useful for supervised/automated launches; the normal interactive console stays available.
     [switch]$HiddenCore,
-    # WebView2 GUI rewrite (W0, opt-in): open the new web Chat panel instead of the WinForms one.
+    # The new glass Chat and Settings windows are the default (WebView2). -ClassicPanels opens the
+    # previous WinForms windows instead. -WebPanels is still accepted and changes nothing.
+    [switch]$ClassicPanels,
     [switch]$WebPanels,
     # Translucency route for web panels: System (Windows 11 acrylic), Accent (older blur) or None.
     [ValidateSet("System", "Accent", "None")]
@@ -62,6 +64,31 @@ function ConvertTo-NativeArgument([string]$Value) {
 # The native app is the ordinary client (V1). It owns SORA's lifetime, so a headless
 # -NoClient start without an explicit client keeps the plain Core path.
 if ($NoClient -and -not $PSBoundParameters.ContainsKey('Client')) { $Client = "Desktop" }
+
+# Choose SORA's port before the native app starts. Another program may own the default port (on
+# the owner's machine, Antigravity serves 8765); the native app would then refuse to attach to it
+# and, correctly, would not start a second Core there, leaving no Core at all.
+if ($Client -eq "Shell" -and -not $PSBoundParameters.ContainsKey("Port")) {
+    $savedPort = $null
+    $descriptor = Join-Path $StateRoot "desktop-shell/runtime.json"
+    if (Test-Path -LiteralPath $descriptor -PathType Leaf) {
+        try { $savedPort = ([Uri](Get-Content -Raw -LiteralPath $descriptor | ConvertFrom-Json).core_url).Port }
+        catch { $savedPort = $null }
+    }
+    if ($savedPort) {
+        $Port = $savedPort  # Reuse this profile's Core address so a running Core is found again.
+    }
+    else {
+        $candidates = @($Port) + (8766..8775)
+        $free = $candidates | Where-Object {
+            -not (Get-NetTCPConnection -LocalPort $_ -State Listen -ErrorAction SilentlyContinue)
+        } | Select-Object -First 1
+        if (-not $free) { throw "Ports 8765-8775 are all in use. Choose a free one with -Port." }
+        if ($free -ne $Port) { Write-Host "Port $Port is used by another program; SORA will use $free." }
+        $Port = $free
+    }
+    $coreUrl = "http://127.0.0.1:$Port"
+}
 if ($Client -eq "Shell") {
     if ($NoClient) { throw "-Client Shell owns presence and service lifetime; do not combine it with -NoClient." }
     $shellProject = Join-Path $projectRoot "clients/desktop_shell/desktop_shell.csproj"
@@ -104,10 +131,8 @@ if ($Client -eq "Shell") {
         if ($selection[1]) { $shellArgs.Add($selection[0]); $shellArgs.Add($selection[1]) }
     }
     $hostStart.Arguments = ($shellArgs | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' '
-    if ($WebPanels) {
-        $hostStart.EnvironmentVariables["SORA_PANELS"] = "web"
-        $hostStart.EnvironmentVariables["SORA_PANEL_BACKDROP"] = $PanelBackdrop.ToLowerInvariant()
-    }
+    $hostStart.EnvironmentVariables["SORA_PANELS"] = $(if ($ClassicPanels) { "classic" } else { "web" })
+    $hostStart.EnvironmentVariables["SORA_PANEL_BACKDROP"] = $PanelBackdrop.ToLowerInvariant()
     $hostProcess = [Diagnostics.Process]::Start($hostStart)
     Write-Host "SORA desktop host requested for $StateRoot (host/forwarder PID $($hostProcess.Id))."
     Write-Host "The host verifies profile ownership before startup. Use tray/menu for recovery and owned Quit."

@@ -61,13 +61,20 @@ record Request(
     long? window_handle,
     string? process_started_at,
     int max_pixels,
-    int max_bytes)
+    int max_bytes,
+    int? output_max_edge = null)
 {
+    // A desktop overview may span several monitors, so it is checked against a larger source
+    // budget and then scaled down until its longest edge fits output_max_edge.
+    const long OverviewSourcePixels = 67_108_864;
+
     public void Validate()
     {
         if (schema_version != "1.0" || capture_id.Length is < 1 or > 128 ||
             source is not ("window" or "region") || max_pixels is < 1 or > 8_294_400 ||
-            max_bytes is < 1 or > 16_777_216) throw new ArgumentException();
+            max_bytes is < 1 or > 16_777_216 ||
+            output_max_edge is < 256 or > 4096 ||
+            (output_max_edge.HasValue && source != "region")) throw new ArgumentException();
         if (source == "region")
         {
             if (region is null || process_id.HasValue || window_handle.HasValue ||
@@ -81,7 +88,8 @@ record Request(
     public void ValidateRect(Rect rect)
     {
         if (rect.width < 1 || rect.height < 1 ||
-            (long)rect.width * rect.height > max_pixels ||
+            (long)rect.width * rect.height >
+                (output_max_edge.HasValue ? OverviewSourcePixels : max_pixels) ||
             Math.Abs((long)rect.x) > 1_000_000 || Math.Abs((long)rect.y) > 1_000_000)
             throw new ArgumentException();
     }
@@ -94,7 +102,9 @@ record Reply(
     int? process_id,
     long? window_handle,
     string? process_started_at,
-    string png_base64)
+    string png_base64,
+    int? image_width = null,
+    int? image_height = null)
 {
     public static Reply Error(string status) => new(status, null, null, null, null, null, "");
 }
@@ -142,7 +152,19 @@ static class Capture
         using var bitmap = NewBitmap(rect);
         using (var graphics = Graphics.FromImage(bitmap))
             graphics.CopyFromScreen(rect.x, rect.y, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
-        return Encode(request, bitmap, rect, null, null, null);
+        if (request.output_max_edge is not { } edge) return Encode(request, bitmap, rect, null, null, null);
+        var scale = Math.Min(1.0, (double)edge / Math.Max(rect.width, rect.height));
+        var width = Math.Max(1, (int)Math.Round(rect.width * scale));
+        var height = Math.Max(1, (int)Math.Round(rect.height * scale));
+        if ((long)width * height > request.max_pixels) throw new ArgumentException();
+        using var scaled = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+        using (var graphics = Graphics.FromImage(scaled))
+        {
+            graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            graphics.DrawImage(bitmap, 0, 0, width, height);
+        }
+        var reply = Encode(request, scaled, rect, null, null, null);
+        return reply.status == "ok" ? reply with { image_width = width, image_height = height } : reply;
     }
 
     static Bitmap NewBitmap(Rect rect) =>

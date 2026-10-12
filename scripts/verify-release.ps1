@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory = $true)][string]$Bundle,
     [string]$WorkRoot,
     [switch]$RequireWidget,
-    [switch]$RequireDesktop
+    [switch]$RequireDesktop,
+    # Keep the temporary install folder after a successful run (it is always kept on failure).
+    [switch]$KeepWorkRoot
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,6 +15,7 @@ $widgetIncluded = Test-Path -LiteralPath (Join-Path $bundleRoot "payload/clients
 if ($RequireWidget -and -not $widgetIncluded) { throw "The release bundle lacks SoraWidget.exe." }
 $desktopIncluded = Test-Path -LiteralPath (Join-Path $bundleRoot "payload/clients/desktop/SoraDesktop.exe") -PathType Leaf
 if ($RequireDesktop -and -not $desktopIncluded) { throw "The release bundle lacks SoraDesktop.exe." }
+$generatedWorkRoot = -not $WorkRoot
 if (-not $WorkRoot) {
     $WorkRoot = Join-Path $projectRoot (".local/p15.3-release-acceptance-" + [guid]::NewGuid())
 }
@@ -150,4 +153,12 @@ $evidence = [ordered]@{
 }
 $evidencePath = Join-Path $work "acceptance.json"
 $evidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $evidencePath -Encoding utf8
+if ($generatedWorkRoot -and -not $KeepWorkRoot) {
+    # Each run installs a full copy of SORA (about 1.5-2 GB). Keep the evidence beside the bundle
+    # and remove the temporary install; failed runs never reach here, so they stay for inspection.
+    $kept = "$bundleRoot.acceptance-$(Get-Date -Format 'yyyyMMdd-HHmmss').json"
+    Copy-Item -LiteralPath $evidencePath -Destination $kept
+    Remove-Item -LiteralPath $work -Recurse -Force
+    $evidencePath = $kept
+}
 Write-Host "Release acceptance passed: $evidencePath"

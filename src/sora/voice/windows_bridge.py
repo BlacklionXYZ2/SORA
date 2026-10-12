@@ -7,8 +7,11 @@ import json
 import os
 import sys
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
+
+from sora import helper_processes
 
 from .relay import LocalPresentationRelay
 from .settings import VoiceSettings, resolve_assets
@@ -30,8 +33,13 @@ class WindowsVoiceBridge:
         self.lock = asyncio.Lock()
         self.diagnostics = ""
         self.microphone_open: bool | None = False
+        # Always-on listening: speech is being heard right now (not yet a turn).
+        self.hearing = False
+        self.listening = False  # always-on listening is active
         self.lifecycle_epoch = 0
         self.presentation = LocalPresentationRelay()
+        # Names the speech recogniser should expect (sora.voice.vocabulary); Core sets this.
+        self.vocabulary: Callable[[], tuple[str, ...]] = tuple
 
     def configure(self, url: str, token: str) -> None:
         self.url, self.token = url, token
@@ -43,6 +51,8 @@ class WindowsVoiceBridge:
             "devices": self.devices,
             "running": self.process is not None and self.process.returncode is None,
             "microphone_open": self.microphone_open,
+            "hearing": self.hearing,
+            "listening": self.listening,
         }
 
     async def start(self, settings: VoiceSettings) -> dict[str, Any]:
@@ -88,6 +98,7 @@ class WindowsVoiceBridge:
                 env=env,
                 **kwargs,
             )
+            helper_processes.record("voice", getattr(process, "pid", None))
             if epoch != self.lifecycle_epoch:
                 if process.stdin is not None:
                     process.stdin.close()
@@ -112,6 +123,7 @@ class WindowsVoiceBridge:
                             "settings": resolved.model_dump(),
                             "url": self.url,
                             "token": self.token,
+                            "vocabulary": list(self.vocabulary()),
                         }
                     )
                     + "\n"
@@ -129,6 +141,10 @@ class WindowsVoiceBridge:
                     continue
                 if isinstance(data.get("microphone_open"), bool):
                     self.microphone_open = data["microphone_open"]
+                if isinstance(data.get("hearing"), bool):
+                    self.hearing = data["hearing"]
+                if isinstance(data.get("listening"), bool):
+                    self.listening = data["listening"]
                 if isinstance(data.get("presentation"), dict):
                     self.presentation.publish(data["presentation"])
                 reply = self.pending.pop(str(data.get("reply_to")), None)
@@ -144,6 +160,7 @@ class WindowsVoiceBridge:
                 if data.get("state") in {
                     "loading",
                     "ready",
+                    "listening",
                     "recording",
                     "transcribing",
                     "thinking",
@@ -166,6 +183,8 @@ class WindowsVoiceBridge:
             await process.wait()
             if self.process is process:
                 self.microphone_open = False
+                self.hearing = False
+                self.listening = False
                 self.presentation.reset()
                 self.state = "error"
                 self.message = (
@@ -234,4 +253,5 @@ class WindowsVoiceBridge:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
             self.microphone_open = False
+        self.hearing = self.listening = False
         self.reader = self.stderr = None

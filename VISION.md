@@ -48,9 +48,11 @@ voice / text + current screen
 - **A body that moves like a person.** Language models never drive joints. SORA publishes
   semantic state: intent, emotion, attention, speaking/listening and audio. A motion model turns
   that into movement. Today a deterministic animation layer does this. The goal is a **learned
-  motion model built by the owner**: encoders for intent, emotion, audio and context, feeding a
-  GRU that outputs joint rotations, possibly as a mixture of experts for distinct skills such as
-  getting up, leaning and climbing. It is "the backbone of convincing motion for a digital
+  motion model, built and trained by agents** (owner decision, 2026-10-11; the owner supplies
+  dataset licences, training-hardware time and naturalness judgements): encoders for intent,
+  emotion, audio and context, feeding a GRU that outputs joint rotations, possibly as a mixture
+  of experts for distinct skills such as getting up, leaning and climbing. It is "the backbone
+  of convincing motion for a digital
   person". Its interface must be fixed before it is built, so it can replace the deterministic
   layer without changes upstream.
 - **Memory.** She remembers the owner across sessions. Core owns the canonical memory; models
@@ -95,7 +97,9 @@ There is no "good enough", only "complete", and that goalpost will move. The ord
    and audio that work and with functional agent colleagues.
 2. **After V1:** the decision layer (Laya); desktop pings and anchored notes; Automations
    (daily tasks for SORA); the memory graph and deeper memory management; proactivity.
-3. **After A Levels:** the learned motion model.
+3. **Started 2026-10-11, alongside V1 and after-V1 work:** the learned motion model, researched
+   in `~/Desktop/motion-lab` and integrated into SORA after V1
+   ([roadmap](docs/plans/MOTION-CORE-ROADMAP_2026-10-11.md)).
 4. **Long term:**
    - a LoRA training program with a custom dataset for her personality and tool calling;
    - an owner-facing CLI that exposes her internals for building integrations (tools and stimuli

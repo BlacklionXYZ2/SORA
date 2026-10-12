@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import AsyncIterator
-from typing import Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 from urllib.parse import urlparse
 
 import httpx
@@ -12,10 +13,17 @@ from pydantic import ValidationError
 
 from sora.contracts.companion_call import COMPANION_TOOL_PROMPT, CompanionCall, call_schema
 from sora.contracts.companion_read import READ_TOOL_PROMPT, CompanionReadCall
-from sora.contracts.memory import MEMORY_PROMPT, MEMORY_RATIONALE_PROMPT, MemoryChoice
+from sora.contracts.memory import (
+    MEMORY_PROMPT,
+    MEMORY_RATIONALE_PROMPT,
+    REMEMBER_CHOICE_PROMPT,
+    MemoryChoice,
+    RememberChoice,
+)
 from sora.contracts.models import ActiveCapabilitySet
 from sora.contracts.motion import MOTION_PROMPT, MotionChoice
 from sora.contracts.screen import SCREEN_VIEW_PROMPT, ScreenViewChoice
+from sora.providers.turn_audio import SPOKEN_AUDIO_NOTE, current_turn_audio
 
 
 class DialogueProvider(Protocol):
@@ -36,6 +44,20 @@ class DialogueProvider(Protocol):
         *,
         active_capabilities: ActiveCapabilitySet | None = None,
     ) -> str: ...
+
+
+@runtime_checkable
+class StreamingReplyProvider(Protocol):
+    """Optional: the free-text reply as it is written, for speaking before it is finished."""
+
+    def stream_reply(
+        self,
+        prompt: str,
+        context: str,
+        image_data_urls: tuple[str, ...] = (),
+        *,
+        source: Literal["owner", "screen"] = "owner",
+    ) -> AsyncIterator[str]: ...
 
 
 @runtime_checkable
@@ -74,6 +96,13 @@ class MemoryDialogueProvider(Protocol):
 
 
 @runtime_checkable
+class RememberDialogueProvider(Protocol):
+    """Optional: the remember tool's safety net (sora.contracts.memory.RememberChoice)."""
+
+    async def choose_remember(self, prompt: str) -> RememberChoice: ...
+
+
+@runtime_checkable
 class ImageDialogueProvider(Protocol):
     """Optional multimodal seam; images are transient and never in conversation rows."""
 
@@ -84,7 +113,15 @@ class ImageDialogueProvider(Protocol):
         image_data_urls: tuple[str, ...],
         *,
         active_capabilities: ActiveCapabilitySet | None = None,
+        source: Literal["owner", "screen"] = "owner",
     ) -> str: ...
+
+
+SCREEN_IMAGE_NOTE = (
+    "[Core: the image below is your own live view of the owner's screen, captured "
+    "automatically this turn. The owner did not send it. Call it the screen or the "
+    "desktop, never \"the image you provided\".]"
+)
 
 
 class DeterministicDialogueProvider:
@@ -134,8 +171,9 @@ class DeterministicDialogueProvider:
         image_data_urls: tuple[str, ...],
         *,
         active_capabilities: ActiveCapabilitySet | None = None,
+        source: Literal["owner", "screen"] = "owner",
     ) -> str:
-        del prompt, context, image_data_urls, active_capabilities
+        del prompt, context, image_data_urls, active_capabilities, source
         return "An image was provided, but the deterministic test model cannot interpret pixels."
 
 
@@ -159,6 +197,7 @@ class OpenAICompatibleDialogueProvider:
         model: str,
         api_key: str | None = None,
         timeout_seconds: float = 30.0,
+        llama_native: bool = False,
     ) -> None:
         parsed = urlparse(base_url)
         if (
@@ -187,6 +226,12 @@ class OpenAICompatibleDialogueProvider:
         self.display_name = model
         self._api_key = api_key
         self.timeout_seconds = timeout_seconds
+        # True only for SORA's own managed llama.cpp server, which also serves /apply-template
+        # and /completion. External servers such as LM Studio keep the Chat Completions path.
+        self.llama_native = llama_native
+        # True when the brain hears audio natively (its projector has an audio encoder); voice
+        # turns then attach the owner's clip to the reply request (sora.providers.turn_audio).
+        self.audio_input = False
 
     async def respond(
         self,
@@ -196,7 +241,7 @@ class OpenAICompatibleDialogueProvider:
         active_capabilities: ActiveCapabilitySet | None = None,
     ) -> str:
         del active_capabilities  # Core resolves and dispatches; the model receives context only.
-        return await self._request(prompt, context, ())
+        return await self._request(prompt, context, (), audio_wav_base64=current_turn_audio())
 
     async def respond_with_images(
         self,
@@ -205,6 +250,7 @@ class OpenAICompatibleDialogueProvider:
         image_data_urls: tuple[str, ...],
         *,
         active_capabilities: ActiveCapabilitySet | None = None,
+        source: Literal["owner", "screen"] = "owner",
     ) -> str:
         del active_capabilities
         if not image_data_urls or len(image_data_urls) > 3 or any(
@@ -212,16 +258,37 @@ class OpenAICompatibleDialogueProvider:
             for value in image_data_urls
         ):
             raise DialogueProviderError("Invalid local image input")
-        return await self._request(prompt, context, image_data_urls)
+        return await self._request(
+            prompt, context, image_data_urls, image_source=source,
+            audio_wav_base64=current_turn_audio(),
+        )
 
     def _build_messages(
-        self, prompt: str, context: str, image_data_urls: tuple[str, ...]
+        self, prompt: str, context: str, image_data_urls: tuple[str, ...],
+        image_source: Literal["owner", "screen"] = "owner",
+        *, audio_wav_base64: str | None = None,
     ) -> list[dict[str, object]]:
         messages: list[dict[str, object]] = []
         if context:
             messages.append({"role": "system", "content": context})
-        if image_data_urls:
+        if audio_wav_base64 is not None and self.audio_input:
+            parts: list[dict[str, object]] = [
+                {"type": "text", "text": prompt},
+                {"type": "text", "text": SPOKEN_AUDIO_NOTE},
+                {"type": "input_audio", "input_audio": {"data": audio_wav_base64, "format": "wav"}},
+            ]
+            if image_data_urls:
+                if image_source == "screen":
+                    parts.append({"type": "text", "text": SCREEN_IMAGE_NOTE})
+                parts.extend(
+                    {"type": "image_url", "image_url": {"url": image}} for image in image_data_urls
+                )
+            messages.append({"role": "user", "content": parts})
+        elif image_data_urls:
             content: list[dict[str, object]] = [{"type": "text", "text": prompt}]
+            if image_source == "screen":
+                # Attached inside the owner's turn, a capture reads as something the owner sent.
+                content.append({"type": "text", "text": SCREEN_IMAGE_NOTE})
             content.extend(
                 {"type": "image_url", "image_url": {"url": image}}
                 for image in image_data_urls
@@ -258,17 +325,72 @@ class OpenAICompatibleDialogueProvider:
             request_body["max_tokens"] = max_tokens
         return request_body
 
-    async def _post_message(
-        self, request_body: dict[str, object], *, has_images: bool = False,
-    ) -> dict[str, object]:
+    def _headers(self) -> dict[str, str]:
         headers = {"Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
+        return headers
+
+    async def _constrained_completion(self, request_body: dict[str, object]) -> str:
+        """Schema-constrained output from the first token, on SORA's own llama.cpp server.
+
+        Through Chat Completions, Gemma 4 sometimes opens a thought channel on its own, and
+        llama.cpp holds the JSON grammar back until the channel closes. When the model writes a
+        malformed closing tag the grammar never starts, and the call runs to its token cap with
+        no JSON (measured on 2026-10-07: 3 of 7 companion calls, about 9 s each). Rendering
+        the same messages with the model's template and sending them to /completion applies the
+        grammar from the first token.
+        """
+        response_format = request_body["response_format"]
+        assert isinstance(response_format, dict)
+        root = self.base_url.removesuffix("/v1")
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout_seconds, trust_env=False) as client:
+                rendered = await client.post(
+                    f"{root}/apply-template", headers=self._headers(), json={
+                        "messages": request_body["messages"],
+                        "chat_template_kwargs": {"enable_thinking": False},
+                    },
+                )
+                rendered.raise_for_status()
+                prompt = rendered.json()["prompt"]
+                if not isinstance(prompt, str) or not prompt:
+                    raise ValueError("empty rendered prompt")
+                response = await client.post(
+                    f"{root}/completion", headers=self._headers(), json={
+                        "prompt": prompt,
+                        "json_schema": response_format["schema"],
+                        "n_predict": request_body.get("max_tokens", 64),
+                        "temperature": 0,
+                        "cache_prompt": True,
+                    },
+                )
+                response.raise_for_status()
+                if len(response.content) > 1_048_576:
+                    raise DialogueProviderError("Dialogue response exceeded the size limit")
+                content = response.json()["content"]
+        except httpx.TimeoutException as exc:
+            raise DialogueTimeoutError(
+                "The local dialogue model timed out. Check model loading and the Settings timeout."
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise DialogueProviderError(
+                f"Local model server returned HTTP {exc.response.status_code}"
+            ) from exc
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            raise DialogueProviderError("Local model server is unavailable") from exc
+        if not isinstance(content, str):
+            raise DialogueProviderError("Local model server returned an invalid response")
+        return content
+
+    async def _post_message(
+        self, request_body: dict[str, object], *, has_images: bool = False,
+    ) -> dict[str, object]:
         try:
             async with httpx.AsyncClient(timeout=self.timeout_seconds, trust_env=False) as client:
                 response = await client.post(
                     f"{self.base_url}/chat/completions",
-                    headers=headers,
+                    headers=self._headers(),
                     json=request_body,
                 )
                 if has_images and response.status_code in {400, 415, 422}:
@@ -306,16 +428,92 @@ class OpenAICompatibleDialogueProvider:
         self, prompt: str, context: str, image_data_urls: tuple[str, ...],
         *, response_schema: dict[str, object] | None = None,
         max_tokens: int | None = None,
+        image_source: Literal["owner", "screen"] = "owner",
+        audio_wav_base64: str | None = None,
     ) -> str:
-        messages = self._build_messages(prompt, context, image_data_urls)
+        messages = self._build_messages(
+            prompt, context, image_data_urls, image_source, audio_wav_base64=audio_wav_base64,
+        )
         request_body = self._request_body(
             messages, response_schema=response_schema, max_tokens=max_tokens,
         )
-        message = await self._post_message(request_body, has_images=bool(image_data_urls))
-        content = message.get("content")
+        content: object
+        if response_schema is not None and self.llama_native and not image_data_urls:
+            content = await self._constrained_completion(request_body)
+        else:
+            message = await self._post_message(request_body, has_images=bool(image_data_urls))
+            content = message.get("content")
         if not isinstance(content, str) or not content.strip() or len(content) > 16_000:
             raise DialogueProviderError("Direct dialogue provider returned invalid text")
         return content.strip()
+
+    async def stream_reply(
+        self,
+        prompt: str,
+        context: str,
+        image_data_urls: tuple[str, ...] = (),
+        *,
+        source: Literal["owner", "screen"] = "owner",
+    ) -> AsyncIterator[str]:
+        """Yield the reply text as the server streams it (Server-Sent Events).
+
+        Same request as ``respond``/``respond_with_images``; only ``stream`` differs. Thinking
+        deltas (``reasoning_content``) are not part of the reply and are skipped.
+        """
+        if image_data_urls and (len(image_data_urls) > 3 or any(
+            not value.startswith("data:image/") or ";base64," not in value
+            for value in image_data_urls
+        )):
+            raise DialogueProviderError("Invalid local image input")
+        request_body = self._request_body(
+            self._build_messages(
+                prompt, context, image_data_urls, source,
+                audio_wav_base64=current_turn_audio(),
+            )
+        )
+        request_body["stream"] = True
+        written = 0
+        try:
+            async with (
+                httpx.AsyncClient(timeout=self.timeout_seconds, trust_env=False) as client,
+                client.stream(
+                    "POST", f"{self.base_url}/chat/completions",
+                    headers=self._headers(), json=request_body,
+                ) as response,
+            ):
+                if image_data_urls and response.status_code in {400, 415, 422}:
+                    raise DialogueProviderError(
+                        "The local model rejected the image input. Select a vision-capable "
+                        "model in Settings and check that its vision projector loads."
+                    )
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line.startswith("data:"):
+                        continue
+                    data = line.removeprefix("data:").strip()
+                    if data == "[DONE]":
+                        break
+                    choices = json.loads(data).get("choices") or [{}]
+                    delta = (choices[0].get("delta") or {}).get("content")
+                    if not isinstance(delta, str) or not delta:
+                        continue
+                    written += len(delta)
+                    if written > 16_000:
+                        raise DialogueProviderError("Dialogue response exceeded the size limit")
+                    yield delta
+        except httpx.TimeoutException as exc:
+            raise DialogueTimeoutError(
+                "The local dialogue model timed out. Check model loading and the Settings timeout."
+            ) from exc
+        except httpx.HTTPStatusError as exc:
+            raise DialogueProviderError(
+                f"Direct dialogue provider returned HTTP {exc.response.status_code}. "
+                "Check the model server and selected model."
+            ) from exc
+        except (httpx.HTTPError, ValueError, AttributeError, IndexError) as exc:
+            raise DialogueProviderError("Direct dialogue provider is unavailable") from exc
+        if not written:
+            raise DialogueProviderError("Direct dialogue provider returned invalid text")
 
     async def choose_motion(self, prompt: str) -> MotionChoice:
         """Select from a closed keyword set; never repair/execute free-form model prose."""
@@ -377,6 +575,18 @@ class OpenAICompatibleDialogueProvider:
             return MemoryChoice.model_validate_json(content)
         except ValidationError as exc:
             raise DialogueProviderError("The model returned an invalid memory choice") from exc
+
+    async def choose_remember(self, prompt: str) -> RememberChoice:
+        """One focused question when her turn called no memory tool; Core stores the result
+        with the whole turn."""
+        content = await self._request(
+            prompt, REMEMBER_CHOICE_PROMPT, (),
+            response_schema=RememberChoice.model_json_schema(), max_tokens=256,
+        )
+        try:
+            return RememberChoice.model_validate_json(content)
+        except ValidationError as exc:
+            raise DialogueProviderError("The model returned an invalid remember choice") from exc
 
     async def explain_memory(self, prompt: str, response: str) -> tuple[str | None, str | None]:
         """Her stated reason for keeping a moment, plus thinking when the model returns it.

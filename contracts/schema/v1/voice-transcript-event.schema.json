@@ -26,6 +26,20 @@
   },
   "additionalProperties": false,
   "properties": {
+    "audio_wav_base64": {
+      "anyOf": [
+        {
+          "maxLength": 2700000,
+          "minLength": 60,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Audio Wav Base64"
+    },
     "captured_at": {
       "format": "date-time",
       "title": "Captured At",

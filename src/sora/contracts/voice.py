@@ -121,6 +121,9 @@ class VoiceTranscriptEvent(ContractModel):
     speech_ended_at: datetime | None = None
     reference_spoken_at: datetime | None = None
     captured_at: datetime
+    # The utterance itself as a base64 mono 16 kHz WAV, for brains that hear audio natively.
+    # Optional: Core ignores it unless the brain supports audio and Settings allow it.
+    audio_wav_base64: str | None = Field(default=None, min_length=60, max_length=2_700_000)
 
     @field_validator("text")
     @classmethod
@@ -246,6 +249,21 @@ class VoicePlaybackCommand(ContractModel):
         if self.expires_at <= self.created_at:
             raise ValueError("playback command must expire after creation")
         return self
+
+
+class VoiceSpeechPreview(ContractModel):
+    """Sentences of a voice reply that the model is still writing.
+
+    Core opens the playback at the first finished sentence so the audio worker can start
+    speaking before the turn commits. The worker polls with ``after`` and gets sentences from
+    that index; ``finished`` means the model's reply text is complete.
+    """
+
+    session_id: Identifier
+    playback: VoicePlaybackCommand | None = None
+    sentences: tuple[NonEmptyText, ...] = Field(default=(), max_length=256)
+    next_index: int = Field(ge=0, le=100_000)
+    finished: bool = False
 
 
 class VoiceSessionSnapshot(ContractModel):

@@ -30,6 +30,7 @@ namespace Sora.Embodiment.Network
         private string? _voiceStream;
         private SoraCoreClient? _client;
         private DisplayTopology? _topology;
+        private bool _placed;
         private float _nextReport;
         private bool _reportPending;
         private bool _feedbackPending;
@@ -239,6 +240,16 @@ namespace Sora.Embodiment.Network
                 locomotion.TeleportTo(safe.X, safe.Y);
                 if (state.PresentationState != "moving" && state.PresentationState != "looking")
                     presentation.SetState(state.PresentationState);
+                _placed = true;
+            }
+            else if (!_placed)
+            {
+                // No position to restore (a new profile, or the layout changed): appear standing
+                // on the main monitor's taskbar, not at the default origin. Clamping that origin
+                // put her high at the top-left, and she fell diagonally across the screen.
+                var home = OverlayPlacement.HomeAnchor(_topology);
+                locomotion.TeleportTo(home.X, home.Y);
+                _placed = true;
             }
         }
 
@@ -264,7 +275,7 @@ namespace Sora.Embodiment.Network
                 voicePresentation.Begin(sample.PlaybackId, sample.OutputEpoch.Value, sample.Emotion);
             else if (!voicePresentation.ApplyFrame(new VoicePresentationFrame(sample.PlaybackId,
                 sample.OutputEpoch.Value, sample.Sequence, sample.PositionMs, sample.DurationMs,
-                sample.MouthOpen, sample.Emotion)))
+                sample.MouthOpen, sample.Emotion, sample.Vowels)))
                 voicePresentation.ResetAll(VoicePresentationResetReason.Failed);
         }
         private void Apply(EmbodimentCommandDto command)

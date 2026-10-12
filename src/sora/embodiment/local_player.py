@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from sora import helper_processes
 from sora.contracts.embodiment import (
     EmbodimentCommand,
     EmbodimentFeedbackKind,
@@ -40,7 +41,7 @@ WALK_TIMEOUT_SECONDS = 20.0
 class LocalAvatarSession:
     """Only the explicitly launched local player receives renderer grants."""
 
-    STATES = frozenset({"idle", "waving", "sitting", "leaning", "climbing"})
+    STATES = frozenset({"idle", "sitting", "leaning", "climbing"})
 
     def __init__(self, runtime: SoraRuntime, player: Path, avatar: Path | None = None):
         self.runtime = runtime
@@ -115,6 +116,7 @@ class LocalAvatarSession:
             self.process = await asyncio.create_subprocess_exec(
                 str(self.player), "-logFile", str(log), env=env, cwd=self.player.parent,
             )
+            helper_processes.record("avatar", getattr(self.process, "pid", None))
             self._monitor = asyncio.create_task(self._watch(), name="local-avatar")
         except BaseException:
             await self.close()

@@ -198,3 +198,9 @@ It uses isolated profile roots, installs with the portable runtime, creates a ca
 performs a side-by-side state-preserving update, rolls back, uninstalls while retaining data, and
 reinstalls to prove retained-state recovery. It never changes the actual user's Startup folder or
 normal SORA state.
+
+After a successful run it copies its `acceptance.json` beside the bundle
+(`<bundle>.acceptance-<time>.json`) and removes its temporary install (about 1.5–2 GB each).
+Failed runs keep it for inspection; `-KeepWorkRoot` keeps it after success too. For older
+leftovers, `.\scripts\cleanup-local.ps1` lists a reviewed set of superseded builds and test
+installs, and removes them only with `-Remove`.

@@ -93,7 +93,7 @@ preserved. Full W4 acceptance and passive foreground context are still in progre
 Normal startup also launches the packaged Unity companion. Build it with
 `scripts/build-embodiment.ps1` if `clients/unity/Builds/Windows/SORA.exe` is absent,
 or pass `-NoAvatar` for a UI-only session. The full app's **3D companion** tab reports
-its connection and provides Wave, Sit, Lean, Climb pose, and Stand/reset previews.
+its connection and provides Sit, Lean, Climb pose, and Stand/reset previews.
 Thinking/waiting states reflect dialogue/specialist activity; these presentation
 states do not authorize desktop clicks or typing.
 

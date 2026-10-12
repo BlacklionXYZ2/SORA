@@ -13,10 +13,11 @@ from typing import NamedTuple
 
 from pydantic import SecretStr
 
-from sora import __version__
+from sora import __version__, helper_processes
 from sora.api import ApiServerConfig, SoraApiServer
 from sora.api.lifecycle import ManagedLifecycle
 from sora.contracts.models import TaskStatus
+from sora.embodiment.avatar_settings import resolve_avatar
 from sora.embodiment.local_player import LocalAvatarSession
 from sora.providers.antigravity import AntigravityProvider
 from sora.providers.base import ReasoningProvider
@@ -116,6 +117,11 @@ def parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="explicit trusted one-shot Windows capture helper executable; disabled by default",
+    )
+    result.add_argument(
+        "--listen-on-start",
+        action="store_true",
+        help="start local voice at launch when Settings set listening to always (owner launch)",
     )
     result.add_argument(
         "--editor-root",
@@ -536,6 +542,8 @@ async def run(arguments: argparse.Namespace) -> int:
     except ValueError as error:
         print(str(error))
         return 2
+    if arguments.serve:
+        helper_processes.enable(arguments.root)  # the desktop host's Quit closes them all
     if lifecycle is not None and not arguments.serve:
         print("Managed desktop launch requires serve mode.")
         return 2
@@ -666,9 +674,16 @@ async def _run(
             api_server = SoraApiServer(runtime, api_cfg, lifecycle=lifecycle)
             await api_server.start()
             if arguments.embodiment_player is not None:
+                # An explicit --avatar-path wins; otherwise Settings → Appearance (default
+                # Alice), or the built-in Seed-san when that file is missing.
+                avatar = arguments.avatar_path or resolve_avatar(
+                    app_settings.boot.avatar, Path(__file__).resolve().parents[2])
+                if avatar is None and app_settings.boot.avatar.vrm_path.strip():
+                    print(f"Avatar {app_settings.boot.avatar.vrm_path} not found; "
+                          "using the built-in Seed-san.")
                 try:
                     runtime.local_avatar = LocalAvatarSession(
-                        runtime, arguments.embodiment_player, arguments.avatar_path
+                        runtime, arguments.embodiment_player, avatar
                     )
                     await runtime.local_avatar.start(
                         token=api_cfg.auth_token, port=api_server.actual_port
@@ -676,6 +691,12 @@ async def _run(
                 except Exception:
                     await api_server.close()
                     raise
+            if arguments.listen_on_start:
+                # Owner launches only: start listening and load the decision layer early.
+                runtime.start_listening_on_launch()
+                runtime.warm_decision_layer()
+            # Every served Core embeds and recalls memories; it needs no microphone.
+            runtime.start_memory_manager()
             print(
                 f"SORA API Server running on http://{api_cfg.host}:{api_server.actual_port}"
             )

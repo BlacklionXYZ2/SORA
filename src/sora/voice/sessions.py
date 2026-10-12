@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import re
 import uuid
 from collections import OrderedDict
@@ -26,6 +27,7 @@ from sora.contracts.voice import (
     VoiceSessionSnapshot,
     VoiceSessionStartRequest,
     VoiceSessionStatus,
+    VoiceSpeechPreview,
     VoiceTranscriptDisposition,
     VoiceTranscriptEvent,
     VoiceTranscriptKind,
@@ -48,6 +50,23 @@ FinalizeVoiceTurn = Callable[[VoiceTranscriptEvent, str, str, str], Awaitable[Vo
 
 class VoiceGenerationCancelled(RuntimeError):
     """The active direct-dialogue generation was cooperatively interrupted."""
+
+
+@dataclass(slots=True)
+class _SpeechPreview:
+    """A reply still being written, spoken sentence by sentence before the turn commits."""
+
+    generation_id: str
+    utterance_id: str
+    output_epoch: int
+    playback: VoicePlaybackCommand | None = None
+    sentences: list[str] = field(default_factory=list)
+    finished: bool = False
+    changed: asyncio.Event = field(default_factory=asyncio.Event)
+
+    def notify(self) -> None:
+        self.changed.set()
+        self.changed = asyncio.Event()
 
 
 @dataclass(slots=True)
@@ -75,6 +94,8 @@ class _VoiceSession:
     playback_sequence: int = -1
     output_epoch: int = 0
     active_generation_id: str | None = None
+    active_utterance_id: str | None = None
+    preview: _SpeechPreview | None = None
     generation_cancel_requested: bool = False
     output_suppressed: bool = False
     interruption_events: OrderedDict[str, VoiceInterruptionRequest] = field(
@@ -214,6 +235,11 @@ class VoiceSessionCoordinator:
         generation_id = f"voice-generation-{uuid.uuid4()}"
         generation_epoch = session.output_epoch
         session.active_generation_id = generation_id
+        session.active_utterance_id = event.utterance_id
+        if session.preview is not None:
+            session.preview.finished = True
+            session.preview.notify()
+        session.preview = None
         session.generation_cancel_requested = False
         session.output_suppressed = False
         try:
@@ -221,7 +247,9 @@ class VoiceSessionCoordinator:
                 event, device_id, generation_id, session.request.session_id
             )
         except VoiceGenerationCancelled:
+            self._end_preview(session, generation_id)
             session.active_generation_id = None
+            session.active_utterance_id = None
             session.generation_cancel_requested = False
             session.output_suppressed = False
             session.updated_at = datetime.now(UTC)
@@ -233,7 +261,9 @@ class VoiceSessionCoordinator:
             self._remember(session.transcript_results, event.event_id, result)
             return result
         except BaseException:
+            self._end_preview(session, generation_id)
             session.active_generation_id = None
+            session.active_utterance_id = None
             session.generation_cancel_requested = False
             session.output_suppressed = False
             session.transcript_events.pop(event.event_id, None)
@@ -244,11 +274,19 @@ class VoiceSessionCoordinator:
             session.updated_at = datetime.now(UTC)
             raise
         receipt = finalization.receipt
+        preview = self._end_preview(session, generation_id)
         self._remember(session.finalized_ids, event.utterance_id, None)
         if receipt.created:
             session.finalized_utterances += 1
         playback = None
-        if (
+        if preview is not None and preview.playback is not None:
+            # Already speaking: the worker keeps this playback, so the reply is not repeated.
+            if (
+                session.active_playback is not None
+                and session.active_playback.playback_id == preview.playback.playback_id
+            ):
+                playback = session.active_playback
+        elif (
             receipt.created
             and session.output_available
             and not session.output_suppressed
@@ -271,6 +309,7 @@ class VoiceSessionCoordinator:
             session.playback_state = VoicePlaybackState.QUEUED
             session.playback_sequence = -1
         session.active_generation_id = None
+        session.active_utterance_id = None
         session.generation_cancel_requested = False
         session.output_suppressed = False
         result = VoiceTurnResult(
@@ -289,6 +328,116 @@ class VoiceSessionCoordinator:
         )
         self._remember(session.transcript_results, event.event_id, result)
         return result
+
+    def speech_sentence(self, session_id: str, generation_id: str, sentence: str) -> None:
+        """Queue one finished sentence of a reply still being written, and open its playback.
+
+        Ignored once the generation is no longer current or its output was interrupted, so a
+        stopped reply never starts speaking again.
+        """
+
+        session = self._sessions.get(session_id)
+        if (
+            session is None
+            or session.closed
+            or session.active_generation_id != generation_id
+            or session.active_utterance_id is None
+            or session.output_suppressed
+            or not session.output_available
+            or not sentence.strip()
+        ):
+            return
+        preview = session.preview
+        if preview is None or preview.generation_id != generation_id:
+            if session.active_playback is not None:
+                return  # Earlier audio still owns the speaker; the reply is spoken at the end.
+            preview = _SpeechPreview(
+                generation_id=generation_id,
+                utterance_id=session.active_utterance_id,
+                output_epoch=session.output_epoch,
+            )
+            session.preview = preview
+        if preview.finished or preview.output_epoch != session.output_epoch:
+            return
+        preview.sentences.append(sentence.strip())
+        spoken = " ".join(preview.sentences)[:16_384]
+        if preview.playback is None:
+            created_at = datetime.now(UTC)
+            preview.playback = VoicePlaybackCommand(
+                playback_id=f"playback-{uuid.uuid4()}",
+                session_id=session.request.session_id,
+                utterance_id=preview.utterance_id,
+                output_device_id=session.request.output_device_id,
+                device_generation=session.output_generation,
+                output_epoch=session.output_epoch,
+                voice_id=session.request.voice_id,
+                text=spoken,
+                created_at=created_at,
+                expires_at=created_at + timedelta(seconds=30),
+            )
+            session.active_playback = preview.playback
+            session.playback_state = VoicePlaybackState.QUEUED
+            session.playback_sequence = -1
+        elif (
+            session.active_playback is not None
+            and session.active_playback.playback_id == preview.playback.playback_id
+        ):
+            # Echo suppression compares the microphone with everything spoken so far.
+            session.active_playback = session.active_playback.model_copy(update={"text": spoken})
+        preview.notify()
+
+    def finish_speech(self, session_id: str, generation_id: str) -> None:
+        """The model finished writing; no more sentences will follow for this generation."""
+
+        session = self._sessions.get(session_id)
+        if session is not None:
+            self._end_preview(session, generation_id)
+
+    async def wait_speech(
+        self,
+        session_id: str,
+        *,
+        device_id: str,
+        utterance_id: str,
+        after: int,
+        timeout: float = 15.0,
+    ) -> VoiceSpeechPreview:
+        """Long-poll for sentences from index ``after`` of this utterance's reply."""
+
+        session = self._session(session_id, device_id)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        while True:
+            preview = session.preview
+            if preview is not None and preview.utterance_id == utterance_id:
+                interrupted = preview.output_epoch != session.output_epoch
+                if len(preview.sentences) > after or preview.finished or interrupted:
+                    return VoiceSpeechPreview(
+                        session_id=session_id,
+                        playback=None if interrupted else preview.playback,
+                        sentences=() if interrupted else tuple(preview.sentences[after:]),
+                        next_index=len(preview.sentences),
+                        finished=preview.finished or interrupted,
+                    )
+            remaining = deadline - loop.time()
+            if remaining <= 0 or session.closed:
+                return VoiceSpeechPreview(session_id=session_id, next_index=after)
+            try:
+                if preview is not None:
+                    await asyncio.wait_for(preview.changed.wait(), min(remaining, 0.5))
+                else:
+                    await asyncio.sleep(min(remaining, 0.05))
+            except TimeoutError:
+                pass
+
+    def _end_preview(self, session: _VoiceSession, generation_id: str) -> _SpeechPreview | None:
+        preview = session.preview
+        if preview is None or preview.generation_id != generation_id:
+            return None
+        if not preview.finished:
+            preview.finished = True
+            preview.notify()
+        return preview
 
     def interrupt(
         self,

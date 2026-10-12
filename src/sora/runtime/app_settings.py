@@ -15,6 +15,9 @@ from typing import Any, Literal, get_args
 from pydantic import Field, model_validator
 
 from sora.contracts.base import StrictModel
+from sora.decision.settings import DecisionSettings
+from sora.embodiment.avatar_settings import CREDIT, AvatarSettings
+from sora.memory.settings import MemoryManagerSettings
 from sora.providers.dialogue import (
     DeterministicDialogueProvider,
     DialogueProvider,
@@ -28,11 +31,13 @@ from sora.providers.llama_server import (
     llama_arguments,
     public_llama_arguments,
 )
+from sora.providers.turn_audio import projector_modalities
+from sora.providers.vision_detail import expand_choice
 from sora.runtime.agent_preferences import AgentPreference, AgentPreferences, CustomEndpoint
 from sora.runtime.perception import PerceptionSettings
 from sora.runtime.project_paths import project_directory
 from sora.security.local_policy import LocalCompanionPolicy
-from sora.voice.settings import VoiceSettings
+from sora.voice.settings import LISTENING_FIELDS, VoiceSettings
 
 
 class DialogueSettings(StrictModel):
@@ -67,6 +72,12 @@ class AppSettings(StrictModel):
     perception: PerceptionSettings = Field(default_factory=PerceptionSettings)
     voice: VoiceSettings = Field(default_factory=VoiceSettings)
     agents: AgentPreferences = Field(default_factory=AgentPreferences)
+    # Added 2026-10-08; settings saved before then load with the defaults.
+    decision: DecisionSettings = Field(default_factory=DecisionSettings)
+    # Added 2026-10-09; settings saved before then load with the defaults.
+    memory: MemoryManagerSettings = Field(default_factory=MemoryManagerSettings)
+    # Added 2026-10-11 (Alice as the default avatar); settings saved before then load with it.
+    avatar: AvatarSettings = Field(default_factory=AvatarSettings)
 
     @model_validator(mode="after")
     def external_endpoint(self) -> AppSettings:
@@ -92,6 +103,7 @@ class SettingsConflict(ValueError):
 
 
 BOOT_FIELDS = {
+    "avatar.vrm_path",  # the avatar loads when her player starts
     "dialogue.backend",
     "llama.executable",
     "llama.port",
@@ -109,6 +121,10 @@ LABELS = {
     "voice.voice_id": "Kokoro voice name",
     "voice.recording_limit_seconds": "Maximum press-to-talk recording (seconds)",
     "voice.speech_speed": "Speech speed",
+    "voice.listening": "Listening",
+    "voice.wake_words": "Names she answers to (always-on listening)",
+    "voice.follow_on_seconds": "Keep listening after she replies (seconds)",
+    "voice.audio_route": "Voice to the brain",
     "perception.mode": "Automatic perception mode",
     "perception.paused": "Pause automatic perception",
     "perception.window_context": "Include window metadata on prompts",
@@ -131,6 +147,18 @@ LABELS = {
     "external.model": "External server model ID",
     "external.base_url": "External server URL",
     "llama.context_size": "Context length (tokens)",
+    "llama.vision_detail": "Vision detail",
+    "decision.mode": "Decision layer (System-1)",
+    "decision.threshold": "Offer a tool family from this probability",
+    "decision.device": "Decision layer device",
+    "decision.executable": "laya runner (blank uses the setup script's)",
+    "decision.model_path": "Laya model GGUF (blank uses the setup script's)",
+    "avatar.vrm_path": "Avatar model (VRM)",
+    "memory.mode": "Memory manager",
+    "memory.device": "Memory embedder device",
+    "memory.server": "Embedding server (blank uses the setup script's)",
+    "memory.model_path": "Embedding model GGUF (blank uses the setup script's)",
+    "llama.image_max_tokens": "Image token budget (per image)",
     "llama.gpu_layers": "GPU offload layers",
     "llama.cache_type_k": "K cache quantisation",
     "llama.cache_type_v": "V cache quantisation",
@@ -170,9 +198,10 @@ POLICY_HELP = {
 }
 PERCEPTION_HELP = {
     "mode": (
-        "native-only adds no automatic images; image-on-prompt attaches the recent application "
-        "window; adaptive interprets changed window images at the configured interval. "
-        "No full-display fallback or image recording."
+        "native-only adds no automatic images; image-on-prompt attaches a reduced image of the "
+        "whole desktop (every monitor) to each message, and SORA can look closer at one window; "
+        "adaptive interprets changed window images at the configured interval. "
+        "Images are never recorded."
     ),
     "paused": (
         "Pause automatic metadata and images. Explicit read/look requests remain available "
@@ -192,6 +221,88 @@ PERCEPTION_HELP = {
     "context_max_age_seconds": (
         "Adaptive only. Reject background context not reverified within this age. "
         "It is interpreted data, never authority for an action."
+    ),
+}
+
+
+VISION_DISCLAIMER = (
+    "Higher detail increases response times and context usage, but SORA reads your screen "
+    "more reliably and guesses less."
+)
+VISION_HELP = {
+    "llama.vision_detail": (
+        "How much of each image SORA's model can see. Low, medium and high set the image token "
+        "budget, physical batch and context length together; changing any of those by hand "
+        "makes this Custom. " + VISION_DISCLAIMER + " Applies when the model reloads."
+    ),
+    "llama.image_max_tokens": (
+        "llama.cpp --image-max-tokens: the most tokens one image may use. Set by Vision detail; "
+        "editing it switches Vision detail to Custom. Physical batch must be at least this."
+    ),
+    "llama.ubatch_size": (
+        "llama.cpp --ubatch-size. Set by Vision detail and must be at least the image token "
+        "budget; editing it switches Vision detail to Custom."
+    ),
+    "llama.context_size": (
+        "llama.cpp --ctx-size. Set by Vision detail, since images use context; editing it "
+        "switches Vision detail to Custom."
+    ),
+}
+
+
+DECISION_HELP = {
+    "mode": (
+        "A small fast model (Laya, on the GPU) chooses which kinds of tools her brain sees for "
+        "each message. Fewer choices make a small brain's tool use more reliable. shadow: it "
+        "decides and the decision is logged for training, but every tool stays available. "
+        "enforce: only the chosen kinds are offered. off: not used. Needs "
+        "scripts/setup-decision-layer.ps1."
+    ),
+    "threshold": (
+        "Lower offers more tools (fewer missed, more for the brain to choose from); higher "
+        "offers fewer. Untrained, 0.25 kept every needed kind in testing while offering about "
+        "half."
+    ),
+    "device": "auto uses the GPU when available (Vulkan on AMD). Applies to the next message.",
+    "executable": "The ggmlc laya runner. Blank: .local/decision from the setup script.",
+    "model_path": "A Laya GGUF compiled by ggmlc (not a llama.cpp model).",
+}
+AVATAR_HELP = (
+    "The VRM avatar she wears, applied when SORA next starts. Default: Alice, kept in "
+    ".local\\avatars\\Alice.vrm (outside git; her licence forbids sharing or editing the file). "
+    f"Credit: {CREDIT}. Blank, or a missing file, uses the built-in Seed-san."
+)
+MEMORY_HELP = {
+    "mode": (
+        "A small embedding model (EmbeddingGemma 2) reads each memory so she can find memories "
+        "by meaning, link related ones and notice repeats and updates. on (default): her "
+        "replies see the memories most relevant to your message. shadow: her replies see "
+        "memories sharing words with your message and your most recent ones, and what "
+        "meaning-based recall would have chosen is recorded for comparison. off: not used. "
+        "Needs scripts/setup-memory-embedder.ps1."
+    ),
+    "device": "gpu uses about 0.2 GB of video memory; cpu is slower but uses none.",
+    "server": "llama.cpp b11516 or newer. Blank: .local/llama.cpp-b11516 from the setup script.",
+    "model_path": "An EmbeddingGemma 2 GGUF. Changing it re-embeds every memory.",
+}
+LISTENING_HELP = {
+    "voice.listening": (
+        "press: hold the Chat microphone button to talk. always: the microphone stays open while "
+        "voice is on, and she answers when you say her name (or keep talking just after she "
+        "replies). Audio stays in memory on this PC; it is saved only with a moment she "
+        "chooses to remember, and forgetting that memory deletes it. Start voice again to apply."
+    ),
+    "voice.wake_words": (
+        "Comma-separated names she answers to when listening is always on, for example "
+        "\"sora, zora\" if speech recognition sometimes mishears her name."
+    ),
+    "voice.follow_on_seconds": (
+        "After she finishes speaking, you can keep talking without her name for this many "
+        "seconds. 0 turns it off."
+    ),
+    "voice.audio_route": (
+        "auto: brains that hear audio natively (Gemma 4 E2B and E4B) receive your voice itself, "
+        "with the transcript as a hint. transcribe: send only the speech-to-text transcript."
     ),
 }
 
@@ -232,6 +343,8 @@ SETTINGS_CATEGORY_KEYS = {
         "llama.model_path", "llama.mmproj_path", "llama.context_size", "llama.gpu_layers",
         "llama.flash_attn", "llama.cache_type_k", "llama.cache_type_v",
         "external.model", "external.base_url", "external.model_folder",
+        "decision.mode", "decision.threshold", "decision.device", "decision.executable",
+        "decision.model_path",
         *{f"llama.speculative.{name}" for name in (
             "type", "draft_model_path", "draft_gpu_layers", "draft_cache_type_k",
             "draft_cache_type_v", "draft_tokens_min", "draft_tokens_max",
@@ -245,8 +358,10 @@ SETTINGS_CATEGORY_KEYS = {
     "Audio": {"local_companion.voice", *{f"voice.{name}" for name in (
         "python_executable", "stt_model_path", "tts_model_path", "voices_path",
         "input_device", "output_device", "voice_id", "recording_limit_seconds", "speech_speed",
+        "listening", "wake_words", "follow_on_seconds", "audio_route",
     )}},
-    "Vision": {"local_companion.desktop_observe", "local_companion.desktop_capture",
+    "Vision": {"llama.vision_detail", "local_companion.desktop_observe",
+               "local_companion.desktop_capture",
                *{f"perception.{name}" for name in (
                    "mode", "paused", "window_context", "desktop_context", "interval_seconds",
                    "context_max_age_seconds",
@@ -260,13 +375,17 @@ SETTINGS_CATEGORY_KEYS = {
           for name in ("project_root", "workspace_mode", "base_ref")},
         "runtime.task_timeout_seconds",
     },
+    "Appearance": {"avatar.vrm_path"},
+    "Memory": {"memory.mode", "memory.device", "memory.server", "memory.model_path"},
     "Performance": {f"llama.{name}" for name in (
-        "batch_size", "ubatch_size", "split_mode", "tensor_split", "main_gpu",
+        "image_max_tokens", "batch_size", "ubatch_size", "split_mode", "tensor_split", "main_gpu",
         "cpu_moe", "n_cpu_moe", "load_mode", "swa_full",
     )} | {"runtime.worker_count"},
     "Advanced": {"llama.executable", "llama.port", "llama.startup_timeout"},
 }
 SETTINGS_ADVANCED_KEYS = {
+    "decision.device", "decision.executable", "decision.model_path",
+    "memory.device", "memory.server", "memory.model_path",
     "dialogue.timeout_seconds", "dialogue.context_max_chars", "external.model_folder",
     "voice.python_executable", "voice.stt_model_path", "voice.tts_model_path", "voice.voices_path",
     *{f"llama.speculative.{name}" for name in (
@@ -318,13 +437,13 @@ def field_definitions() -> list[dict[str, Any]]:
                 kind = "float"
             elif key == "voice.stt_model_path":
                 kind = "path-dir"
-            elif key in {"voice.tts_model_path", "voice.voices_path"}:
+            elif key in {"voice.tts_model_path", "voice.voices_path", "avatar.vrm_path"}:
                 kind = "path-file"
             elif key == "voice.python_executable":
                 kind = "path-exe"
             elif name.endswith("path"):
                 kind = "path-gguf"
-            elif name == "executable":
+            elif name == "executable" or key in {"decision.executable", "memory.server"}:
                 kind = "path-exe"
             elif name == "model_folder":
                 kind = "path-dir"
@@ -352,6 +471,14 @@ def field_definitions() -> list[dict[str, Any]]:
                 else
                 "Companion access"
                 if key.startswith("local_companion.")
+                else "Vision detail"
+                if key == "llama.vision_detail"
+                else "Decision layer (Laya)"
+                if key.startswith("decision.")
+                else "Memory manager (EmbeddingGemma 2)"
+                if key.startswith("memory.")
+                else "Avatar"
+                if key.startswith("avatar.")
                 else "Speculative decoding"
                 if ".speculative." in key
                 # The brain's own files come first in Models, apart from tuning knobs.
@@ -396,9 +523,19 @@ def field_definitions() -> list[dict[str, Any]]:
                     if key.startswith("local_companion.")
                     else PERCEPTION_HELP[name]
                     if key.startswith("perception.")
+                    else LISTENING_HELP[key]
+                    if key in LISTENING_HELP
                     else "Local speech only. Changes stop active voice; start it again to apply. "
                     "Device keys are shown in the Voice window. No automatic model download."
                     if key.startswith("voice.")
+                    else VISION_HELP[key]
+                    if key in VISION_HELP
+                    else DECISION_HELP[name]
+                    if key.startswith("decision.")
+                    else MEMORY_HELP[name]
+                    if key.startswith("memory.")
+                    else AVATAR_HELP
+                    if key.startswith("avatar.")
                     else "Requires compatible model, draft weights and runtime support."
                     if ".speculative." in key
                     else "Model changes are saved first; Reload model applies them."
@@ -470,7 +607,9 @@ class AppSettingsStore:
                     "perception", PerceptionSettings(mode="native-only").model_dump(),
                 )
         if old_version in {6, 7, 8, 9, 10} and (not isinstance(payload.get("voice"), dict) or (
-            set(payload["voice"]) != set(VoiceSettings.model_fields)
+            not set(VoiceSettings.model_fields) - LISTENING_FIELDS
+            <= set(payload["voice"])
+            <= set(VoiceSettings.model_fields)
         )):
             raise ValueError("Settings require complete local voice settings")
         agent_keys = set(AgentPreferences.model_fields)
@@ -737,6 +876,7 @@ class AppSettingsController:
                 if len(candidates) != 1:
                     raise ValueError("Select a matching projector: none or multiple were found")
                 changes["llama.mmproj_path"] = candidates[0]
+        changes = expand_choice(changes, self.saved.llama.batch_size)
         proposed = update_values(self.saved, changes)
         if proposed.dialogue.backend == "managed-llama" and any(
             key.startswith("llama.") or key == "dialogue.backend" for key in changes
@@ -819,6 +959,7 @@ class AppSettingsController:
                 model=self.provider.model,
                 api_key=self.provider._api_key,
                 timeout_seconds=self.active.dialogue.timeout_seconds,
+                llama_native=self.provider.llama_native,
             )
             self.provider.display_name = display_name
             self.on_provider(self.provider)
@@ -858,8 +999,11 @@ class AppSettingsController:
             model="sora-local",
             api_key=server.api_key,
             timeout_seconds=self.active.dialogue.timeout_seconds,
+            llama_native=True,
         )
         self.provider.display_name = config.model_path.name
+        # Gemma 4 E2B/E4B projectors carry an audio encoder: voice turns can send the clip itself.
+        self.provider.audio_input = "audio" in projector_modalities(config.mmproj_path)
         self.on_provider(self.provider)
 
     async def _preflight(self, candidate: AppSettings) -> None:

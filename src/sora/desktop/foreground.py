@@ -10,7 +10,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import PureWindowsPath
 from typing import Protocol
 
-COMPANION_PROCESSES = frozenset({"soradesktop.exe", "sorawidget.exe", "sora.exe"})
+# SORA's own windows are never "the application the owner was using". SoraShell.exe hosts the
+# native app's Chat and Settings (the default client since 2026-10-06); missing it here made
+# image-on-prompt capture SORA's own Chat instead of the owner's window.
+COMPANION_PROCESSES = frozenset({"soradesktop.exe", "sorawidget.exe", "sora.exe", "sorashell.exe"})
 
 
 @dataclass(frozen=True)

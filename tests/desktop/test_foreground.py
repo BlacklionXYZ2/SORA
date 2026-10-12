@@ -55,6 +55,16 @@ def test_focus_handoff_staleness_and_secure_desktop_clear() -> None:
     assert memory.recent() is None
 
 
+def test_typing_in_the_native_app_keeps_the_owners_previous_application() -> None:
+    # Owner report 2026-10-07: SORA described her own Chat window instead of the screen.
+    memory = ForegroundMemory()
+    browser = identity("msedge.exe", pid=20, hwnd=200)
+    memory.accept(browser)
+    memory.accept(identity("SoraShell.exe", pid=21, hwnd=201))
+    recent = memory.recent()
+    assert recent is not None and recent.process_name == "msedge.exe"
+
+
 def test_long_foreground_session_gets_fresh_focus_lost_timestamp() -> None:
     memory = ForegroundMemory()
     editor = replace(identity(), observed_at=datetime.now(UTC) - timedelta(hours=2))
