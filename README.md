@@ -92,4 +92,4 @@ committed.
 
 All contributors, human or model, follow [AGENTS.md](AGENTS.md). In short: never delete files;
 write a changelog in your own model name for every change; keep fixture, component, native,
-live-model and hardware evidence separate; and don't commit or push unless the owner asks.
+live-model and hardware evidence separate; and don't push unless asked.
