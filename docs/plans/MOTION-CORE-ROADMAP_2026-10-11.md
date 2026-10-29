@@ -7,7 +7,10 @@ It replaces the [28 September roadmap](archive/MOTION-CORE-ROADMAP_2026-09-28.md
 The owner asked: "Recent developments take precedence over older decisions. Could you
 rationalise the roadmap and define each stage for me?"
 
-**Status: current plan. M0 is in progress** (see M0 below). Stage IDs M0 to M8 are kept, so
+**Status: current plan. M0 is complete (2026-10-16). MA (the avatar layer and training
+environment, added 2026-10-15) is built and measured; the audit's fixes are in (2026-10-22). Its
+gate is open on hair and clothing clipping, one slow fall (Seed-san at full help) and the owner's
+judgement of falls** (see below). Stage IDs M0 to M8 are kept, so
 nothing is renumbered, but several stages have new content (§5). Defaults marked "default" are
 this plan's choice; the owner can change any of them (§6). Thresholds marked "proposed" are
 confirmed in each stage's task plan.
@@ -54,9 +57,12 @@ unchanged and is what this plan builds.
    day one.
 7. **What stays deterministic:**
    - the root position: on the screen plane, owned by SORA's existing coordinate system;
-   - falling, being dragged and ragdoll physics.
+   - being dragged.
 
-   Getting up afterwards becomes a learned skill (M7) once the ragdoll hands back control.
+   **Falling is physical, not a preset animation** (owner, 2026-10-15; this replaces "falling
+   and ragdoll stay deterministic"). The motion core's targets drive a physics body (MA), and
+   help forces are a dial that defaults to zero. Getting up is a learned skill, starting from
+   wherever the body came to rest.
 8. **Model size is set by measurement,** by the sizing sweep in M1 (owner decision,
    2026-10-11): the smallest model that performs as well as the best one tried, within the
    runtime budget. It grows later only when evaluation shows a deficiency that more capacity
@@ -98,6 +104,7 @@ unchanged and is what this plan builds.
 | Stage | Size | Depends on | Owner input |
 |---|---|---|---|
 | M0 Foundations and specs | Small | Nothing | None |
+| MA Avatar layer: fitting, physics, moving parts (added 2026-10-15) | Medium | M0; M1 for learned falls | Fall judgement |
 | M1 Data, motion prior and intent | Large; critical path | M0; AMASS (with BABEL) and LAFAN1 licences | Licences, GPU time, idle judgement |
 | M2 Constraint layer | Medium | M1 | GPU time |
 | M3 Speech and gesture | Medium | M1, M2; corpus licence | Corpus choice |
@@ -114,10 +121,17 @@ The sources give relative sizes only; no durations are promised.
 
 **Status (2026-10-12, Opus 5.5):** built in `~/Desktop/motion-lab` (spec `docs/M0.md`). Every
 numeric gate passed, and passed again on Alice's skeleton
-([evidence](../verification/MOTION_M0_Opus-5.5_2026-10-11.md)); 33 tests pass, including the
-avatar adapter. Two items are still open:
-- the skeleton table's line-by-line review by a second agent;
-- the non-gating Unity runtime spike.
+([evidence](../verification/MOTION_M0_Opus-5.5_2026-10-11.md)); 35 tests pass, including the
+avatar adapter.
+- **The runtime spike is done** ([evidence](../verification/MOTION_M0-RUNTIME-SPIKE_Opus-5.5_2026-10-12.md)):
+  - **Sentis on the CPU** runs the model.
+  - **Sentis has no `GRU` operator,** so the export writes the GRU as its cell equations.
+  - **Every size of the M1 sweep fits the budget.** The budget is a tenth of a 60 Hz frame per
+    tick (1.67 ms at p99). Driving Alice, the slowest size, 512 × 2, takes p99 1.13 ms.
+- **The skeleton table review is done** (2026-10-16): Gemini 4 Argon (medium) reviewed it
+  line by line and passed it ([review](../verification/MOTION_M0-SKELETON-REVIEW_Gemini-4-Argon_2026-10-16.md)).
+  Opus 5.5 re-checked its main claims (joint order, bone lengths, symmetry to 0.028 mm, the
+  0.436 upper-chest ratio, toes on the ground), and the 35 tests pass. **M0's gate has passed.**
 
 - **Purpose:** the maths, skeleton and data formats every later stage uses. Nothing is trained.
 - **Builds:**
@@ -139,7 +153,182 @@ avatar adapter. Two items are still open:
   - the skeleton table reviewed;
   - ONNX output matching PyTorch (proposed: < 1e-5 maximum absolute difference).
 
+### MA: Avatar layer: fitting, physics and moving parts (medium; alongside M1)
+
+**Added 2026-10-15 at the owner's request.** "There should be a translation layer that handles
+the differences between the uniform training model and the actual model so that the user can
+swap between vrm models." Then: "a better physics model before training", where falling should
+"ragdoll onto the ground rather than using a preset animation that leaves a large gap", but be
+"slightly more sophisticated than just a ragdoll". And: "Ideally I'd like for the model to be
+singularly subject to the physics constraints", with helper forces only where needed.
+Hair, clothing and bones "should behave differently".
+
+**Status (2026-10-22, Opus 5.5):**
+- **Audit fixes (2026-10-22,
+  [evidence](../verification/MOTION_MA-AUDIT-FIXES_Opus-5.5_2026-10-22.md)):** running, collision
+  shapes fitted to the mesh, held where grabbed, real-gravity drops, falls that always end, and
+  tests through SORA's real grab and drop wiring.
+  - motion-lab: 15 of 17 tests pass. Walking and running pass at realistic strength on all three
+    avatars, with no foot slide.
+  - SORA: 89 of 89 Unity tests pass, and the player is rebuilt. Not yet seen by the owner.
+  - Still open: Seed-san's fall at full help takes 2.33 s to settle (gate 2 s); Odd's run fails
+    at ladder step 2 only.
+  - Deferred: the left/right conversion test (M1, M8) and more than one floor (M7).
+- The 2026-10-17 measurements below are superseded where the record above differs.
+- **The training environment exists** (owner, 2026-10-17: "the ideal training environment will
+  exist before training begins"). It is `~/Desktop/motion-lab/unity-env`, its own Unity project,
+  described in motion-lab's `docs/MA.md`. Measured
+  ([evidence](../verification/MOTION_MA-ENVIRONMENT_Opus-5.5_2026-10-17.md)), with stand-in
+  motion, on Alice, Seed-san and an oddly proportioned avatar:
+  - **A2, fitting:** the C# twin agrees with `adapter.py` on 21 shared cases; hips travel
+    scales with leg length; planted feet drift at most 6.2 mm.
+  - **A3, the physics body:**
+    - every test pose is reached exactly;
+    - standing is steady (0.6° worst, no wobble);
+    - physics costs 0.25 to 0.28 ms a frame (gate 1 ms);
+    - help is a logged dial.
+  - **A4, falling:** every fall settles in 0.75 to 1.76 s, resting on the taskbar with no gap
+    and at most 0.003 cm inside it.
+  - **The ladder:** stand, walk, sit, push and the stand-in get-up need the balance helper but
+    pass with realistic motor strength; falls need no help.
+  - **Still open:**
+    - A1 clipping in four of the 18 checks: Alice's skirt (sitting 4.6 cm, walking 1.5 cm),
+      her props when lying (8.9 cm), and hair when lying on Seed-san (2.7 cm) and Odd
+      (1.2 cm). Likely fix in SORA's code: spring bones collide with the floor too;
+    - the owner's judgement of falls (nothing visual yet);
+    - fingers (a hand expert).
+- **The physics body is in SORA's player** (owner's request, 2026-10-17, ahead of M8).
+  `AvatarPhysicsBody.cs` uses the avatar layer (copied from motion-lab, which stays the source;
+  a test catches drift). SORA's animation is the motor target; help is "realistic"; a hard
+  landing is a physical fall in place of the preset ragdoll. `SORA_PHYSICS_BODY=0` turns it off.
+  Component-tested (82 Unity tests) and seen standing in the owner's profile; not yet judged.
+- **A1 is in SORA's avatar player.** The code is `AvatarSecondaryParts.cs`, and the Unity
+  tests (68) pass.
+  - Every one of Alice's chains is classified: hair, ears, ties, a skirt ring, soft tissue, a
+    tail and weapon props.
+  - Colliders are generated from her body, and each kind gets its own physics.
+  - Live check: while she walks, her ponytail now hangs at about 45° rather than streaming out
+    flat.
+- **Eyes are in SORA's avatar player (2026-10-16, Opus 5.5).** The owner chose rules over a
+  learned model for the eyes: saccades on the main sequence, fixations, pursuit, eye-head
+  coordination, gaze held on target while the head moves, and blinking at measured rates. The
+  code is `GazeModel.cs` and `AvatarEyeRig.cs`, using each VRM's own eye settings.
+- **Fingers go to the motion core** (owner, 2026-10-16): a separate hand expert, possibly a
+  mixture-of-experts member, outputs the finger joints from the arm, intent and speech. The
+  22-joint body skeleton stays as M0 fixed it. Hand-capture data (for example GRAB, BEAT)
+  needs its own licences.
+
+- **Purpose:** everything between the motion core's canonical pose and a particular VRM avatar.
+  The model never sees the avatar; this layer makes any VRM work, physically. It needs no
+  licences, so it runs alongside M1.
+- **Where it is built:** in Unity, because that is what ships: motion-lab's `unity-env/`
+  (2026-10-17), which reaches SORA's player at M8. Part A1 doesn't depend on the motion core, so it goes into SORA's current
+  avatar player straight away. The Python reference (`adapter.py`) stays the source of truth
+  for fitting, with shared test cases for the C# twin.
+- **A1. Moving parts: body, hair, clothing and accessories.**
+  - VRM separates **body bones** (its humanoid map) from **spring bones** (everything that
+    moves on its own).
+  - Each spring chain is then classified as **hair**, **clothing** (skirt, coat, tie) or an
+    **accessory** (tail, ears, ornaments, soft tissue). The clues are where it hangs from (head,
+    hips or chest), name patterns across the VRoid, MMD and Japanese conventions, and its shape.
+  - A **per-avatar override file** corrects anything misclassified.
+  - **Each category has its own physics:**
+    - hair is light, with real gravity and air drag;
+    - clothing is heavier and more damped, and collides with hips and legs;
+    - accessories are tuned per type.
+  - **Colliders are generated from the body.** Many models, Alice among them, ship with none
+    (and with zero spring gravity, which is why her ponytail streamed out sideways).
+  - **Coupling is one way:** the body moves hair and clothing, never the reverse.
+- **A2. Fitting (retargeting).**
+  - the avatar map (missing joints, done in M0);
+  - proportions: root motion scaled by leg length so feet don't slide; contact heights and
+    reach from the avatar's own bones;
+  - a C# twin that passes the Python cases.
+- **A3. The physics body.**
+  - Each body segment is a capsule with mass (standard body-segment proportions), built from the
+    avatar's bones, with joint limits from the skeleton table. Unity articulation bodies are used.
+  - Joint motors (PD drives) pull towards the target pose, with **strength scheduled per
+    joint**.
+  - Desktop surfaces (taskbar, window tops, screen edges) are colliders.
+  - **Help is a dial, defaulting to zero** (owner, 2026-10-15). Everything non-physical is a
+    setting from 0 to 1 and logged when used: a balance helper at the hips, motor strength
+    above realistic muscle limits, and joints exempted from physics.
+  - The physics layer is swappable without touching the model.
+- **A4. Falling.**
+  1. **Trigger:** losing support, a push, or being dropped. The direction comes from momentum.
+  2. **Reaction:** about 0.2 to 0.5 s, with the motors partly on. The motion core's `fall`
+     intent drives a catch step, arms out, head tucked, and a turn towards the side. Stand-in
+     reaction poses are used until M1 learns them.
+  3. **Impact and settling:** muscle tone drops to about 10 to 20 %, with the neck stiffer.
+     She comes to rest in real contact.
+  4. **Getting up:** from the pose she actually ended in.
+
+  Being dragged stays deterministic.
+- **The physics ladder** is the test every trained model runs, starting at M1. Fixed 60 s
+  scenarios (stand, walk, sit, push, fall, get up) are run while help is removed step by step:
+  1. full help;
+  2. no exempt joints;
+  3. realistic motor strength;
+  4. no balance helper.
+
+  The result is **the least help each scenario needs**, recorded per model, so physical
+  progress can be compared between models.
+- **Physics in training (optional, later):** a model trained only on motion capture is not
+  expected to balance itself at step 4. If the ladder shows help can't otherwise be reduced, the
+  trained model is fine-tuned inside a simulator, rewarded for staying close to its own motion
+  while staying upright (DeepMimic-style). It is started only on that evidence and judged by the
+  same ladder.
+- **Gate:**
+  - **moving parts:** every spring chain of Alice and Seed-san is classified, and the test
+    avatars' overrides are honoured. Hair and skirts don't pass through the body in the 60 s
+    scenarios;
+  - **falling:** after settling, the gap to the surface is at most 1 cm and penetration at most
+    1 cm, with settling within 2 s;
+  - **steadiness:** no jitter at rest. With full help, the pose stays within a few degrees of
+    the target (threshold set in the task plan);
+  - **swapping:** the same results on Alice, Seed-san and an oddly proportioned test avatar,
+    and foot slide within the M1 threshold;
+  - **cost:** physics at 120 Hz costs at most 1 ms per frame;
+  - **owner judgement:** the owner judges falls realistic, in a dated note.
+- **Risks:**
+  - tuning physics at desktop scale (screen units, not metres);
+  - how it interacts with SORA's existing drag and ragdoll code;
+  - whether the reaction phase reads as a person rather than a puppet. That depends on M1
+    learning falls well.
+
 ### M1: Data, motion prior and intent (large; critical path)
+
+**Status (2026-10-26, Opus 5.5): v1, v2 and v3 trained and evaluated.** v3 fixed the drift
+into impossible limb poses (outside the data's limits: 21% → 3.6%), but it's even calmer than
+v2, and its hips float in 2 of 16 test seeds. **v4 (2026-10-26)** added keywords (a MotionSignal
+v2 draft in motion-lab's `specs/`, labels from LAFAN1, 100STYLE and BABEL) and the hips height
+above what she stands on.
+- **Fixed:** the hips no longer float; limits 2.1%; the lowest error yet.
+- **Weak:** the keywords steer only a little (walking at 0.20 m/s against the data's 0.56), and
+  the motion still winds down.
+- **Proposed next:** probabilistic output (a Motion-VAE-style sampled latent).
+Each model version is self-contained in motion-lab's `versions/vN/`; motion-lab's `docs/M1.md`
+lists them.
+- **Data:** LAFAN1, 100STYLE and CMU (with BABEL's labels), about 37 hours, retargeted at 60 Hz
+  with foot contacts and split by performer. AMASS's converter is built; AMASS itself wasn't
+  downloadable in time.
+- **Model:** 828,643 parameters (per-input encoders, FiLM, fusion, a GRU and a decoder; the
+  rotation head).
+- **v1:** smooth, but it drifts between the datasets' differing neutral poses and winds down.
+- **v2:** retargeting relative to each dataset's T-pose fixed the cross-dataset posture
+  disagreement. Two things remain:
+  - over 60 s free runs it drifts into limb poses no recording has;
+  - it is about 10× calmer than the data.
+- **v3:** three changes aimed at that drift:
+  - a data-quality filter (CMU has flipped hands, heads and feet, and 361 duplicated takes);
+  - joint and hips limits measured from the data, with a loss past them (replacing the M0
+    placeholders, as this stage planned);
+  - rollouts of up to 128 ticks.
+  - Trained for 9.4 h; results in motion-lab's `versions/v3/README.md`.
+- **Open:**
+  - intent and emotion keywords (MotionSignal v2), for the calmness;
+  - the 17.5M size test, on v3's setup;
+  - the viewer.
 
 - **Purpose:** a stable, natural recurrent model that already does what SORA does most (walk,
   stand, sit, wave, lean, point, look). Its neutral-input version is the **control** for every
@@ -170,10 +359,22 @@ avatar adapter. Two items are still open:
 - **Tools:**
   - an evaluation harness: 60 s+ autoregressive rollouts, drift against horizon, saturation,
     foot slide, jitter, and comparison with the dataset's distribution;
+  - **the physics ladder (MA)** once the physics body exists: the least help each scenario
+    needs. `fall` and `get_up` are among the intents (LAFAN1's fall-and-get-up, BABEL's fall),
+    and training adds random pose perturbations so the model copes when physics moves her off
+    its target;
   - a **browser (three.js) VRM viewer** showing dataset clips beside rollouts. The owner judges
     from it.
-- **Model size (owner decision, 2026-10-11).** The size is a measured result, not a choice made
-  up front.
+- **Model size (owner decision, 2026-10-11; updated 2026-10-25).** The size is a measured result,
+  not a choice made up front.
+  - **2026-10-25:** on the owner's GPU, models under about 100M parameters run almost
+    instantly in a few hundred MB, so the CPU budget below no longer caps the size.
+  - The end goal, nuanced and expressive motion with meaningful fingers, gaze and unusual
+    movements, is expected to need a much bigger model than the first controller.
+  - So the sweep reaches larger sizes: a 17.5M model (GRU 1024 × 2) is trained beside the
+    0.8M control on v2's data.
+  - An open idea: a large semantic part reading the brain's intent from text at a low rate,
+    feeding a fast motion part at 60 Hz.
   - **What limits it:**
     - **Runtime is not the limit at this scale.** A GRU costs about its parameter count in
       multiply-adds per tick. 1×256 with a 256-wide fused input is about 0.4M parameters, which
@@ -216,7 +417,9 @@ avatar adapter. Two items are still open:
 ### M2: Constraint layer (medium)
 
 - **Purpose:** a deterministic pass that makes predicted motion valid. It's built in Python as
-  the reference the C# runtime must later match.
+  the reference the C# runtime must later match. **Since MA (2026-10-15)** the physics body
+  handles contact and joint limits at runtime, so M2 keeps foot lock, gaze IK and the soft
+  training losses.
 - **Builds:**
   - **a solver for the desktop:**
     - joint limits;
@@ -346,8 +549,8 @@ avatar adapter. Two items are still open:
     already let experts be added without touching the contract.
 - **Experts (decision 3, default):**
   - general;
-  - **getting up** (LAFAN1's fall-and-get-up and ground clips, starting from the ragdoll's end
-    pose);
+  - **getting up** (LAFAN1's fall-and-get-up and ground clips, starting from wherever MA's
+    physics body came to rest);
   - **leaning**;
   - **climbing** (M5 data).
 - **Builds:**
@@ -379,15 +582,20 @@ avatar adapter. Two items are still open:
   - **opt-in logging** of `MotionSignal` plus the realised poses, kept in the profile and used
     for M5 and M8.
 - **Gate:**
-  - V1 step 5 behaviours (wave, sit, walk or run to a window, look, point) unchanged;
+  - V1 step 5 behaviours (sit, walk or run to a window, look, point) unchanged;
   - schema exported; logging verified in an isolated profile.
 
 ### M8: SORA integration (medium)
 
-- **Purpose:** the learned core replaces the deterministic layer in the real app.
+- **Purpose:** the learned core runs in the real app. **Owner decision (2026-10-25):** it
+  doesn't replace the deterministic layer outright. A setting in SORA's GUI swaps between the
+  trained model versions (`motion-lab/versions/vN`) and the current algorithmic system, which
+  stays the default and the fallback. The work starts once a model version looks usable
+  (v2 or later).
 - **Builds:**
   - ONNX in Unity on the runtime chosen by the spike, behind the pose-ownership arbiter. The
-    learned core is the base layer; gaze, reach, grab and ragdoll are overrides;
+    learned core is the base layer, driving MA's physics body; gaze, reach and grab are
+    overrides;
   - a C# constraint twin that passes the M2 golden traces;
   - the deterministic root;
   - the ragdoll-to-getting-up handover;
@@ -423,6 +631,7 @@ hidden state and is trained on motion the core generates.
 | The desktop setting | Screen-plane root only | Not discussed | Rule 9; M2, M4 and M5 cover support surfaces and screen scale |
 | Datasets | "Licences to confirm" | Unverified coverage | Checked 2026-10-11: LAFAN1 CC BY-NC-ND 4.0 with fall and get up; BABEL labels; BEAT2 Apache-2.0 on Hugging Face |
 | Training hardware | "Which GPU?" | Named | Checked: PyTorch 2.12 with ROCm 7.14 sees the GPU |
+| Avatars and physics | Retarget to a canonical skeleton; ragdoll deterministic | Not covered | **MA (2026-10-15):** fitting any VRM; a physics body with a help dial defaulting to zero; physical falls; hair, clothing and accessories with their own physics |
 
 ## 6. Defaults the owner can change
 
@@ -442,6 +651,9 @@ hidden state and is trained on motion the core generates.
 8. **Audio fields (decide before M0 freezes the contract):** default `rms`, `voiced`, pitch and
    onset strength, computed from her TTS output. Hearing the owner's speech stays out of v1.
 9. **Labelling:** agents label; the owner reviews only if they want to.
+10. **Physics help (decided 2026-10-15):** a dial defaulting to zero. Help is added only where
+    the physics ladder shows it is needed, and the goal is a model subject only to physics.
+    Physics-in-training is optional and started only on the ladder's evidence.
 
 **Owner actions:**
 - register for AMASS and accept its licence (BABEL builds on it);

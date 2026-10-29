@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "MotionChunk": {
+      "additionalProperties": false,
+      "properties": {
+        "fps": {
+          "const": 60,
+          "default": 60,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/MotionFrame"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Frames",
+          "type": "array"
+        },
+        "prompt": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Prompt",
+          "type": "string"
+        },
+        "seq": {
+          "minimum": 0,
+          "title": "Seq",
+          "type": "integer"
+        },
+        "t0": {
+          "minimum": 0,
+          "title": "T0",
+          "type": "number"
+        }
+      },
+      "required": [
+        "seq",
+        "t0",
+        "frames"
+      ],
+      "title": "MotionChunk",
+      "type": "object"
+    },
+    "MotionFrame": {
+      "additionalProperties": false,
+      "properties": {
+        "contacts": {
+          "items": {
+            "type": "boolean"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Contacts",
+          "type": "array"
+        },
+        "root": {
+          "items": {
+            "maximum": 1000,
+            "minimum": -1000,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Root",
+          "type": "array"
+        },
+        "rot": {
+          "items": {
+            "items": {
+              "maximum": 1.0001,
+              "minimum": -1.0001,
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          },
+          "maxItems": 22,
+          "minItems": 22,
+          "title": "Rot",
+          "type": "array"
+        }
+      },
+      "required": [
+        "root",
+        "rot"
+      ],
+      "title": "MotionFrame",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "chunk": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MotionChunk"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "op": {
+      "enum": [
+        "source",
+        "record",
+        "seed_request",
+        "chunk"
+      ],
+      "title": "Op",
+      "type": "string"
+    },
+    "seconds": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Seconds"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "enum": [
+            "algorithmic",
+            "ardy"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source"
+    }
+  },
+  "required": [
+    "op"
+  ],
+  "title": "CoreMotionMessage",
+  "type": "object"
+}

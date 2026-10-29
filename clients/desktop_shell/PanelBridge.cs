@@ -36,7 +36,7 @@ public sealed record PanelRect(double X, double Y, double Width, double Height);
 public static class PanelBridge
 {
     public static readonly IReadOnlySet<string> OpenablePanels = new HashSet<string>(StringComparer.Ordinal)
-        { "chat", "settings", "voice", "memory", "activity", "agents", "paths", "appearance" };
+        { "chat", "settings", "voice", "memory", "activity", "agents", "paths", "appearance", "motion" };
     public static readonly IReadOnlySet<string> PickKinds = new HashSet<string>(StringComparer.Ordinal)
         { "gguf", "exe", "dir", "file", "attachment" };
     public static readonly IReadOnlySet<string> ResizeEdges = new HashSet<string>(StringComparer.Ordinal)

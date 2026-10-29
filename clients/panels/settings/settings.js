@@ -252,7 +252,8 @@ function purposeEditor(field, rows, row) {
 function fieldRow(field, { showHelp = true } = {}) {
   const row = el("div", { class: `field${edited(field.key) ? " edited" : ""}`, "data-key": field.key });
   const tier = field.tier === "next_boot" ? "Applies after restarting SORA"
-    : field.tier === "model_reload" ? "Applies when the model reloads" : "";
+    : field.tier === "model_reload" ? "Applies when the model reloads"
+    : field.tier === "motion_reload" ? "Applies with Reload motion model (Motion window)" : "";
   row.append(
     el("div", {},
       el("label", { class: "field-label", for: `f-${field.key.replace(/[^A-Za-z0-9]/g, "-")}` }, field.label),
@@ -408,6 +409,13 @@ function renderPane() {
     parts.push(brainCard(), el("h2", {}, "Model information"), infoTiles());
   }
   if (state.category === "Vision") parts.push(visionCard());
+  if (state.category === "Motion") {
+    parts.push(el("div", { class: "panel-links" },
+      el("button", { class: "btn primary", type: "button", onclick: () => openPanel("motion") },
+        "Choose her motion model…")),
+      el("div", { class: "field-help" },
+        "The Motion window shows which engines and trained versions are installed, how each measured, and a preview."));
+  }
   const windowStyle = state.category === "Appearance" && el("div", {},
     el("h2", {}, "Windows"),
     el("button", { class: "btn", type: "button", onclick: openAppearanceWindow },

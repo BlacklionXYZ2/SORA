@@ -10,6 +10,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, cast
 
+from sora.api import motion_routes
 from sora.api.events import build_state_snapshot, get_stream_bounds, replay_events_since
 from sora.api.lifecycle import ManagedLifecycle
 from sora.api.protocol import HttpRequest, HttpResponse
@@ -590,6 +591,19 @@ class RouteHandler:
                         403, "Model settings are owner-local", code="FORBIDDEN"
                     )
                 return self._handle_model_settings(path, request)
+
+            if (method == "GET" and path in motion_routes.PATHS
+                    or method == "POST" and path in motion_routes.POST_PATHS):
+                if remote_scopes is not None or self.runtime.app_settings is None:
+                    return HttpResponse.error(403, "Motion models are owner-local",
+                                              code="FORBIDDEN")
+                controller = self.runtime.app_settings
+                if path == motion_routes.STATUS:
+                    return motion_routes.status(self.runtime.motion)
+                if path == motion_routes.RELOAD:
+                    return await motion_routes.reload(request, controller, self.runtime.motion)
+                return motion_routes.handle(path, request, controller.saved.motion,
+                                            controller.root)
 
             if method == "GET" and path == "/api/v1/projections/permissions":
                 return await self._handle_permissions_projection()

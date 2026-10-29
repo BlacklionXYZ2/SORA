@@ -1,5 +1,4 @@
 using System;
-using UniGLTF.SpringBoneJobs.Blittables;
 using UniVRM10;
 using UnityEngine;
 
@@ -29,29 +28,44 @@ namespace Sora.Embodiment.Avatar
     {
         private Vrm10Instance? _instance;
         public int TunedJointCount { get; private set; }
+        /// <summary>Each spring joint's classification (hair, clothing or accessory).</summary>
+        public System.Collections.Generic.IReadOnlyDictionary<VRM10SpringBoneJoint, SecondaryClassification> Parts { get; private set; } =
+            new System.Collections.Generic.Dictionary<VRM10SpringBoneJoint, SecondaryClassification>();
 
-        public int Configure(Vrm10Instance instance)
+        /// <summary>
+        /// Bounds every spring joint, and (motion roadmap MA, A1) classifies each chain as hair,
+        /// clothing or an accessory with its own physics, adding body colliders where the avatar
+        /// has none. <paramref name="partsOverridePath"/> is the optional <c>.parts.txt</c> file
+        /// beside the avatar.
+        /// </summary>
+        public int Configure(Vrm10Instance instance, string? partsOverridePath = null, bool generateColliders = true)
         {
             _instance = instance ?? throw new ArgumentNullException(nameof(instance));
             TunedJointCount = 0;
+            var animator = instance.GetComponent<Animator>();
+            var parts = animator != null && animator.isHuman
+                ? AvatarSecondaryParts.Prepare(instance, animator, AvatarSecondaryParts.ReadOverrides(partsOverridePath), generateColliders)
+                : new System.Collections.Generic.Dictionary<VRM10SpringBoneJoint, SecondaryClassification>();
+            Parts = parts;
             foreach (var joint in instance.GetComponentsInChildren<VRM10SpringBoneJoint>(true))
             {
                 var settings = Stabilize(joint.m_stiffnessForce, joint.m_gravityPower,
                     joint.m_gravityDir, joint.m_dragForce, joint.m_jointRadius);
-                var mutable = new BlittableJointMutable(
-                    stiffnessForce: settings.Stiffness,
-                    gravityPower: settings.GravityPower,
-                    gravityDir: settings.GravityDirection,
-                    dragForce: settings.Drag,
-                    radius: settings.Radius,
-                    angleLimitType: (float)joint.m_anglelimitType,
-                    angleLimit1: Mathf.Clamp(joint.m_pitch, 0, Mathf.PI),
-                    angleLimit2: Mathf.Clamp(joint.m_yaw, 0, Mathf.PI / 2),
-                    angleLimitOffset: IsFinite(joint.m_limitSpaceOffset) ?
-                        joint.m_limitSpaceOffset : Quaternion.identity);
-                instance.Runtime.SpringBone.SetJointLevel(joint.transform, mutable);
+                if (parts.TryGetValue(joint, out var part)) settings = AvatarSecondaryParts.Shape(part, settings);
+                // Written onto the joint itself, then the simulation is rebuilt from it: settings
+                // pushed into the running buffers are lost when they are rebuilt (2026-10-15).
+                joint.m_stiffnessForce = settings.Stiffness;
+                joint.m_gravityPower = settings.GravityPower;
+                joint.m_gravityDir = settings.GravityDirection;
+                joint.m_dragForce = settings.Drag;
+                joint.m_jointRadius = settings.Radius;
+                joint.m_pitch = Mathf.Clamp(joint.m_pitch, 0, Mathf.PI);
+                joint.m_yaw = Mathf.Clamp(joint.m_yaw, 0, Mathf.PI / 2);
+                if (!IsFinite(joint.m_limitSpaceOffset)) joint.m_limitSpaceOffset = Quaternion.identity;
                 TunedJointCount++;
             }
+            if (!instance.Runtime.SpringBone.ReconstructSpringBone())
+                Debug.LogWarning("Secondary motion: the spring simulation could not be rebuilt");
             Debug.Log("Secondary motion tuned: " + TunedJointCount + " spring joints");
             return TunedJointCount;
         }

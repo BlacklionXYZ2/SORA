@@ -17,6 +17,7 @@ from pydantic import Field, model_validator
 from sora.contracts.base import StrictModel
 from sora.decision.settings import DecisionSettings
 from sora.embodiment.avatar_settings import CREDIT, AvatarSettings
+from sora.embodiment.motion_settings import MotionSettings
 from sora.memory.settings import MemoryManagerSettings
 from sora.providers.dialogue import (
     DeterministicDialogueProvider,
@@ -78,6 +79,9 @@ class AppSettings(StrictModel):
     memory: MemoryManagerSettings = Field(default_factory=MemoryManagerSettings)
     # Added 2026-10-11 (Alice as the default avatar); settings saved before then load with it.
     avatar: AvatarSettings = Field(default_factory=AvatarSettings)
+    # Added 2026-10-27 (the motion engine choice); settings saved before then load with the
+    # algorithmic default.
+    motion: MotionSettings = Field(default_factory=MotionSettings)
 
     @model_validator(mode="after")
     def external_endpoint(self) -> AppSettings:
@@ -102,6 +106,7 @@ class SettingsConflict(ValueError):
     pass
 
 
+MOTION_KEYS = tuple(f"motion.{name}" for name in MotionSettings.model_fields)
 BOOT_FIELDS = {
     "avatar.vrm_path",  # the avatar loads when her player starts
     "dialogue.backend",
@@ -154,6 +159,12 @@ LABELS = {
     "decision.executable": "laya runner (blank uses the setup script's)",
     "decision.model_path": "Laya model GGUF (blank uses the setup script's)",
     "avatar.vrm_path": "Avatar model (VRM)",
+    "motion.engine": "Motion engine",
+    "motion.ardy_precision": "ARDY precision",
+    "motion.ardy_steps": "ARDY diffusion steps",
+    "motion.custom_version": "Custom model version",
+    "motion.custom_size": "Custom model size",
+    "motion.lab_path": "motion-lab folder (blank: beside SORA's folder)",
     "memory.mode": "Memory manager",
     "memory.device": "Memory embedder device",
     "memory.server": "Embedding server (blank uses the setup script's)",
@@ -272,6 +283,25 @@ AVATAR_HELP = (
     ".local\\avatars\\Alice.vrm (outside git; her licence forbids sharing or editing the file). "
     f"Credit: {CREDIT}. Blank, or a missing file, uses the built-in Seed-san."
 )
+MOTION_HELP = {
+    "engine": (
+        "What moves her body. algorithmic: the hand-made poses and gait (the default and the "
+        "fallback). ardy: NVIDIA's ARDY motion model on the GPU. custom: one of motion-lab's own "
+        "trained versions. The Motion window shows what is installed and how each measured. "
+        "Save, then Reload motion model in the Motion window; SORA keeps running."
+    ),
+    "ardy_precision": (
+        "fp16 uses about 0.7 GB of video memory and adds a little jitter while she stands still; "
+        "fp32 is cleaner and uses more."
+    ),
+    "ardy_steps": (
+        "Diffusion steps per plan. 4 keeps up in real time on an RX 9070 XT while replanning "
+        "every 0.4 s; more is smoother but slower, and 2 loses walking speed."
+    ),
+    "custom_version": "A motion-lab version folder, such as v4 (versions\\v4).",
+    "custom_size": "A size that version has trained, such as 0.8M.",
+    "lab_path": "Where motion-lab is. Blank: a motion-lab folder beside SORA's folder.",
+}
 MEMORY_HELP = {
     "mode": (
         "A small embedding model (EmbeddingGemma 2) reads each memory so she can find memories "
@@ -332,7 +362,7 @@ def update_values(settings: AppSettings, changes: dict[str, Any]) -> AppSettings
 BUILTIN_AGENT_KEYS = ("codex", "hermes", "antigravity", "claude")
 CUSTOM_AGENT_KEYS = ("custom_1", "custom_2", "custom_3", "custom_4")
 SETTINGS_CATEGORIES = (
-    "General", "Appearance", "Models", "Audio", "Vision", "Memory", "Tools",
+    "General", "Appearance", "Models", "Audio", "Motion", "Vision", "Memory", "Tools",
     "Automation", "Performance", "Advanced",
 )
 # Deliberate UI mapping, not an extra settings store. Adding a preference requires
@@ -376,6 +406,7 @@ SETTINGS_CATEGORY_KEYS = {
         "runtime.task_timeout_seconds",
     },
     "Appearance": {"avatar.vrm_path"},
+    "Motion": set(MOTION_KEYS),
     "Memory": {"memory.mode", "memory.device", "memory.server", "memory.model_path"},
     "Performance": {f"llama.{name}" for name in (
         "image_max_tokens", "batch_size", "ubatch_size", "split_mode", "tensor_split", "main_gpu",
@@ -384,6 +415,7 @@ SETTINGS_CATEGORY_KEYS = {
     "Advanced": {"llama.executable", "llama.port", "llama.startup_timeout"},
 }
 SETTINGS_ADVANCED_KEYS = {
+    "motion.ardy_precision", "motion.ardy_steps", "motion.lab_path",
     "decision.device", "decision.executable", "decision.model_path",
     "memory.device", "memory.server", "memory.model_path",
     "dialogue.timeout_seconds", "dialogue.context_max_chars", "external.model_folder",
@@ -435,7 +467,7 @@ def field_definitions() -> list[dict[str, Any]]:
                 kind = "int"
             elif isinstance(value, float) or name.endswith("seconds") or name == "startup_timeout":
                 kind = "float"
-            elif key == "voice.stt_model_path":
+            elif key in {"voice.stt_model_path", "motion.lab_path"}:
                 kind = "path-dir"
             elif key in {"voice.tts_model_path", "voice.voices_path", "avatar.vrm_path"}:
                 kind = "path-file"
@@ -455,7 +487,10 @@ def field_definitions() -> list[dict[str, Any]]:
                 kind = "agent-model-purposes"
             custom_agent = key.startswith("agents.custom_")
             tier = (
-                "next_boot"
+                # Applied by Reload motion model (the Motion window) while SORA runs.
+                "motion_reload"
+                if key in MOTION_KEYS
+                else "next_boot"
                 if key in BOOT_FIELDS or key.startswith("external.")
                 # Custom agents are registered when Core starts; only the description is live.
                 or (custom_agent and name != "purpose")
@@ -479,6 +514,8 @@ def field_definitions() -> list[dict[str, Any]]:
                 if key.startswith("memory.")
                 else "Avatar"
                 if key.startswith("avatar.")
+                else "Motion engine"
+                if key.startswith("motion.")
                 else "Speculative decoding"
                 if ".speculative." in key
                 # The brain's own files come first in Models, apart from tuning knobs.
@@ -536,6 +573,8 @@ def field_definitions() -> list[dict[str, Any]]:
                     if key.startswith("memory.")
                     else AVATAR_HELP
                     if key.startswith("avatar.")
+                    else MOTION_HELP[name]
+                    if key.startswith("motion.")
                     else "Requires compatible model, draft weights and runtime support."
                     if ".speculative." in key
                     else "Model changes are saved first; Reload model applies them."
@@ -782,6 +821,8 @@ class AppSettingsController:
             "pending_settings": None,
             "restart_required": any(f["pending"] and f["tier"] == "next_boot" for f in fields),
             "model_reload_required": model_pending,
+            "motion_reload_required": any(
+                f["pending"] and f["tier"] == "motion_reload" for f in fields),
             "can_reload": self.boot.dialogue.backend == "managed-llama"
             and self.model_state != "reloading",
             "model_state": self.model_state,
@@ -978,6 +1019,13 @@ class AppSettingsController:
                 api_key=self.external_key,
                 timeout_seconds=self.active.dialogue.timeout_seconds,
             )
+
+    def apply_motion(self, request: ReloadRequest) -> dict[str, Any]:
+        """Make the saved motion settings active (Reload motion model); the caller restarts
+        the motion engine with ``self.active.motion``."""
+        self._check(request.expected_revision)
+        self.active = self.active.model_copy(update={"motion": self.saved.motion})
+        return self.projection()
 
     def request_reload(self, request: ReloadRequest) -> dict[str, Any]:
         self._check(request.expected_revision)

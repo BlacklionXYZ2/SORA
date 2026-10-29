@@ -5,6 +5,12 @@ name. **Every change writes one:** code, configuration, schemas, scripts, or doc
 changes status, structure or guidance. These files are **records**: never edit or rename another
 contributor's entry. If something in one is wrong, write a new entry that says so.
 
+**motion-lab has its own changelog.** Work done in `~/Desktop/motion-lab` (the motion core's
+versions, data, training and evaluation) is logged in `motion-lab/changelog/`. The 21 such entries
+written here before 2026-10-26 moved there that day, unchanged. A change to SORA itself stays
+here, even when it comes from motion-lab work: the physics body or avatar layer synced into the
+player, the motion-core roadmap, the brain's motion keywords.
+
 ## File name
 
 ```text

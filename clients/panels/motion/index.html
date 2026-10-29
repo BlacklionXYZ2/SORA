@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SORA · Motion</title>
+  <link rel="stylesheet" href="../shared/components.css">
+  <link rel="stylesheet" href="./motion.css">
+</head>
+<body>
+  <main class="window" aria-label="SORA motion model">
+    <header class="titlebar"><span class="title">Motion</span><nav class="window-controls"></nav></header>
+    <div class="window-body motion-body">
+      <section class="pane" id="pane">
+        <div class="pane-scroll selectable" id="content">
+          <header class="motion-head">
+            <span class="motion-head-icon" id="head-icon"></span>
+            <div>
+              <h1>Motion model</h1>
+              <p class="lead">What moves her body: the algorithmic system, NVIDIA's ARDY, or one of SORA's own
+                trained models. A change applies with Reload motion model, without restarting SORA.</p>
+            </div>
+          </header>
+          <div class="notices" id="notices" aria-live="polite"></div>
+          <div class="motion-grid">
+            <div class="motion-main">
+              <section class="card block" aria-labelledby="source-title">
+                <h2 id="source-title">Model source</h2>
+                <p class="sub">Choose what generates her movement.</p>
+                <div class="sources" id="sources" role="radiogroup" aria-labelledby="source-title"></div>
+              </section>
+              <section class="card block" id="options" aria-live="polite"></section>
+              <section class="card block" id="details" aria-labelledby="details-title"></section>
+            </div>
+            <aside class="motion-side">
+              <section class="card block" aria-labelledby="preview-title">
+                <h2 id="preview-title">Preview</h2>
+                <p class="sub" id="preview-label">Motion this model generated.</p>
+                <div class="preview-stage">
+                  <canvas id="preview" width="560" height="380" aria-label="Stick-figure preview of the selected model's motion"></canvas>
+                  <div class="preview-empty" id="preview-empty" hidden></div>
+                </div>
+                <div class="preview-controls">
+                  <button class="btn" id="play" type="button">Pause</button>
+                  <span class="preview-time" id="preview-time"></span>
+                </div>
+              </section>
+              <section class="card block" aria-labelledby="measures-title">
+                <h2 id="measures-title">Measured</h2>
+                <p class="sub">From motion-lab's evaluations. The pale mark is real motion capture.</p>
+                <div class="measures" id="measures"></div>
+              </section>
+            </aside>
+          </div>
+        </div>
+        <footer class="savebar" id="savebar" hidden>
+          <span class="savebar-text" id="savebar-text" aria-live="polite"></span>
+          <button class="btn" id="discard" type="button">Discard</button>
+          <button class="btn primary" id="save" type="button">Save</button>
+        </footer>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="./motion.js"></script>
+</body>
+</html>

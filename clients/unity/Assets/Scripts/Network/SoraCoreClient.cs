@@ -296,6 +296,64 @@ namespace Sora.Embodiment.Network
         [JsonProperty("reason")] public string Reason { get; set; } = "disconnected";
     }
 
+    // Her motion model's stream (sora.contracts.motion_stream). Poses are motion-lab's canonical
+    // skeleton (22 joints, right-handed, local quaternions [x, y, z, w]); the player converts.
+    public sealed class MotionFrameDto
+    {
+        public const int Joints = 22;
+        [JsonProperty("root")] public float[] Root { get; set; } = new float[3];
+        [JsonProperty("rot")] public float[][] Rot { get; set; } = Array.Empty<float[]>();
+        [JsonProperty("contacts")] public bool[] Contacts { get; set; } = new bool[4];
+
+        public bool IsValid()
+        {
+            if (Root == null || Root.Length != 3 || Rot == null || Rot.Length != Joints ||
+                Contacts == null || Contacts.Length != 4) return false;
+            foreach (var v in Root) if (float.IsNaN(v) || float.IsInfinity(v) || Math.Abs(v) > 1000) return false;
+            foreach (var q in Rot)
+            {
+                if (q == null || q.Length != 4) return false;
+                var norm = 0.0;
+                foreach (var c in q)
+                {
+                    if (float.IsNaN(c) || float.IsInfinity(c)) return false;
+                    norm += c * c;
+                }
+                if (Math.Abs(norm - 1) > 0.01) return false; // a unit quaternion, give or take rounding
+            }
+            return true;
+        }
+    }
+
+    public sealed class MotionChunkDto
+    {
+        [JsonProperty("seq")] public long Seq { get; set; }
+        [JsonProperty("t0")] public double T0 { get; set; }
+        [JsonProperty("fps")] public int Fps { get; set; } = 60;
+        [JsonProperty("prompt")] public string Prompt { get; set; } = "";
+        [JsonProperty("frames")] public List<MotionFrameDto> Frames { get; set; } = new List<MotionFrameDto>();
+    }
+
+    public sealed class MotionMessageDto
+    {
+        [JsonProperty("op")] public string Op { get; set; } = "";
+        [JsonProperty("source")] public string? Source { get; set; }
+        [JsonProperty("seconds")] public float? Seconds { get; set; }
+        [JsonProperty("chunk")] public MotionChunkDto? Chunk { get; set; }
+
+        public bool IsValid() => Op switch
+        {
+            "source" => Source == "algorithmic" || Source == "ardy",
+            "record" => Seconds is float s && s > 0 && s <= 10,
+            "seed_request" => true,
+            "chunk" => Chunk != null && Chunk.Fps == 60 && Chunk.Seq >= 0 &&
+                       !double.IsNaN(Chunk.T0) && !double.IsInfinity(Chunk.T0) && Chunk.T0 >= 0 &&
+                       Chunk.Frames != null && Chunk.Frames.Count >= 1 && Chunk.Frames.Count <= 64 &&
+                       Chunk.Frames.TrueForAll(f => f != null && f.IsValid()),
+            _ => false,
+        };
+    }
+
     public interface IDesktopPressTransport
     {
         Task<DesktopActionResultDto> PressDesktopTargetAsync(
@@ -340,6 +398,7 @@ namespace Sora.Embodiment.Network
         public event Action? OnResyncRequired;
         public event Action<EmbodimentProjectionDto>? OnProjectionReceived;
         public event Action<VoiceSampleDto>? OnVoiceSampleReceived;
+        public event Action<MotionMessageDto>? OnMotionReceived;
         private string? _voiceStream;
         private long _voiceSerial;
 
@@ -456,6 +515,13 @@ namespace Sora.Embodiment.Network
                 OnVoiceSampleReceived?.Invoke(sample);
                 return;
             }
+            if (type == "embodiment.motion")
+            {
+                // Her motion model's stream (sora.contracts.motion_stream); invalid ones are dropped.
+                var motion = root.ToObject<MotionMessageDto>();
+                if (motion != null && motion.IsValid()) OnMotionReceived?.Invoke(motion);
+                return;
+            }
             if (type == "embodiment.snapshot")
             {
                 var projection = root["projection"]?.ToObject<EmbodimentProjectionDto>()
@@ -561,6 +627,18 @@ namespace Sora.Embodiment.Network
         public Task ReportFeedbackAsync(EmbodimentFeedbackDto feedback,
             CancellationToken ct = default) =>
             SendAsync(new { type = "embodiment.feedback", @event = feedback }, ct);
+
+        /// <summary>Her recorded pose for a motion model's handover (canonical frames).</summary>
+        public Task ReportMotionSeedAsync(int fps, IReadOnlyList<MotionFrameDto> frames,
+            CancellationToken ct = default) =>
+            SendAsync(new { type = "embodiment.motion", op = "seed", seed = new { fps, frames } }, ct);
+
+        /// <summary>What she is doing (a phrase key) and the velocity she should travel at
+        /// (canonical metres a second; zero when she shouldn't travel).</summary>
+        public Task ReportMotionSignalAsync(string key, float velocityX, float velocityZ,
+            CancellationToken ct = default) =>
+            SendAsync(new { type = "embodiment.motion", op = "signal", key,
+                velocity = new[] { velocityX, velocityZ } }, ct);
 
         public async Task<EmbodimentProjectionDto?> GetEmbodimentProjectionAsync(CancellationToken ct = default)
         {

@@ -99,6 +99,26 @@ namespace Sora.Embodiment.Avatar
             OnPositionUpdated?.Invoke(globalPixelX, globalPixelY);
         }
 
+        /// <summary>Stops a walk where she is (e.g. she fell on the way). Core sees her position,
+        /// not an arrival.</summary>
+        public void Stop()
+        {
+            if (!_isMoving) return;
+            _targetWorldPosition = transform.position;
+            _isMoving = false;
+            var here = GetCurrentGlobalPixelPosition();
+            OnPositionUpdated?.Invoke(here.GlobalX, here.GlobalY);
+        }
+
+        /// <summary>Moves her instantly to a world position (snapped to a safe screen anchor),
+        /// e.g. to where her physics body came to rest after a fall.</summary>
+        public void TeleportToWorld(Vector3 world)
+        {
+            var global = _transformer.WorldToGlobal(new UnityWorldPoint(world.x, world.y, world.z), _topology);
+            var safe = OverlayPlacement.SafeAnchor(_topology, global.GlobalX, global.GlobalY);
+            TeleportTo(safe.X, safe.Y);
+        }
+
         public (int GlobalX, int GlobalY) GetCurrentGlobalPixelPosition()
         {
             var worldPt = new UnityWorldPoint(transform.position.x, transform.position.y, transform.position.z);

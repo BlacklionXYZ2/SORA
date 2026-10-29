@@ -60,6 +60,20 @@ They sit on top of EmbeddingGemma 2. Fine-tuning EmbeddingGemma itself is a late
 4. **Fabricated examples** (`training\memory\labels\fabricated\`, made from the probes) are used
    only with `--include-fabricated`, at a third of the weight. They exercise the program; they
    are not you.
+5. **Bootstrap examples from public datasets** (from 2026-10-23). The datasets live in
+   `training\memory\datasets\` (git-ignored; its `README.md` says what each is for and where to
+   download it). Convert them into a labels folder at half an owner label's weight, plus
+   LongMemEval test files that are never trained on:
+
+   ```powershell
+   uv run --with pyarrow python scripts/memory/convert_datasets.py --out <state>\memory\labels --test-out <state>\memory\tests
+   uv run python scripts/memory/evaluate_layers.py --state-root <state> --tests <state>\memory\tests
+   ```
+
+   `evaluate_layers.py` scores each layer's newest saved version against its fixed rule on the
+   test files. Use an isolated state folder for experiments, not your profile. The first round
+   (2026-10-23, [evidence](../verification/MEMORY_LAYERS_BOOTSTRAP_Opus-5.5_2026-10-23.md))
+   didn't beat the fixed rules well enough to adopt any layer.
 
 ## Steps
 

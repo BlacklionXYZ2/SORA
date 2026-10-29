@@ -11,7 +11,7 @@ export const RESIZE_EDGES = Object.freeze(["n", "s", "e", "w", "ne", "nw", "se",
 /** What a file picker may choose: model files, programs, folders, any file, or an attachment. */
 export const PICK_KINDS = Object.freeze(["gguf", "exe", "dir", "file", "attachment"]);
 export const OPENABLE_PANELS = Object.freeze([
-  "chat", "settings", "voice", "memory", "activity", "agents", "paths", "appearance",
+  "chat", "settings", "voice", "memory", "activity", "agents", "paths", "appearance", "motion",
 ]);
 /** UI preference values the Appearance page may save (host-local, never Core). */
 export const THEMES = Object.freeze(["Dark", "System"]);

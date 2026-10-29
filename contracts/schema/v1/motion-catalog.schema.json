@@ -1,0 +1,278 @@
+{
+  "$defs": {
+    "MotionEngineEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "enum": [
+            "algorithmic",
+            "ardy",
+            "custom"
+          ],
+          "title": "Id",
+          "type": "string"
+        },
+        "licence": {
+          "default": "",
+          "maxLength": 200,
+          "title": "Licence",
+          "type": "string"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/$defs/MotionModel"
+          },
+          "maxItems": 64,
+          "title": "Models",
+          "type": "array"
+        },
+        "name": {
+          "maxLength": 80,
+          "title": "Name",
+          "type": "string"
+        },
+        "summary": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "title": "MotionEngineEntry",
+      "type": "object"
+    },
+    "MotionMeasures": {
+      "additionalProperties": false,
+      "description": "One model's numbers on motion-lab's 60 s evaluation (``m1_eval.measures``); None where\nthat evaluation didn't measure it.",
+      "properties": {
+        "energy_rad_s": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Energy Rad S"
+        },
+        "foot_slide_m_s": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Foot Slide M S"
+        },
+        "jitter_m_s3": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jitter M S3"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Note",
+          "type": "string"
+        },
+        "outside_limits_share": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outside Limits Share"
+        },
+        "step_latency_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Latency Ms"
+        },
+        "video_memory_gb": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Video Memory Gb"
+        },
+        "walk_speed_m_s": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Walk Speed M S"
+        }
+      },
+      "title": "MotionMeasures",
+      "type": "object"
+    },
+    "MotionModel": {
+      "additionalProperties": false,
+      "description": "One selectable model: an engine variant or a trained version at one size.",
+      "properties": {
+        "files": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Files",
+          "type": "array"
+        },
+        "measures": {
+          "$ref": "#/$defs/MotionMeasures"
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parameters"
+        },
+        "preview": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "pattern": "^previews/[A-Za-z0-9_.-]+\\.json$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Preview"
+        },
+        "size": {
+          "maxLength": 16,
+          "title": "Size",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "ready",
+            "experimental",
+            "missing",
+            "planned"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "summary": {
+          "default": "",
+          "maxLength": 600,
+          "title": "Summary",
+          "type": "string"
+        },
+        "version": {
+          "maxLength": 32,
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "size",
+        "state"
+      ],
+      "title": "MotionModel",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The Motion window's catalogue (``GET /api/v1/motion/catalog``).",
+  "properties": {
+    "engines": {
+      "items": {
+        "$ref": "#/$defs/MotionEngineEntry"
+      },
+      "maxItems": 8,
+      "title": "Engines",
+      "type": "array"
+    },
+    "generated": {
+      "default": "",
+      "maxLength": 40,
+      "title": "Generated",
+      "type": "string"
+    },
+    "lab_found": {
+      "default": false,
+      "title": "Lab Found",
+      "type": "boolean"
+    },
+    "lab_path": {
+      "default": "",
+      "maxLength": 4096,
+      "title": "Lab Path",
+      "type": "string"
+    },
+    "note": {
+      "default": "",
+      "maxLength": 600,
+      "title": "Note",
+      "type": "string"
+    },
+    "recordings": {
+      "$ref": "#/$defs/MotionMeasures"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "title": "MotionCatalog",
+  "type": "object"
+}

@@ -80,6 +80,7 @@ from sora.contracts.memory_browser import (
     MemoryPage,
 )
 from sora.contracts.motion import MotionChoice
+from sora.contracts.motion_stream import CoreMotionMessage, PlayerMotionMessage
 from sora.contracts.runtime_identity import RuntimeIdentity
 from sora.contracts.runtime_lifecycle import RuntimeLifecycle, RuntimeShutdownRequest
 from sora.contracts.screen import ScreenViewChoice
@@ -116,6 +117,7 @@ from sora.contracts.voice import (
     VoiceTranscriptEvent,
     VoiceTurnResult,
 )
+from sora.embodiment.motion_catalog import MotionCatalog
 from sora.runtime.app_settings import AppSettings, ReloadRequest, SettingsEdit
 
 from .embodiment import (
@@ -185,6 +187,9 @@ PUBLIC_CONTRACTS: dict[str, type[BaseModel]] = {
     "companion-read-result": CompanionReadResult,
     "app-settings": AppSettings,
     "motion-choice": MotionChoice,
+    "motion-catalog": MotionCatalog,
+    "motion-stream-core-message": CoreMotionMessage,
+    "motion-stream-player-message": PlayerMotionMessage,
     "screen-view-choice": ScreenViewChoice,
     "settings-edit": SettingsEdit,
     "model-reload-request": ReloadRequest,

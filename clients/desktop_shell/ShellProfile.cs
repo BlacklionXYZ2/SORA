@@ -32,7 +32,7 @@ public sealed record ShellOptions(Uri CoreUrl, string TokenFile, string? StateRo
             throw new ArgumentException("An explicit loopback Core URL and private token file are required.");
         var state = values.TryGetValue("--state-root", out var root) ? ShellProfile.CanonicalRoot(root) : null;
         var panel = values.GetValueOrDefault("--show", state is null ? "chat" : "none");
-        if (panel is not ("chat" or "voice" or "memory" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "settings" or "appearance" or "menu" or "none" or "quit") || (state is null && panel != "chat"))
+        if (panel is not ("chat" or "voice" or "memory" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "settings" or "appearance" or "motion" or "menu" or "none" or "quit") || (state is null && panel != "chat"))
             throw new ArgumentException("Use a supported panel; --show requires a host profile.");
         token = Path.GetFullPath(token);
         if (state is not null && (Path.GetRelativePath(state, token) is var relative

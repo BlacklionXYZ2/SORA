@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
@@ -788,6 +789,7 @@ class SoraApiServer:
         queue = None
         sender = None
         voice_queue = None
+        motion_queue = None
         try:
             await self.runtime.authorize_operation(
                 grant_id=request.header("X-SORA-Grant-ID") or "",
@@ -796,6 +798,9 @@ class SoraApiServer:
             )
             queue = self.runtime.register_embodiment_queue()
             voice_queue = self.runtime.local_voice.presentation.register()
+            # The motion stream (sora.embodiment.motion_service), beside the voice stream.
+            motion_queue = (self.runtime.motion.register()
+                            if self.runtime.motion is not None else None)
             await ws.send_json(
                 {
                     "type": "embodiment.snapshot",
@@ -815,6 +820,9 @@ class SoraApiServer:
                             resource="embodiment.connect",
                         )
                         current = self.runtime.topology_manager.revision
+                        while motion_queue is not None and not motion_queue.empty():
+                            await ws.send_json(
+                                {"type": "embodiment.motion", **motion_queue.get_nowait()})
                         assert voice_queue is not None
                         while not voice_queue.empty():
                             sample = voice_queue.get_nowait()
@@ -881,6 +889,10 @@ class SoraApiServer:
                 elif data.get("type") == "embodiment.feedback":
                     feedback = EmbodimentFeedbackEvent.model_validate(data.get("event"))
                     self.runtime.record_embodiment_feedback(feedback)
+                elif data.get("type") == "embodiment.motion" and self.runtime.motion is not None:
+                    # A malformed motion message is dropped; it never closes her connection.
+                    with contextlib.suppress(ValueError):
+                        await self.runtime.motion.from_player(data)
                 else:
                     raise ValueError("unsupported embodiment message")
         except (OperationAuthorizationError, ValueError, WebSocketProtocolError):
@@ -893,5 +905,7 @@ class SoraApiServer:
                 self.runtime.unregister_embodiment_queue(queue)
             if voice_queue is not None:
                 self.runtime.local_voice.presentation.unregister(voice_queue)
+            if motion_queue is not None and self.runtime.motion is not None:
+                self.runtime.motion.unregister(motion_queue)
             self._websockets.pop(client_id, None)
             await ws.close()

@@ -26,6 +26,8 @@ namespace Sora.Embodiment.Avatar
         private float _maximumPointerTravel;
 
         public bool IsGrabbed { get; private set; }
+        /// <summary>Where on her body (world) the current or last grab took hold.</summary>
+        public Vector3 GrabPointWorld { get; private set; }
         public bool HasReleaseInertia { get; private set; }
         public Vector2 VelocityPixelsPerSecond => _velocity;
         public event Action? Grabbed;
@@ -54,6 +56,7 @@ namespace Sora.Embodiment.Avatar
             _motion.TeleportTo(current.GlobalX, current.GlobalY);
             _velocity = Vector2.zero;
             HasReleaseInertia = false;
+            GrabPointWorld = bodyHitWorld;
             IsGrabbed = true;
             _pointerStart = new Vector2(pointerGlobalX, pointerGlobalY);
             _maximumPointerTravel = 0;

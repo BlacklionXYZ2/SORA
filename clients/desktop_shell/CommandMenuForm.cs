@@ -23,7 +23,7 @@ internal sealed class CommandMenuForm : Form
             ("Memory / retained context", "memory"),
             ("Agents / delegate task", "agents"), ("Project paths / writers", "paths"),
             ("Note board", "board"), ("Content / registered references", "content"), ("Integrations / details", "integrations"),
-            ("Appearance / panels", "appearance"),
+            ("Appearance / panels", "appearance"), ("Motion / her motion model", "motion"),
             ("Reconnect / retry startup", "retry"),
             (ownsCore ? "Quit SORA (owned services only)" : "Quit host (keep Core running)", "quit") })
         {

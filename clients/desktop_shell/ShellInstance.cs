@@ -7,7 +7,7 @@ namespace Sora.DesktopShell;
 public sealed record HostCommand(int Version, string Profile, string Panel)
 {
     public bool Valid(string expected) => Version == 1 && Profile == expected
-        && Panel is "chat" or "voice" or "memory" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "settings" or "appearance" or "menu" or "none" or "quit";
+        && Panel is "chat" or "voice" or "memory" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "settings" or "appearance" or "motion" or "menu" or "none" or "quit";
 }
 
 // Current-user pipe + profile mutex. No executable arguments, URLs, credentials or arbitrary effects.

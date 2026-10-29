@@ -1,6 +1,6 @@
 # How to use SORA (current state)
 
-**Last updated: 2026-10-12 17:34, Opus 5.5 (Voice, Agents, Project paths, Memory and Appearance are now glass windows too).** This page describes what works *today* and how to use it.
+**Last updated: 2026-10-27, Opus 5.5 (Reload motion model: ARDY moves her live).** This page describes what works *today* and how to use it.
 Every change that alters how SORA is started, set up or used must update this page in the same
 change (see [AGENTS.md](AGENTS.md)). If something here is wrong, it is a bug in this page.
 
@@ -84,6 +84,50 @@ git pull                 # get the latest version
    - **To change her avatar:** Settings → **Appearance** → **Avatar model (VRM)**. Pick a `.vrm`
      file (VRM 0.x or 1.0), **Save**, then quit SORA and start it again. No rebuild is needed.
    - Clear the box to use the built-in Seed-san. She also uses Seed-san if the file is missing.
+   - **Hair, clothing and accessories move differently** (from 2026-10-15).
+     - When her avatar loads, each moving part is sorted into hair, clothing (skirt, coat, tie)
+       or an accessory (tail, ears, props, soft tissue), and each kind gets its own weight,
+       stiffness and damping.
+     - Parts that came with no collision get collision with her body, so they don't pass
+       through her.
+     - Her player log lists what each part was sorted as ("Secondary part: …").
+     - **If one is wrong,** create `.local\avatars\Alice.vrm.parts.txt` (the avatar's file
+       name plus `.parts.txt`). Put one line per part, for example
+       `41.joint_Skn_Tail_01 = hair`, using `hair`, `clothing` or `accessory`, then restart
+       SORA.
+   - **Her body is physical** (from 2026-10-17). Her animation (standing, poses, pointing,
+     looking) drives motors in a simulated body with real weight, so gravity, inertia and the
+     surface she stands on act on her.
+     - Walking lifts her feet and matches her stride and step rate to her speed. Running
+       (from 2026-10-21) uses shorter foot contacts with both feet briefly off the ground. When
+       she stops she takes a few steps on the spot to bring her feet under her.
+     - Picked up, she hangs loosely from the point you grabbed (her head, an arm, a foot), not
+       from her hips (from 2026-10-21). Dropped, she falls at real gravity for her size; if she
+       lands hard she falls over physically, comes to rest, and gets back up where she landed
+       (the getting up is a placeholder until her motion model learns it). A fall that hasn't
+       ended after about 20 seconds ends anyway, so she can't get stuck lying down.
+     - Her collision shape follows her mesh, including rigid accessories such as a robot arm,
+       so her body rests on the taskbar rather than sinking into it. Hair and loose clothing
+       can still dip into the floor.
+     - These changes reach the avatar program only after `.\scripts\build-embodiment.ps1`.
+   - **Her size:** she stands 500 physical pixels tall on every monitor (from 2026-10-16; 300
+     before), whatever its scaling.
+   - **Her eyes move and she blinks** (from 2026-10-16).
+     - She looks at you when nothing else has her attention, glances away now and then, and
+       often looks away as she starts to speak. When she looks at a window or control, her eyes
+       get there first; her head turns only for bigger shifts. Her eyes stay on what she's
+       looking at while her head or body moves.
+     - She blinks about 17 times a minute, more while talking and less while concentrating.
+     - It uses each avatar's own eye settings, so any VRM works: eye bones (Alice) or look
+       expressions (Seed-san).
+   - **Diagnostic switches** (for tracking down a problem; start SORA from PowerShell):
+     `$env:SORA_EYE_RIG = "0"` keeps her eyes still, and `$env:SORA_SECONDARY_COLLIDERS = "0"`
+     turns off the body collision added for hair and clothing. `$env:SORA_PHYSICS_BODY = "0"`
+     brings back her old posed body and preset fall. `$env:SORA_PHYSICS_HELP` sets how much
+     non-physical help her body gets: `full`, `no-exempt`, `realistic` (the default: real muscle
+     strength plus a balance helper at her hips) or `none` (she can't yet balance on her own).
+     A value it doesn't recognise falls back to `realistic` and writes a warning to the avatar's
+     log. Then run `.\Start-SORA.ps1`.
 5. **Decision layer (once, optional):** run `.\scripts\setup-decision-layer.ps1`. It downloads
    Laya (about 430 MB) and its GPU runner (18 MB) into `.local\decision`. Laya is a small, fast
    model that picks which kinds of tools her brain sees for each message (about 20 ms on the
@@ -223,7 +267,7 @@ SORA hands harder work to hosted agents and keeps chatting while they work:
 
 ## The glass windows
 
-Chat, Settings, Activity, Voice, Agents, Project paths, Memory and Appearance are the new
+Chat, Settings, Activity, Voice, Agents, Project paths, Memory, Motion and Appearance are the new
 see-through windows that match the concept images. Open any of them from the tray icon or the
 command menu. The note board, Content, Integrations and the command menu are still the older
 style.
@@ -262,6 +306,31 @@ style.
   replaces a memory with your wording; **Forget** removes it after you confirm. When SORA shows
   you a memory, Memory opens on it with a glow around it. The graph view comes later, once
   Core records real links between memories.
+- **Motion:** which motion model moves her body. Open it from the tray (**Motion / her motion
+  model**), the command menu, or Settings → **Motion** → **Choose her motion model…**.
+  - **Choose one of three sources:**
+    - **Algorithmic**, her built-in poses and gait: the default and the fallback;
+    - **ARDY (NVIDIA)**, a real-time motion model run on the GPU;
+    - **Custom trained**, one of SORA's own versions (v1 to v4) at a size that has been trained.
+      Planned sizes are shown greyed out.
+  - **ARDY options:** precision (fp16 uses less video memory; fp32 is cleaner at rest) and
+    diffusion steps (4 is the real-time setting on this PC).
+  - **The right-hand side** plays a stick-figure preview of motion the model really generated,
+    and shows how it measured beside real motion capture.
+  - **Save**, then **Reload motion model** (in the window's banner) applies it at once, without
+    restarting SORA. Core stops the old model and starts the new one. While it loads (about 26
+    seconds for ARDY on this PC, measured once) she keeps moving by herself, and her last 3
+    seconds are passed to the new model so it carries on from what she was doing. The banner then says what is moving her, or why the model
+    couldn't start (she keeps the algorithmic system if it fails).
+  - **What ARDY is told:** what she is doing (standing, walking or running at the speed SORA
+    moves her, sitting, leaning or climbing); her emotion isn't passed on yet. Her physics, falls
+    and being picked up stay as they are, and SORA still decides where she goes and which way she
+    faces. It needs motion-lab's `ardy-runtime` set up; Core starts it on the GPU.
+    Custom trained versions can be saved but can't drive her yet: only ARDY runs live so far.
+  - **Where the list comes from:** the models listed come from motion-lab (a `motion-lab` folder
+    beside SORA's, or Settings → Motion → motion-lab folder). After training or evaluating
+    something there, run `.venv\Scripts\python tools\motion_catalog.py` in motion-lab to update
+    the list.
 - **Appearance:** panel text size, reduced motion, the Chat shortcut, compact Chat, pinning
   Chat on top, and **Reset panel placement**. Each setting says which windows it affects. These
   stay on this PC; they are not Core settings.

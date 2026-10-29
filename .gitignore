@@ -33,3 +33,8 @@
 /dist/
 /tmp_test/
 /%SystemDrive%/
+
+# Public datasets downloaded for training the memory layers: large, licensed separately, and
+# not part of SORA. Only the note saying what each one is used for is kept.
+/training/memory/datasets/*
+!/training/memory/datasets/README.md

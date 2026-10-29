@@ -50,6 +50,15 @@ namespace Sora.Embodiment.Avatar
             _resetSecondaryMotion = resetSecondaryMotion;
         }
 
+        /// <summary>Gravity in pixels a second squared (2400 by default). Her physics body sets
+        /// real gravity at her on-screen size, so drops fall as fast as her body would.</summary>
+        public float GravityPxPerSecondSquared
+        {
+            get => gravityPxPerSecondSquared;
+            set => gravityPxPerSecondSquared = float.IsFinite(value) && value > 0 ? value
+                : throw new ArgumentOutOfRangeException(nameof(value));
+        }
+
         public void ConfigureSecondaryMotionReset(Action resetSecondaryMotion)
         {
             _resetSecondaryMotion = resetSecondaryMotion ??

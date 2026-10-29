@@ -38,7 +38,7 @@ public sealed record ShellPreferences
             throw new InvalidDataException("Unsupported UI preferences version or values.");
         foreach (var (key, placement) in Panels)
         {
-            if (key is not ("chat" or "voice" or "memory" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "settings" or "appearance" or "menu") || placement is null
+            if (key is not ("chat" or "voice" or "memory" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "settings" or "appearance" or "motion" or "menu") || placement is null
                 || placement.Monitor is null || placement.Monitor.Length > 256
                 || placement.Dpi is < 48 or > 768 || !double.IsFinite(placement.X)
                 || !double.IsFinite(placement.Y) || !double.IsFinite(placement.Width)

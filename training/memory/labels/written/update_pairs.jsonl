@@ -1,0 +1,80 @@
+{"layer": "comparison", "a": "My favourite colour is teal.", "b": "My favourite colour is green these days.", "label": "updated", "days": 40}
+{"layer": "comparison", "a": "My favourite colour is teal.", "b": "I really love teal, it's my favourite colour.", "label": "same", "days": 12}
+{"layer": "comparison", "a": "I work at the library on weekends.", "b": "I quit the library job, I work at a cafe on weekends now.", "label": "updated", "days": 60}
+{"layer": "comparison", "a": "I work at the library on weekends.", "b": "Saturdays and Sundays I'm at the library for work.", "label": "same", "days": 9}
+{"layer": "comparison", "a": "My exams start on the 14th of May.", "b": "They moved my exams, they start on the 21st of May now.", "label": "updated", "days": 20}
+{"layer": "comparison", "a": "My exams start on the 14th of May.", "b": "Just a reminder that my exams begin on 14 May.", "label": "same", "days": 15}
+{"layer": "comparison", "a": "I have one cat called Miso.", "b": "We adopted a second cat, so I have two now: Miso and Tofu.", "label": "updated", "days": 90}
+{"layer": "comparison", "a": "I have one cat called Miso.", "b": "Miso is my cat.", "label": "same", "days": 30}
+{"layer": "comparison", "a": "I drink coffee every morning.", "b": "I've stopped drinking coffee, I have green tea in the mornings instead.", "label": "updated", "days": 45}
+{"layer": "comparison", "a": "I drink coffee every morning.", "b": "Every morning starts with a coffee for me.", "label": "same", "days": 3}
+{"layer": "comparison", "a": "I live in Leeds.", "b": "I moved to Manchester last month.", "label": "updated", "days": 120}
+{"layer": "comparison", "a": "I live in Leeds.", "b": "I'm based in Leeds.", "label": "same", "days": 70}
+{"layer": "comparison", "a": "My sister is called Hannah.", "b": "Hannah is my sister's name.", "label": "same", "days": 25}
+{"layer": "comparison", "a": "I'm learning Japanese.", "b": "I gave up on Japanese, I'm learning Spanish now.", "label": "updated", "days": 80}
+{"layer": "comparison", "a": "I'm learning Japanese.", "b": "I've been studying Japanese, still going.", "label": "same", "days": 35}
+{"layer": "comparison", "a": "My password manager is Bitwarden.", "b": "I switched from Bitwarden to 1Password.", "label": "updated", "days": 50}
+{"layer": "comparison", "a": "I use Bitwarden for my passwords.", "b": "My passwords are all in Bitwarden.", "label": "same", "days": 14}
+{"layer": "comparison", "a": "I'm 23.", "b": "I turned 24 yesterday.", "label": "updated", "days": 200}
+{"layer": "comparison", "a": "I'm 23 years old.", "b": "I'm twenty-three.", "label": "same", "days": 10}
+{"layer": "comparison", "a": "I don't like mushrooms.", "b": "I actually like mushrooms now, I tried them again.", "label": "updated", "days": 100}
+{"layer": "comparison", "a": "I don't like mushrooms.", "b": "Mushrooms are not for me, I never eat them.", "label": "same", "days": 18}
+{"layer": "comparison", "a": "I go to the gym three times a week.", "b": "I only manage the gym once a week now.", "label": "updated", "days": 30}
+{"layer": "comparison", "a": "I go to the gym three times a week.", "b": "Three gym sessions a week is my routine.", "label": "same", "days": 21}
+{"layer": "comparison", "a": "My GPU is an RX 6800.", "b": "I upgraded my GPU to an RX 9070 XT.", "label": "updated", "days": 150}
+{"layer": "comparison", "a": "My graphics card is an RX 9070 XT.", "b": "I've got a 9070 XT in my PC.", "label": "same", "days": 7}
+{"layer": "comparison", "a": "Please call me Alex.", "b": "From now on, call me Lex instead.", "label": "updated", "days": 33}
+{"layer": "comparison", "a": "Please call me Alex.", "b": "Alex is what I'd like you to call me.", "label": "same", "days": 8}
+{"layer": "comparison", "a": "My dentist appointment is on Tuesday at 3.", "b": "The dentist rescheduled me to Thursday at 10.", "label": "updated", "days": 2}
+{"layer": "comparison", "a": "My dentist appointment is on Tuesday at 3.", "b": "Don't forget, dentist on Tuesday at 3pm.", "label": "same", "days": 1}
+{"layer": "comparison", "a": "I'm vegetarian.", "b": "I'm not vegetarian anymore, I eat fish again.", "label": "updated", "days": 160}
+{"layer": "comparison", "a": "I'm vegetarian.", "b": "I don't eat meat.", "label": "same", "days": 19}
+{"layer": "comparison", "a": "I keep my spare keys in the blue drawer.", "b": "I moved the spare keys to the hook by the door.", "label": "updated", "days": 75}
+{"layer": "comparison", "a": "I keep my spare keys in the blue drawer.", "b": "The spare keys live in the blue drawer.", "label": "same", "days": 40}
+{"layer": "comparison", "a": "My manager is Priya.", "b": "Priya left, my new manager is Tom.", "label": "updated", "days": 110}
+{"layer": "comparison", "a": "My manager is Priya.", "b": "I report to Priya at work.", "label": "same", "days": 22}
+{"layer": "comparison", "a": "I sleep around midnight.", "b": "These days I'm in bed by ten.", "label": "updated", "days": 55}
+{"layer": "comparison", "a": "I usually go to sleep around midnight.", "b": "Midnight is my usual bedtime.", "label": "same", "days": 16}
+{"layer": "comparison", "a": "I'm reading Dune.", "b": "I finished Dune and started Hyperion.", "label": "updated", "days": 27}
+{"layer": "comparison", "a": "I'm reading Dune at the moment.", "b": "Currently working my way through Dune.", "label": "same", "days": 6}
+{"layer": "comparison", "a": "My rent is 750 a month.", "b": "My rent went up to 820 a month.", "label": "updated", "days": 365}
+{"layer": "comparison", "a": "My rent is 750 a month.", "b": "I pay 750 a month in rent.", "label": "same", "days": 45}
+{"layer": "comparison", "a": "I don't have a car.", "b": "I bought a car last week, a used Yaris.", "label": "updated", "days": 140}
+{"layer": "comparison", "a": "I don't have a car.", "b": "I don't own a car, I take the bus.", "label": "same", "days": 31}
+{"layer": "comparison", "a": "I'm allergic to penicillin.", "b": "Remember I'm allergic to penicillin.", "label": "same", "days": 90}
+{"layer": "comparison", "a": "My best friend is Sam.", "b": "Sam's still my best friend, we met again yesterday.", "label": "same", "days": 60}
+{"layer": "comparison", "a": "I play guitar.", "b": "I sold my guitar, I play piano now.", "label": "updated", "days": 130}
+{"layer": "comparison", "a": "I play guitar.", "b": "I've been playing guitar for years.", "label": "same", "days": 44}
+{"layer": "comparison", "a": "I want you to speak more quietly.", "b": "You can go back to your normal volume now.", "label": "updated", "days": 5}
+{"layer": "comparison", "a": "I want you to keep your answers short.", "b": "Keep your answers brief, please.", "label": "same", "days": 11}
+{"layer": "comparison", "a": "I'm working on SORA's chat window.", "b": "I've moved on from the chat window, I'm working on the motion lab now.", "label": "updated", "days": 14}
+{"layer": "comparison", "a": "I'm working on SORA's chat window.", "b": "Still busy with the chat window for SORA.", "label": "same", "days": 4}
+{"layer": "comparison", "a": "My phone is an iPhone 12.", "b": "I got a Pixel to replace my iPhone 12.", "label": "updated", "days": 85}
+{"layer": "comparison", "a": "My phone is an iPhone 12.", "b": "I use an iPhone 12.", "label": "same", "days": 29}
+{"layer": "comparison", "a": "I'm single.", "b": "I'm seeing someone now, her name is Lily.", "label": "updated", "days": 95}
+{"layer": "comparison", "a": "My mum works night shifts.", "b": "My mum switched to day shifts.", "label": "updated", "days": 70}
+{"layer": "comparison", "a": "My mum works night shifts.", "b": "Mum's on nights at the hospital.", "label": "same", "days": 13}
+{"layer": "comparison", "a": "I hate horror films.", "b": "I can't stand horror movies.", "label": "same", "days": 38}
+{"layer": "comparison", "a": "I hate horror films.", "b": "Turns out I enjoy horror films after all.", "label": "updated", "days": 115}
+{"layer": "comparison", "a": "My birthday is on the 3rd of March.", "b": "3 March is my birthday.", "label": "same", "days": 210}
+{"layer": "comparison", "a": "I study computer science.", "b": "I switched my degree to physics.", "label": "updated", "days": 100}
+{"layer": "comparison", "a": "I study computer science.", "b": "My course is computer science.", "label": "same", "days": 26}
+{"layer": "comparison", "a": "The Wi-Fi password is on the router.", "b": "I changed the Wi-Fi password, it's not the one on the router anymore.", "label": "updated", "days": 48}
+{"layer": "comparison", "a": "I run 5K in 28 minutes.", "b": "New personal best: 5K in 25:40.", "label": "updated", "days": 66}
+{"layer": "comparison", "a": "I run 5K in about 28 minutes.", "b": "My 5K time is around 28 minutes.", "label": "same", "days": 17}
+{"layer": "comparison", "a": "I use Windows 11.", "b": "I'm on Windows 11.", "label": "same", "days": 52}
+{"layer": "comparison", "a": "I use Windows 10.", "b": "I finally upgraded to Windows 11.", "label": "updated", "days": 180}
+{"layer": "comparison", "a": "My dog is called Biscuit.", "b": "Biscuit, my dog, says hi.", "label": "same", "days": 9}
+{"layer": "comparison", "a": "I take the train to work.", "b": "I cycle to work now instead of taking the train.", "label": "updated", "days": 58}
+{"layer": "comparison", "a": "I take the train to work.", "b": "I commute by train.", "label": "same", "days": 23}
+{"layer": "comparison", "a": "I'm not a morning person.", "b": "Mornings aren't my thing.", "label": "same", "days": 41}
+{"layer": "comparison", "a": "I'm not a morning person.", "b": "I've become a morning person, up at six every day now.", "label": "updated", "days": 125}
+{"layer": "comparison", "a": "My team meeting is on Mondays at 9.", "b": "The team meeting moved to Wednesdays at 2.", "label": "updated", "days": 36}
+{"layer": "comparison", "a": "My team meeting is on Mondays at 9.", "b": "Every Monday at 9 I have my team meeting.", "label": "same", "days": 7}
+{"layer": "comparison", "a": "I'm saving for a new monitor.", "b": "I bought the monitor, so I'm saving for a holiday now.", "label": "updated", "days": 62}
+{"layer": "comparison", "a": "I'm saving up for a new monitor.", "b": "Putting money aside for that monitor.", "label": "same", "days": 12}
+{"layer": "comparison", "a": "I have two brothers.", "b": "I've got two brothers.", "label": "same", "days": 88}
+{"layer": "comparison", "a": "My brother lives in Bristol.", "b": "My brother moved from Bristol to Cardiff.", "label": "updated", "days": 77}
+{"layer": "comparison", "a": "My brother lives in Bristol.", "b": "Bristol is where my brother lives.", "label": "same", "days": 34}
+{"layer": "comparison", "a": "I prefer dark mode.", "b": "I like light mode better now.", "label": "updated", "days": 47}
+{"layer": "comparison", "a": "I prefer dark mode.", "b": "Dark mode, always.", "label": "same", "days": 15}

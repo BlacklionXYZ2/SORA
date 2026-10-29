@@ -32,6 +32,11 @@ const paths = {
   eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   graph: '<circle cx="12" cy="6" r="2.5"/><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M10.8 8.2L7.2 14.8M13.2 8.2l3.6 6.6M8.5 17h7"/>',
   walk: '<circle cx="13" cy="4" r="2"/><path d="M9 21l3-7 3 3v4M7 11l3-3 4 1 3 3M12 14l-1-5"/>',
+  motion: '<path d="M2 12h3l2-5 3 11 3-14 3 12 2-4h4"/>',
+  cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+  check: '<path d="M5 12l5 5 9-10"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
 };
 
 export function icon(name, label = "") {

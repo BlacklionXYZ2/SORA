@@ -1,0 +1,136 @@
+{
+  "$defs": {
+    "MotionFrame": {
+      "additionalProperties": false,
+      "properties": {
+        "contacts": {
+          "items": {
+            "type": "boolean"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "Contacts",
+          "type": "array"
+        },
+        "root": {
+          "items": {
+            "maximum": 1000,
+            "minimum": -1000,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "title": "Root",
+          "type": "array"
+        },
+        "rot": {
+          "items": {
+            "items": {
+              "maximum": 1.0001,
+              "minimum": -1.0001,
+              "type": "number"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "type": "array"
+          },
+          "maxItems": 22,
+          "minItems": 22,
+          "title": "Rot",
+          "type": "array"
+        }
+      },
+      "required": [
+        "root",
+        "rot"
+      ],
+      "title": "MotionFrame",
+      "type": "object"
+    },
+    "MotionSeed": {
+      "additionalProperties": false,
+      "properties": {
+        "fps": {
+          "maximum": 120,
+          "minimum": 10,
+          "title": "Fps",
+          "type": "integer"
+        },
+        "frames": {
+          "items": {
+            "$ref": "#/$defs/MotionFrame"
+          },
+          "maxItems": 400,
+          "minItems": 2,
+          "title": "Frames",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fps",
+        "frames"
+      ],
+      "title": "MotionSeed",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "key": {
+      "anyOf": [
+        {
+          "pattern": "^[a-z_-]{1,16}\\|[a-z-]{1,16}\\|[a-z-]{1,8}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Key"
+    },
+    "op": {
+      "enum": [
+        "seed",
+        "signal"
+      ],
+      "title": "Op",
+      "type": "string"
+    },
+    "seed": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/MotionSeed"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "velocity": {
+      "anyOf": [
+        {
+          "items": {
+            "maximum": 1000,
+            "minimum": -1000,
+            "type": "number"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Velocity"
+    }
+  },
+  "required": [
+    "op"
+  ],
+  "title": "PlayerMotionMessage",
+  "type": "object"
+}

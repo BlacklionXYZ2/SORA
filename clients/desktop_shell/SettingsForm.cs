@@ -25,7 +25,7 @@ internal sealed class SettingsForm : Form
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         root.Controls.Add(connection, 0, 0);
         var links = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
-        foreach (var (label, panel) in new[] { ("Appearance / UI", "appearance"), ("Voice / devices", "voice"),
+        foreach (var (label, panel) in new[] { ("Appearance / UI", "appearance"), ("Motion model", "motion"), ("Voice / devices", "voice"),
             ("Memory / browse", "memory"), ("Agents / catalogue", "agents"), ("Project paths", "paths"), ("Integrations", "integrations") }) {
             var button = ShellTheme.Button(label, "Open " + label);
             button.Click += (_, _) => openPanel(panel); links.Controls.Add(button);

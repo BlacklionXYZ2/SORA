@@ -3,6 +3,7 @@ using System.IO;
 using System.Globalization;
 using System.Threading;
 using Sora.Embodiment.Avatar;
+using Sora.Embodiment.Coordinates;
 using Sora.Embodiment.Debugging;
 using Sora.Embodiment.Native;
 using Sora.Embodiment.Network;
@@ -62,11 +63,14 @@ namespace Sora.Embodiment
             hud.IsVisible = Environment.GetEnvironmentVariable("SORA_DEBUG_OVERLAY") == "1";
             var bridge = gameObject.AddComponent<SoraEmbodimentBehaviour>();
             bridge.Configure(motion, gaze, hud, marker, presentation, reach, voicePresentation);
+            AvatarPhysicsBody? physicsBody = null;
             var grab = avatar.AddComponent<AvatarGrabController>();
-            grab.Configure(motion, () => bridge.CanAcceptPhysicalGrab && !ragdoll.IsActive);
+            grab.Configure(motion, () => bridge.CanAcceptPhysicalGrab && !ragdoll.IsActive &&
+                physicsBody?.IsFalling != true);
             var simplePhysics = avatar.AddComponent<AvatarSimplePhysicsController>();
             simplePhysics.Configure(motion,
-                () => bridge.CanAcceptPhysicalGrab && !motion.IsMoving && !ragdoll.IsActive);
+                () => bridge.CanAcceptPhysicalGrab && !motion.IsMoving && !ragdoll.IsActive &&
+                    physicsBody?.IsFalling != true);
             var supportSurfaces = avatar.AddComponent<AvatarSupportSurfaceController>();
             supportSurfaces.Configure(motion, simplePhysics);
             bridge.ConfigureSupportPhysics(supportSurfaces);
@@ -91,7 +95,9 @@ namespace Sora.Embodiment
                 var bounds = renderers[0].bounds;
                 foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
                 if (bounds.size.y < 0.01f) throw new InvalidDataException("Invalid avatar height");
-                float scale = 0.6f / bounds.size.y; // 300 physical pixels tall, independent of monitor DPI.
+                // 500 physical pixels (1 unit) tall, independent of monitor DPI.
+                float height = OverlayPlacement.AvatarHeightPixels / 500f;
+                float scale = height / bounds.size.y;
                 instance.transform.localScale = Vector3.one * scale;
                 instance.transform.localPosition = new Vector3(-(bounds.center.x - avatar.transform.position.x) * scale,
                     -(bounds.min.y - avatar.transform.position.y) * scale, 0);
@@ -99,10 +105,40 @@ namespace Sora.Embodiment
                 if (animator == null || !animator.isHuman) throw new InvalidDataException("Humanoid rig required");
                 var secondaryMotion = avatar.AddComponent<AvatarSecondaryMotionTuner>();
                 voicePresentation.Configure(instance);
-                secondaryMotion.Configure(instance);
+                // SORA_SECONDARY_COLLIDERS=0 turns off the body colliders generated for hair and
+                // clothing (a diagnostic switch; on by default).
+                secondaryMotion.Configure(instance, _sample ? null : path + ".parts.txt",
+                    Environment.GetEnvironmentVariable("SORA_SECONDARY_COLLIDERS") != "0");
                 simplePhysics.ConfigureSecondaryMotionReset(secondaryMotion.ResetSimulation);
                 presentation.ConfigureRig(animator);
                 gaze.ConfigureHead(animator.GetBoneTransform(HumanBodyBones.Head));
+                // Eyes, blinking and eye-head coordination. SORA_EYE_RIG=0 leaves the eyes
+                // still (a diagnostic switch; on by default). Configured while still at rest.
+                if (Environment.GetEnvironmentVariable("SORA_EYE_RIG") != "0")
+                    avatar.AddComponent<AvatarEyeRig>().Configure(instance, gaze, voicePresentation, camera);
+                // Her body is a physics body (motion roadmap MA). SORA_PHYSICS_BODY=0 brings back
+                // the posed body and the preset ragdoll; SORA_PHYSICS_HELP sets the help (full,
+                // no-exempt, realistic or none; realistic by default).
+                if (Environment.GetEnvironmentVariable("SORA_PHYSICS_BODY") != "0")
+                {
+                    // If her physics body can't be built (an unusual avatar), she keeps her posed
+                    // body and the preset fall rather than not appearing at all.
+                    var body = avatar.AddComponent<AvatarPhysicsBody>();
+                    try
+                    {
+                        body.Configure(instance, poseOwnership,
+                            AvatarPhysicsBody.HelpFor(Environment.GetEnvironmentVariable("SORA_PHYSICS_HELP")), motion);
+                        body.Connect(grab, simplePhysics);
+                        avatar.AddComponent<AvatarPhysicsPoseRestore>().Body = body;
+                        physicsBody = body;
+                        bridge.ConfigureMotion(body);
+                    }
+                    catch (Exception error)
+                    {
+                        Debug.LogWarning("Physics body unavailable, using the posed body: " + error.GetType().Name + ": " + error.Message);
+                        Destroy(body);
+                    }
+                }
                 var idlePose = avatar.AddComponent<AvatarIdlePose>();
                 idlePose.Configure(animator, motion, poseOwnership, presentation, reach);
                 var modeValue = Environment.GetEnvironmentVariable("SORA_AVATAR_PROACTIVITY") ?? "reactive";
@@ -116,11 +152,13 @@ namespace Sora.Embodiment
                 idlePose.ConfigureBehavior(behaviorMode, distractionLimit);
                 reach.Configure(animator, gaze);
                 var collider = avatar.AddComponent<CapsuleCollider>();
-                collider.height = 0.6f; collider.radius = 0.14f; collider.center = new Vector3(0, 0.3f, 0);
+                collider.height = height; collider.radius = height * 0.233f;
+                collider.center = new Vector3(0, height / 2, 0);
                 ragdoll.Configure(animator, poseOwnership, collider);
                 ragdoll.ConfigureControllers(reach, gaze, presentation, simplePhysics, grab,
                     secondaryMotion.ResetSimulation);
-                simplePhysics.Landed += impact => { ragdoll.TryBeginFromImpact(impact); };
+                // With a physics body, its Connect handles landings (a hard one is a physical fall).
+                if (physicsBody == null) simplePhysics.Landed += impact => { ragdoll.TryBeginFromImpact(impact); };
                 avatar.AddComponent<AvatarHitTest>();
                 bridge.AvatarReady = true;
                 avatar.transform.rotation = Quaternion.Euler(0, 180, 0);

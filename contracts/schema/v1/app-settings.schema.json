@@ -614,6 +614,57 @@
       "title": "MemoryManagerSettings",
       "type": "object"
     },
+    "MotionSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "ardy_precision": {
+          "default": "fp16",
+          "enum": [
+            "fp16",
+            "fp32"
+          ],
+          "title": "Ardy Precision",
+          "type": "string"
+        },
+        "ardy_steps": {
+          "default": 4,
+          "maximum": 10,
+          "minimum": 2,
+          "title": "Ardy Steps",
+          "type": "integer"
+        },
+        "custom_size": {
+          "default": "0.8M",
+          "pattern": "^[0-9]{1,4}(\\.[0-9]{1,2})?[MB]$",
+          "title": "Custom Size",
+          "type": "string"
+        },
+        "custom_version": {
+          "default": "v4",
+          "pattern": "^v[0-9]{1,3}$",
+          "title": "Custom Version",
+          "type": "string"
+        },
+        "engine": {
+          "default": "algorithmic",
+          "enum": [
+            "algorithmic",
+            "ardy",
+            "custom"
+          ],
+          "title": "Engine",
+          "type": "string"
+        },
+        "lab_path": {
+          "default": "",
+          "maxLength": 4096,
+          "title": "Lab Path",
+          "type": "string"
+        }
+      },
+      "title": "MotionSettings",
+      "type": "object"
+    },
     "PerceptionSettings": {
       "additionalProperties": false,
       "properties": {
@@ -908,6 +959,9 @@
     },
     "memory": {
       "$ref": "#/$defs/MemoryManagerSettings"
+    },
+    "motion": {
+      "$ref": "#/$defs/MotionSettings"
     },
     "perception": {
       "$ref": "#/$defs/PerceptionSettings"

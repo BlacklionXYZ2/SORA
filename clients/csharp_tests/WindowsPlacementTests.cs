@@ -18,8 +18,9 @@ public class WindowsPlacementTests
         foreach (var point in new[] { (-1000, -1000), (0, 0), (1919, 1079), (4000, 2000) })
         {
             var safe = OverlayPlacement.SafeAnchor(topology, point.Item1, point.Item2);
-            Assert.True(work.Contains(safe.X - 90, safe.Y - 300));
-            Assert.True(work.Contains(safe.X + 90, safe.Y));
+            Assert.True(work.Contains(safe.X - OverlayPlacement.AvatarHalfWidthPixels,
+                safe.Y - OverlayPlacement.AvatarHeightPixels));
+            Assert.True(work.Contains(safe.X + OverlayPlacement.AvatarHalfWidthPixels, safe.Y));
         }
         var roundtrip = DisplayTopologyDto.FromTopology(topology).Monitors[0].ToDescriptor();
         Assert.Equal(work, roundtrip.WorkArea);
@@ -36,9 +37,11 @@ public class WindowsPlacementTests
         var topology = new DisplayTopology(new ScreenRect(-1280, 0, 5120, 2160), new[] { side, primary });
         var home = OverlayPlacement.HomeAnchor(topology);
         Assert.Equal((3840 - 1 - 3840 / 5, 2087), home);
-        Assert.True(primary.WorkArea.Contains(home.X - 90, home.Y - 300));
-        // Before the fix, clamping the default origin gave (90, 300): high on the top-left.
-        Assert.Equal((90, 300), OverlayPlacement.SafeAnchor(topology, 0, 0));
+        Assert.True(primary.WorkArea.Contains(home.X - OverlayPlacement.AvatarHalfWidthPixels,
+            home.Y - OverlayPlacement.AvatarHeightPixels));
+        // Before the fix, clamping the default origin gave her footprint size: high on the top-left.
+        Assert.Equal((OverlayPlacement.AvatarHalfWidthPixels, OverlayPlacement.AvatarHeightPixels),
+            OverlayPlacement.SafeAnchor(topology, 0, 0));
     }
 
     [Fact]

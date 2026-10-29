@@ -8,6 +8,7 @@ export const CATEGORIES = Object.freeze([
   { id: "Appearance", icon: "appearance", blurb: "How she looks." },
   { id: "Models", icon: "models", blurb: "The local model SORA thinks with, and her agent colleagues." },
   { id: "Audio", icon: "audio", blurb: "Voice in and out: microphone, speakers and her voice." },
+  { id: "Motion", icon: "motion", blurb: "What moves her body: the algorithmic system or a motion model." },
   { id: "Vision", icon: "vision", blurb: "What SORA may see on your screen, and when." },
   { id: "Memory", icon: "memory", blurb: "What SORA remembers." },
   { id: "Tools", icon: "tools", blurb: "What SORA may do on this PC, and where agents work." },

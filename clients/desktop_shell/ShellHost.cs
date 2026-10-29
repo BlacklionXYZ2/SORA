@@ -30,7 +30,7 @@ internal sealed class ShellHost : ApplicationContext
     {
         ["chat"] = new(480, 560), ["settings"] = new(980, 680), ["activity"] = new(960, 660),
         ["voice"] = new(840, 530), ["agents"] = new(820, 740), ["paths"] = new(1000, 670),
-        ["memory"] = new(1060, 740), ["appearance"] = new(600, 640),
+        ["memory"] = new(1060, 740), ["appearance"] = new(600, 640), ["motion"] = new(1180, 820),
     };
     private static bool WebMemory => WebPanels && WebPages.ContainsKey("memory");
     private readonly Dictionary<string, WebPanelForm> webPanels = [];
@@ -81,6 +81,7 @@ internal sealed class ShellHost : ApplicationContext
         menu.Items.Add("Integrations / details", null, (_, _) => ShowPanel("integrations"));
         menu.Items.Add("Settings / recovery", null, (_, _) => ShowPanel("settings"));
         menu.Items.Add("Appearance / panels", null, (_, _) => ShowPanel("appearance"));
+        menu.Items.Add("Motion / her motion model", null, (_, _) => ShowPanel("motion"));
         menu.Items.Add("Command menu", null, (_, _) => ShowPanel("menu"));
         menu.Items.Add("Reconnect / retry startup", null, async (_, _) => await RetryCoreAsync());
         menu.Items.Add(new ToolStripSeparator());
@@ -99,7 +100,7 @@ internal sealed class ShellHost : ApplicationContext
         delayedQuit.Tick += async (_, _) => { delayedQuit.Stop(); await QuitAsync(); };
         pipeTask = Task.Run(() => instance.ServeAsync(DispatchAsync, lifetime.Token));
         refresh.Start();
-        if (options.Panel is "chat" or "voice" or "memory" or "settings" or "appearance" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "menu") ShowPanel(options.Panel);
+        if (options.Panel is "chat" or "voice" or "memory" or "settings" or "appearance" or "motion" or "activity" or "agents" or "paths" or "board" or "content" or "integrations" or "menu") ShowPanel(options.Panel);
         CoreChanged(null, EventArgs.Empty); _ = RetryCoreAsync();
     }
     private Task<bool> DispatchAsync(HostCommand command)

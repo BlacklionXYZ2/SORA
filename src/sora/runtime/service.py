@@ -23,6 +23,7 @@ from pydantic import Field, SecretStr, field_validator, model_validator
 
 if TYPE_CHECKING:
     from sora.embodiment.local_player import LocalAvatarSession
+    from sora.embodiment.motion_service import MotionSupervisor
 
 from sora.attention import (
     AttentionResolution,
@@ -506,6 +507,8 @@ class SoraRuntime:
         self._settings_lock = asyncio.Lock()
         self.config = config
         self.local_avatar: LocalAvatarSession | None = None
+        # Which motion engine moves her (sora.embodiment.motion_service); set with her player.
+        self.motion: MotionSupervisor | None = None
         self.dialogue_in_progress = 0
         self.dialogue_turns = DialogueTurns()
         self.windows_bridge = (
@@ -1173,6 +1176,8 @@ class SoraRuntime:
         await self.automation_worker.stop()
         await self.agent_catalogue.close()
         await self.local_voice.close()
+        if self.motion is not None:
+            await self.motion.close()
         await self.decision_gate.close()
         if self._memory_tasks:
             await asyncio.gather(*tuple(self._memory_tasks), return_exceptions=True)

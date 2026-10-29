@@ -135,6 +135,17 @@ export class CoreApi {
     return this.request("/api/v1/model/reload", { method: "POST", body: { expected_revision: revision } });
   }
   refreshSettings() { return this.request("/api/v1/settings/refresh", { method: "POST", body: {} }); }
+  // Motion window: what motion-lab has (read-only; the choice is a motion.* settings edit).
+  motionCatalog() { return this.request("/api/v1/motion/catalog"); }
+  // What moves her now, and Reload motion model (applies the saved motion.* settings live).
+  motionStatus() { return this.request("/api/v1/motion/status"); }
+  reloadMotion(revision) {
+    return this.request("/api/v1/motion/reload", { method: "POST", body: { expected_revision: revision } });
+  }
+  motionPreview(name) {
+    if (!/^previews\/[A-Za-z0-9_.-]+\.json$/.test(name ?? "")) throw new TypeError("Use a catalogue preview name.");
+    return this.request(`/api/v1/motion/preview?name=${encodeURIComponent(name)}`);
+  }
   projectors(modelPath) {
     return this.request("/api/v1/models/projectors", { method: "POST", body: { model_path: modelPath } });
   }

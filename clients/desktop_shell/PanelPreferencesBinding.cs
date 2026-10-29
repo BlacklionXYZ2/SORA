@@ -73,7 +73,7 @@ internal sealed class PanelPreferencesBinding : IDisposable
                 "content" or "integrations" => new Size(840, 680),
                 "voice" => new Size(840, 530),
                 "memory" => new Size(1060, 740),
-                "appearance" => new Size(600, 640), _ => new Size(460, 350)
+                "appearance" => new Size(600, 640), "motion" => new Size(1180, 820), _ => new Size(460, 350)
             };
             var bounds = new Rectangle(area.Left + (int)(24 * scale), area.Top + (int)(24 * scale),
                 (int)(size.Width * scale), (int)(size.Height * scale));

@@ -81,10 +81,14 @@ def test_all_preferences_have_controls_and_tiers() -> None:
 
 def test_gui_categories_cover_every_v10_preference_once_without_new_authority() -> None:
     keys = [key for group in SETTINGS_CATEGORY_KEYS.values() for key in group]
-    assert len(keys) == len(set(keys)) == len(FIELDS) == 145
+    # 151 since 2026-10-27: the six motion.* settings, in the new Motion category.
+    assert len(keys) == len(set(keys)) == len(FIELDS) == 151
     assert set(keys) == set(TIERS)
     assert SETTINGS_ADVANCED_KEYS <= set(keys)
-    assert len(SETTINGS_CATEGORIES) == 10
+    assert len(SETTINGS_CATEGORIES) == 11
+    assert {f["key"] for f in FIELDS if f["category"] == "Motion"} == {
+        "motion.engine", "motion.ardy_precision", "motion.ardy_steps", "motion.custom_version",
+        "motion.custom_size", "motion.lab_path"}
     for field in FIELDS:
         assert field["category"] in SETTINGS_CATEGORIES
         assert field["key"] in SETTINGS_CATEGORY_KEYS[field["category"]]

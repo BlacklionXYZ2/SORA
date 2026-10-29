@@ -7,8 +7,14 @@ namespace Sora.Embodiment.Coordinates
     /// <summary>Avatar position is the feet anchor. Keep its full rectangular footprint in a work area.</summary>
     public static class OverlayPlacement
     {
+        /// <summary>Her height on screen in physical pixels: one world unit at 500 px a unit
+        /// (owner, 2026-10-16; 300 px before).</summary>
+        public const int AvatarHeightPixels = 500;
+        /// <summary>Half the width of the footprint kept on screen, in physical pixels.</summary>
+        public const int AvatarHalfWidthPixels = 150;
+
         public static (int X, int Y) SafeAnchor(DisplayTopology topology, int x, int y,
-            int halfWidth = 90, int height = 300)
+            int halfWidth = AvatarHalfWidthPixels, int height = AvatarHeightPixels)
         {
             if (halfWidth < 0 || height < 1) throw new ArgumentOutOfRangeException(nameof(height));
             if (topology.Monitors.Count == 0) throw new ArgumentException("Active monitor required");

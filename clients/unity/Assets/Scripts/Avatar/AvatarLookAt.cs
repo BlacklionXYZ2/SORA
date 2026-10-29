@@ -5,9 +5,11 @@ using Sora.Embodiment.Coordinates;
 namespace Sora.Embodiment.Avatar
 {
     /// <summary>
-    /// Clamped gaze and head-tracking controller for the SORA avatar.
-    /// Directs head/eyes toward commanded physical screen pixel coordinates
+    /// Clamped head-tracking controller for the SORA avatar.
+    /// Turns the head toward commanded physical screen pixel coordinates
     /// with strict angular limits to preserve natural humanoid anatomical posture.
+    /// The eyes are aimed separately by <see cref="AvatarEyeRig"/>; as in people, small gaze
+    /// shifts move only the eyes, and the head joins in once the target is further away.
     /// </summary>
     [DefaultExecutionOrder(20001)]
     public class AvatarLookAt : MonoBehaviour
@@ -30,6 +32,13 @@ namespace Sora.Embodiment.Avatar
         [SerializeField]
         private float basePixelsPerMeter = 500.0f;
 
+        [Header("Eye-head coordination (Degrees)")]
+        [SerializeField]
+        private float headEngageAngle = 12.0f; // the eyes alone cover shifts smaller than this
+
+        [SerializeField]
+        private float headSettledAngle = 1.5f;
+
         private CoordinateTransformer _transformer = null!;
         private DisplayTopology _topology = null!;
 
@@ -38,8 +47,12 @@ namespace Sora.Embodiment.Avatar
         private float _presentationWeight = 1.0f;
         private Quaternion _originalHeadRotation;
         private AvatarPoseOwnership? _poseOwnership;
+        private Vector2 _headGoal; // yaw, pitch the head is turning to
+        private bool _headEngaged;
 
         public bool IsLooking => _isLooking;
+        /// <summary>True while the head is turning to follow the gaze target.</summary>
+        public bool HeadEngaged => _headEngaged;
         public void ConfigureHead(Transform head)
         {
             headBone = head;
@@ -100,6 +113,8 @@ namespace Sora.Embodiment.Avatar
         {
             _isLooking = false;
             _presentationWeight = 1.0f;
+            _headGoal = Vector2.zero;
+            _headEngaged = false;
         }
 
         public void ApplyGaze(float deltaSeconds)
@@ -130,10 +145,19 @@ namespace Sora.Embodiment.Avatar
             // Clamp angles to anatomical limits
             float clampedYaw = Mathf.Clamp(yaw, -maxYawAngle, maxYawAngle) * _presentationWeight;
             float clampedPitch = Mathf.Clamp(pitch, -maxPitchAngle, maxPitchAngle) * _presentationWeight;
+            var desired = new Vector2(clampedYaw, clampedPitch);
 
-            Quaternion targetLocalRot = Quaternion.Euler(clampedPitch, clampedYaw, 0f) * _originalHeadRotation;
+            // The head holds still while the target stays within the eyes' easy reach of where it
+            // points; past that it turns all the way and follows until it has caught up.
+            if (!_headEngaged && Vector2.Distance(desired, _headGoal) > headEngageAngle)
+                _headEngaged = true;
+            if (_headEngaged) _headGoal = desired;
+
+            Quaternion targetLocalRot = Quaternion.Euler(_headGoal.y, _headGoal.x, 0f) * _originalHeadRotation;
             headBone.localRotation = Quaternion.Slerp(headBone.localRotation, targetLocalRot,
                 deltaSeconds * gazeSlerpSpeed);
+            if (_headEngaged && Quaternion.Angle(headBone.localRotation, targetLocalRot) < headSettledAngle)
+                _headEngaged = false;
         }
 
         private void LateUpdate() => ApplyGaze(Time.deltaTime);

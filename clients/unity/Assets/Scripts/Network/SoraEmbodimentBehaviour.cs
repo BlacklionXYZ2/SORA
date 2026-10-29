@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using MotionEnv.AvatarLayer;
 using Sora.Embodiment.Avatar;
 using Sora.Embodiment.Coordinates;
 using Sora.Embodiment.Debugging;
@@ -27,6 +28,12 @@ namespace Sora.Embodiment.Network
         [SerializeField] private int port = 8000;
         private readonly ConcurrentQueue<Action> _pending = new ConcurrentQueue<Action>();
         private readonly ConcurrentQueue<VoiceSampleDto> _voicePending = new ConcurrentQueue<VoiceSampleDto>();
+        private readonly ConcurrentQueue<MotionMessageDto> _motionPending = new ConcurrentQueue<MotionMessageDto>();
+        private AvatarPhysicsBody? _motionBody;
+        private float _nextMotionSignal;
+        private bool _motionSignalPending;
+        private bool _motionSeedPending;
+        private string _lastMotionKey = string.Empty;
         private string? _voiceStream;
         private SoraCoreClient? _client;
         private DisplayTopology? _topology;
@@ -104,6 +111,14 @@ namespace Sora.Embodiment.Network
                 "landed", support.SurfaceId, magnitude: velocity.magnitude);
             supports.SupportRemoved += (surfaceId, reason) => QueueFeedback(
                 "support_removed", surfaceId, detail: reason);
+        }
+
+        /// <summary>Her motion model's stream plays on her physics body (2026-10-27). Without one
+        /// (the posed-body fallback) she stays on her own poses and no model can move her.</summary>
+        public void ConfigureMotion(AvatarPhysicsBody body)
+        {
+            _motionBody = body ?? throw new ArgumentNullException(nameof(body));
+            body.MotionStream.SeedRequested += () => _motionSeedPending = true;
         }
 
         public void SetNativeTopology(DisplayTopology topology)
@@ -194,6 +209,13 @@ namespace Sora.Embodiment.Network
                 }
                 else _voicePending.Enqueue(sample);
             };
+            _client.OnMotionReceived += message =>
+            {
+                // Chunks arrive every 0.4 s; a backlog this large means the main thread stalled,
+                // and stale motion is worth less than none.
+                if (_motionPending.Count >= 64) while (_motionPending.TryDequeue(out _)) { }
+                _motionPending.Enqueue(message);
+            };
             _client.OnConnectionStateChanged += connected => _pending.Enqueue(() =>
             {
                 if (hud != null) hud.SetConnectionState(connected);
@@ -212,6 +234,9 @@ namespace Sora.Embodiment.Network
                     voicePresentation.ResetAll(VoicePresentationResetReason.Disconnected);
                     while (_voicePending.TryDequeue(out _)) { }
                     _voiceStream = null;
+                    while (_motionPending.TryDequeue(out _)) { }
+                    _motionBody?.MotionStream.Reset();
+                    _lastMotionKey = string.Empty;
                     _nextTopologyReport = 0;
                 }
             });
@@ -344,6 +369,12 @@ namespace Sora.Embodiment.Network
             // Bound main-thread processing; all Unity calls occur here.
             for (int i = 0; i < 100 && _pending.TryDequeue(out var action); i++) action();
             for (int i = 0; i < 32 && _voicePending.TryDequeue(out var sample); i++) ApplyVoice(sample);
+            for (int i = 0; i < 16 && _motionPending.TryDequeue(out var motion); i++)
+                _motionBody?.MotionStream.Accept(motion);
+            if (_motionSeedPending && _client?.IsConnected == true) ReportMotionSeed();
+            if (_motionBody != null && _client?.IsConnected == true && !_motionSignalPending &&
+                (Time.unscaledTime >= _nextMotionSignal || MotionKey() != _lastMotionKey))
+                ReportMotionSignal();
             if (_interactionController != null)
             {
                 var wasActive = _interactionController.IsActive;
@@ -454,6 +485,54 @@ namespace Sora.Embodiment.Network
             }
             catch (Exception) { /* Transport reconnect owns recovery; never log private payloads. */ }
             finally { _reportPending = false; }
+        }
+
+        /// <summary>What she is doing, as a motion phrase key (intent|emotion|intensity; "-" is
+        /// unknown). Emotion and intensity aren't sent yet.</summary>
+        private string MotionKey()
+        {
+            if (_motionBody == null) return "-|-|-";
+            if (_motionBody.IsFalling) return "fall|-|-";
+            if (_motionBody.Mode == PhysicsBodyMode.Held) return "idle|-|-";
+            if (locomotion.IsMoving)
+                return StandInMotion.HasFlight(_motionBody.CanonicalSpeed) ? "run|-|-" : "walk|-|-";
+            return presentation.CurrentState switch
+            {
+                "sitting" => "sit|-|-",
+                "leaning" => "lean|-|-",
+                "climbing" => "climb|-|-",
+                _ => "idle|-|-",
+            };
+        }
+
+        /// <summary>Tells Core what she is doing and how fast she travels (every 0.4 s, the
+        /// model's replan interval, or at once when what she is doing changes). The velocity
+        /// is along the model's own facing: SORA turns her on screen, the model only walks.</summary>
+        private async void ReportMotionSignal()
+        {
+            if (_client == null || _motionBody == null) return;
+            var key = MotionKey();
+            _lastMotionKey = key;
+            _nextMotionSignal = Time.unscaledTime + 0.4f;
+            var travelling = locomotion.IsMoving && _motionBody.Mode == PhysicsBodyMode.Standing;
+            var velocity = travelling ? _motionBody.MotionStream.CanonicalForward * _motionBody.CanonicalSpeed
+                : Vector2.zero;
+            _motionSignalPending = true;
+            try { await _client.ReportMotionSignalAsync(key, velocity.x, velocity.y); }
+            catch (Exception) { /* The next signal follows in 0.4 s. */ }
+            finally { _motionSignalPending = false; }
+        }
+
+        /// <summary>Sends her recording when Core asks for it (a Reload motion model's handover).
+        /// With under two frames recorded nothing is sent and the model starts standing.</summary>
+        private async void ReportMotionSeed()
+        {
+            _motionSeedPending = false;
+            if (_client == null || _motionBody == null) return;
+            var frames = _motionBody.MotionStream.Seed();
+            if (frames.Length < 2) return;
+            try { await _client.ReportMotionSeedAsync(AvatarMotionStream.RecordFps, frames); }
+            catch (Exception) { /* Core starts the model standing if the seed doesn't arrive. */ }
         }
 
         private async void ReportFeedback()

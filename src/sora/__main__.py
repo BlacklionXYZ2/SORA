@@ -19,6 +19,7 @@ from sora.api.lifecycle import ManagedLifecycle
 from sora.contracts.models import TaskStatus
 from sora.embodiment.avatar_settings import resolve_avatar
 from sora.embodiment.local_player import LocalAvatarSession
+from sora.embodiment.motion_service import MotionSupervisor
 from sora.providers.antigravity import AntigravityProvider
 from sora.providers.base import ReasoningProvider
 from sora.providers.claude_code import ClaudeCodeProvider
@@ -682,12 +683,19 @@ async def _run(
                     print(f"Avatar {app_settings.boot.avatar.vrm_path} not found; "
                           "using the built-in Seed-san.")
                 try:
+                    # Her motion engine (Settings → Motion) lives as long as her player; the
+                    # player connects to it through Core's embodiment channel.
+                    runtime.motion = MotionSupervisor(Path(__file__).resolve().parents[2])
                     runtime.local_avatar = LocalAvatarSession(
                         runtime, arguments.embodiment_player, avatar
                     )
                     await runtime.local_avatar.start(
                         token=api_cfg.auth_token, port=api_server.actual_port
                     )
+                    if app_settings.active.motion.engine != "algorithmic":
+                        # The saved model starts now; she uses her own poses meanwhile and is
+                        # handed over (from her recorded pose) once it has loaded.
+                        await runtime.motion.reload(app_settings.active.motion)
                 except Exception:
                     await api_server.close()
                     raise
