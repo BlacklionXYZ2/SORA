@@ -1,6 +1,6 @@
 # How to use SORA (current state)
 
-**Last updated: 2026-10-27, Opus 5.5 (Reload motion model: ARDY moves her live).** This page describes what works *today* and how to use it.
+**Last updated: 2026-10-30, Opus 5.5 (ARDY: steady long idles and getting up after a fall).** This page describes what works *today* and how to use it.
 Every change that alters how SORA is started, set up or used must update this page in the same
 change (see [AGENTS.md](AGENTS.md)). If something here is wrong, it is a bug in this page.
 
@@ -326,6 +326,10 @@ style.
     moves her, sitting, leaning or climbing); her emotion isn't passed on yet. Her physics, falls
     and being picked up stay as they are, and SORA still decides where she goes and which way she
     faces. It needs motion-lab's `ardy-runtime` set up; Core starts it on the GPU.
+  - **Standing about and getting up with ARDY (since 2026-10-30):** after she has stood still
+    for about 2 seconds, ARDY is held near that pose, so she can idle for minutes without
+    drifting (before, she started flailing and spinning after about a minute). If she ends up
+    on the ground, ARDY gets her up within about 3 seconds.
     Custom trained versions can be saved but can't drive her yet: only ARDY runs live so far.
   - **Where the list comes from:** the models listed come from motion-lab (a `motion-lab` folder
     beside SORA's, or Settings → Motion → motion-lab folder). After training or evaluating

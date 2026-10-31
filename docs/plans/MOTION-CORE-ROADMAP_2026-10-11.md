@@ -307,6 +307,49 @@ above what she stands on.
 - **Weak:** the keywords steer only a little (walking at 0.20 m/s against the data's 0.56), and
   the motion still winds down.
 - **Proposed next:** probabilistic output (a Motion-VAE-style sampled latent).
+
+**v5 (2026-10-30, Opus 5.5, in motion-lab's `versions/v5/`).** A stress battery
+(`motionlab/stress.py`: 5-minute runs, pushes, flicker, cold starts, steering, body checks)
+found that v4:
+- froze in every 5-minute run;
+- glided in 90% of moving frames and hovered with its feet tucked 43% of the time;
+- never turned.
+
+**What has been fixed so far, step by step (each measured by the battery):**
+1. **A per-tick latent (learned prior).** Alone, with the foot losses, it fixed nothing.
+2. **Free-run training:** batches that run alone, scored only on what holds at any horizon:
+   feet on the floor, no wrist in the torso, no crossed legs, the limits, an energy band, the
+   posture, and following the velocity input. **With the latent this ended the freezing**; a
+   deterministic twin trained the same way still froze.
+3. **Correlated run-time noise** (ρ 0.98): independent noise each tick made her shake (jitter
+   15× the recordings').
+4. **A velocity input** (`MotionSignal.velocity`, a v5 draft).
+
+5. **Steering and facing** (counterfactual commands in free runs, a facing reward). Gliding
+   models now go where they're sent: `latent-vel-free7` reaches speeds within 10% and
+   directions within 2°; `free8` turns to face a new heading in about 4 s.
+6. **The foot lock** (the M2 foot lock, built into the step): she travels only by stepping, the
+   lowest foot rests on the floor (the ground lock), flight is limited to 0.3 s, and the root
+   step is capped.
+   - Penalties couldn't stop the gliding (free8); the lock makes it, and hovering,
+     impossible.
+   - Replaying recordings through it reproduces 84 to 88% of their walking travel.
+
+**Where it stands (2026-10-31, 25 runs):**
+- **`latent-vel-lock-sup`**, trained under the locks on the supervised losses alone, is the
+  first model that is alive and on planted feet. Energy holds for 5 minutes; feet are carried
+  0.04% of the time, against the recordings' 3.4% and free7's 99.7%.
+- **Open:** under the lock, no model has yet learned to follow the velocity command (lock-sup
+  shuffles at about 0.21 m/s whatever is asked) or to face where it goes.
+- Every foot-locked fine-tune with free runs (free9 to free14) collapsed into stillness, a
+  crouch or crossed legs instead of learning to step.
+- **Training:** `lock-free` (free runs on top of lock-sup) and `lock-sup2`.
+- **Also found:**
+  - the GRU's memory drifts in long runs (staggered resets help models without free runs);
+  - validation's short free runs don't predict 5-minute behaviour, so checkpoints are now
+    kept for the battery to choose from.
+- Details: motion-lab's `versions/v5/README.md` and changelog.
+
 Each model version is self-contained in motion-lab's `versions/vN/`; motion-lab's `docs/M1.md`
 lists them.
 - **Data:** LAFAN1, 100STYLE and CMU (with BABEL's labels), about 37 hours, retargeted at 60 Hz
